@@ -31,6 +31,12 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          # GitHub Repo Secrets에 등록하세요(예: GEMINI_API_KEY).
+          # 주의: Vite는 빌드 시점에 값을 번들에 포함할 수 있으므로, 운영에서는 서버 프록시로 옮기는 것을 권장합니다.
+          VITE_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # 필요 시 Secrets로 관리: GEMINI_IMAGE_MODEL
+          VITE_GEMINI_IMAGE_MODEL: ${{ secrets.GEMINI_IMAGE_MODEL }}
         run: npm run build
 
       - name: Setup Pages

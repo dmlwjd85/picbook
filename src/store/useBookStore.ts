@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { generateNanoBananaImageDataUrl } from '../lib/nanoBananaGemini'
+import { useUiStore } from './useUiStore'
 
 export type SentenceStatus = 'idle' | 'loading' | 'done'
 
@@ -62,6 +64,7 @@ type BookState = {
   updateDirecting: (sentenceId: string, patch: Partial<Directing>) => void
   markDirectingDone: (sentenceId: string) => void
   resetDirecting: (sentenceId: string) => void
+  regenerateSentenceImage: (sentenceId: string) => { ok: true } | { ok: false; reason: string }
   canAssemblePicBookFromDraft: () => { ok: true } | { ok: false; reason: string }
   assemblePicBookFromDraft: () => { ok: true; picBook: PicBook } | { ok: false; reason: string }
   publishPicBook: (picBookId: string) => { ok: true } | { ok: false; reason: string }
@@ -258,10 +261,82 @@ function escapeXml(s: string): string {
     .replaceAll("'", '&apos;')
 }
 
-async function generateImageMock(sentenceText: string): Promise<string> {
+type ImageProvider = 'gemini' | 'mock'
+
+function getImageProvider(): ImageProvider {
+  const explicit = import.meta.env.VITE_IMAGE_PROVIDER as string | undefined
+  if (explicit === 'mock') return 'mock'
+  if (explicit === 'gemini') return 'gemini'
+
+  // 기본 정책: 키가 있으면 Nano Banana(Gemini API) 우선, 없으면 Mock
+  return import.meta.env.VITE_GEMINI_API_KEY ? 'gemini' : 'mock'
+}
+
+function clipText(s: string, max: number): string {
+  const t = s.replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  return `${t.slice(0, max)}…`
+}
+
+function buildNanoBananaPrompt(input: { fullText: string; sentence: Sentence }): string {
+  const story = clipText(input.fullText, 900)
+  const notes = input.sentence.directing.notes.trim()
+
+  // 한국어 프롬프트: “그림일기” 톤을 강하게 고정(추후 SceneSpec으로 구조화 예정)
+  return [
+    '너는 아동/청소년 독서 활동용 “그림일기(픽처링 북)” 일러스트레이터다.',
+    '요구사항:',
+    '- 단일 장면 1컷으로 완성된 일러스트를 만들어라.',
+    '- 과도한 폭력/선정/혐오/실존 인물 초상화는 피해라.',
+    '- 글의 핵심 감정과 사건을 시각적으로 명확히 표현해라.',
+    '- 화풍: 부드러운 수채화 + 연필 스케치 느낌, 따뜻한 조명, 깔끔한 구도.',
+    notes ? `- 디렉터 메모(최우선 반영): ${notes}` : '- 디렉터 메모: 없음',
+    '',
+    '[원문 문장]',
+    input.sentence.text,
+    '',
+    '[책 전체 맥락(참고용)]',
+    story || '(맥락 텍스트 없음)',
+  ].join('\n')
+}
+
+async function generateSentenceImage(input: { fullText: string; sentence: Sentence }): Promise<string> {
+  const provider = getImageProvider()
+  const role = useUiStore.getState().role
+
+  // 고객 모드에서는 생성 호출이 들어오면 안 되지만, 방어적으로 Mock로 고정
+  if (role !== 'master') {
+    const delay = 250 + Math.floor(Math.random() * 250)
+    await new Promise((r) => setTimeout(r, delay))
+    return svgDataUrl(input.sentence.text)
+  }
+
+  if (provider === 'gemini') {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
+    if (!apiKey) {
+      // 키가 없는데 provider가 gemini로 강제된 경우
+      const delay = 250 + Math.floor(Math.random() * 250)
+      await new Promise((r) => setTimeout(r, delay))
+      return svgDataUrl(input.sentence.text)
+    }
+
+    const model =
+      (import.meta.env.VITE_GEMINI_IMAGE_MODEL as string | undefined) ?? 'gemini-2.5-flash-image' // Nano Banana (공식 모델명)
+
+    const prompt = buildNanoBananaPrompt({ fullText: input.fullText, sentence: input.sentence })
+    try {
+      return await generateNanoBananaImageDataUrl({ apiKey, model, prompt })
+    } catch {
+      // 생성 실패 시에도 작업이 멈추지 않게 Mock로 폴백(마스터는 UI에서 재시도 가능)
+      const delay = 250 + Math.floor(Math.random() * 250)
+      await new Promise((r) => setTimeout(r, delay))
+      return svgDataUrl(input.sentence.text)
+    }
+  }
+
   const delay = 650 + Math.floor(Math.random() * 850)
   await new Promise((r) => setTimeout(r, delay))
-  return svgDataUrl(sentenceText)
+  return svgDataUrl(input.sentence.text)
 }
 
 const STORAGE_KEY = 'picbook.v1'
@@ -354,6 +429,48 @@ export const useBookStore = create<BookState>((set, get) => {
         persistSnapshot(out)
         return out
       })
+    },
+
+    regenerateSentenceImage: (sentenceId) => {
+      if (useUiStore.getState().role !== 'master') {
+        return { ok: false, reason: '마스터 모드에서만 이미지를 재생성할 수 있습니다.' }
+      }
+
+      const s = get().sentences.find((x) => x.id === sentenceId)
+      if (!s) return { ok: false, reason: '문장을 찾을 수 없습니다.' }
+      if (!s.isComplete) return { ok: false, reason: '완성된 문장만 이미지를 생성할 수 있습니다.' }
+
+      set((state) => {
+        const nextSentences = state.sentences.map((it) =>
+          it.id === sentenceId
+            ? {
+                ...it,
+                status: 'loading' as const,
+                // 재생성 중에는 이전 이미지를 숨겨 UX가 명확해지게 한다.
+                imageUrl: null,
+              }
+            : it,
+        )
+        const out = { ...state, sentences: nextSentences }
+        persistSnapshot(out)
+        return out
+      })
+
+      void (async () => {
+        const snap = get().sentences.find((x) => x.id === sentenceId)
+        if (!snap) return
+        const url = await generateSentenceImage({ fullText: get().fullText, sentence: snap })
+        set((state) => {
+          const nextSentences = state.sentences.map((it) =>
+            it.id === sentenceId ? { ...it, imageUrl: url, status: 'done' as const } : it,
+          )
+          const out = { ...state, sentences: nextSentences }
+          persistSnapshot(out)
+          return out
+        })
+      })()
+
+      return { ok: true }
     },
 
     canAssemblePicBookFromDraft: () => {
@@ -529,7 +646,7 @@ export const useBookStore = create<BookState>((set, get) => {
           if (s.status === 'loading' && s.isComplete) {
             // 이미 실행 중이면 중복 호출을 피하기 위해 status만으로 가드한다.
             void (async () => {
-              const url = await generateImageMock(s.text)
+              const url = await generateSentenceImage({ fullText: get().fullText, sentence: s })
               set((state) => {
                 const nextSentences = state.sentences.map((it) =>
                   it.id === s.id ? { ...it, imageUrl: url, status: 'done' as const } : it,

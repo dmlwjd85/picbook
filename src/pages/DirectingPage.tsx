@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useBookStore } from '../store/useBookStore'
 import type { Directing } from '../store/useBookStore'
+import { useUiStore } from '../store/useUiStore'
 
 function directingImageStyle(input: {
   scale: number
@@ -29,8 +30,11 @@ export default function DirectingPage() {
   const updateDirecting = useBookStore((s) => s.updateDirecting)
   const markDirectingDone = useBookStore((s) => s.markDirectingDone)
   const resetDirecting = useBookStore((s) => s.resetDirecting)
+  const regenerateSentenceImage = useBookStore((s) => s.regenerateSentenceImage)
+  const role = useUiStore((s) => s.role)
 
   const ready = Boolean(sentence && sentence.status === 'done' && sentence.imageUrl)
+  const generating = Boolean(sentence && sentence.status === 'loading' && sentence.isComplete)
 
   const d = sentence?.directing
 
@@ -74,6 +78,10 @@ export default function DirectingPage() {
     updateDirecting(sentence.id, { notes: e.target.value })
   }
 
+  const geminiKeyConfigured = Boolean(import.meta.env.VITE_GEMINI_API_KEY)
+  const imageModel = (import.meta.env.VITE_GEMINI_IMAGE_MODEL as string | undefined) ?? 'gemini-2.5-flash-image'
+  const imageProvider = (import.meta.env.VITE_IMAGE_PROVIDER as string | undefined) ?? (geminiKeyConfigured ? 'gemini' : 'mock')
+
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-6xl px-4 py-6">
@@ -88,6 +96,20 @@ export default function DirectingPage() {
             <p className="mt-1 text-sm text-slate-600">
               MVP 단계에서는 화면 연출(크롭/톤) 파라미터를 저장합니다. 이후 ComfyUI/레이어 편집으로 확장할 수 있어요.
             </p>
+            {role === 'master' ? (
+              <p className="mt-2 text-xs text-slate-500">
+                이미지 엔진: <span className="font-semibold text-slate-700">{imageProvider}</span>
+                {imageProvider === 'gemini' ? (
+                  <>
+                    {' '}
+                    · 모델: <span className="font-mono">{imageModel}</span>
+                    {!geminiKeyConfigured ? (
+                      <span className="text-amber-700"> · VITE_GEMINI_API_KEY가 없어 실제 호출이 불가능할 수 있습니다.</span>
+                    ) : null}
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -97,6 +119,25 @@ export default function DirectingPage() {
               onClick={() => resetDirecting(sentence.id)}
             >
               초기화
+            </button>
+            <button
+              type="button"
+              disabled={role !== 'master' || !sentence.isComplete || sentence.status === 'loading'}
+              className={[
+                'rounded-xl px-4 py-2 text-sm font-semibold border transition',
+                role === 'master' && sentence.isComplete && sentence.status !== 'loading'
+                  ? 'bg-violet-600 text-white border-violet-600 hover:bg-violet-700'
+                  : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed',
+              ].join(' ')}
+              onClick={() => {
+                const res = regenerateSentenceImage(sentence.id)
+                if (!res.ok) {
+                  alert(res.reason)
+                }
+              }}
+              title="디렉터 메모/문장을 반영해 Nano Banana(Gemini 이미지)로 장면을 다시 만듭니다."
+            >
+              Nano Banana로 장면 재생성
             </button>
             <button
               type="button"
@@ -134,7 +175,16 @@ export default function DirectingPage() {
             </div>
 
             <div className="mt-4 relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 aspect-[16/10]">
-              {!ready ? (
+              {generating ? (
+                <div className="absolute inset-0">
+                  <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-full bg-white/85 px-4 py-2 border border-slate-200 text-sm font-semibold text-slate-800">
+                      Nano Banana 생성 중…
+                    </div>
+                  </div>
+                </div>
+              ) : !ready ? (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-600">
                   이미지가 아직 준비되지 않았습니다.
                 </div>
