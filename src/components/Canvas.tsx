@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useBookStore } from '../store/useBookStore'
 import type { Sentence } from '../store/useBookStore'
 
@@ -12,6 +13,7 @@ function Spinner() {
 }
 
 function SentenceCard({ s }: { s: Sentence }) {
+  const ready = s.status === 'done' && Boolean(s.imageUrl)
   return (
     <article className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       <div className="relative aspect-[16/10] bg-slate-50">
@@ -45,18 +47,30 @@ function SentenceCard({ s }: { s: Sentence }) {
           >
             {s.text}
           </p>
-          <span
-            className={[
-              'shrink-0 text-[11px] rounded-full px-2 py-1 border',
-              s.status === 'done'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : s.status === 'loading'
-                  ? 'bg-violet-50 text-violet-700 border-violet-200'
-                  : 'bg-slate-50 text-slate-600 border-slate-200',
-            ].join(' ')}
-          >
-            {s.status === 'done' ? '완료' : s.status === 'loading' ? '생성중' : '대기'}
-          </span>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <span
+              className={[
+                'text-[11px] rounded-full px-2 py-1 border',
+                s.status === 'done'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : s.status === 'loading'
+                    ? 'bg-violet-50 text-violet-700 border-violet-200'
+                    : 'bg-slate-50 text-slate-600 border-slate-200',
+              ].join(' ')}
+            >
+              {s.status === 'done' ? '완료' : s.status === 'loading' ? '생성중' : '대기'}
+            </span>
+
+            <Link
+              to={`/direct/${s.id}`}
+              className={[
+                'rounded-xl px-3 py-2 text-[11px] font-semibold border transition',
+                ready ? 'bg-white text-slate-900 border-slate-200 hover:bg-slate-50' : 'pointer-events-none opacity-40',
+              ].join(' ')}
+            >
+              디렉팅
+            </Link>
+          </div>
         </div>
       </div>
     </article>

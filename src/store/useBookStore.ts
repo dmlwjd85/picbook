@@ -2,18 +2,58 @@ import { create } from 'zustand'
 
 export type SentenceStatus = 'idle' | 'loading' | 'done'
 
+export type DirectingStatus = 'draft' | 'done'
+
+export type Directing = {
+  status: DirectingStatus
+  // 화면에서 이미지를 “연출”하기 위한 간단한 파라미터(추후 ComfyUI/레이어 편집으로 확장)
+  scale: number // 0.8 ~ 1.6
+  translateX: number // -120 ~ 120 (px)
+  translateY: number // -120 ~ 120 (px)
+  rotateDeg: number // -8 ~ 8
+  brightness: number // 0.75 ~ 1.25
+  contrast: number // 0.85 ~ 1.25
+  notes: string // 디렉터 메모(프롬프트/연출 의도)
+}
+
 export type Sentence = {
   id: string
   text: string
   imageUrl: string | null
   status: SentenceStatus
   isComplete: boolean
+  directing: Directing
+}
+
+export type PicBookPage = {
+  sentenceId: string
+  text: string
+  imageUrl: string
+  directing: Directing
+}
+
+export type PicBook = {
+  id: string
+  title: string
+  createdAt: string
+  pages: PicBookPage[]
+  price: number // MVP: 모의 코인 가격
+  purchased: boolean
 }
 
 type BookState = {
   fullText: string
   sentences: Sentence[]
+  picBooks: PicBook[]
+  wallet: { coins: number }
   setFullText: (nextText: string) => void
+  updateDirecting: (sentenceId: string, patch: Partial<Directing>) => void
+  markDirectingDone: (sentenceId: string) => void
+  resetDirecting: (sentenceId: string) => void
+  canAssemblePicBookFromDraft: () => { ok: true } | { ok: false; reason: string }
+  assemblePicBookFromDraft: () => { ok: true; picBook: PicBook } | { ok: false; reason: string }
+  purchasePicBook: (picBookId: string) => { ok: true } | { ok: false; reason: string }
+  grantMockCoins: (amount: number) => void
 }
 
 function createId(): string {
@@ -45,6 +85,33 @@ function splitIntoSentences(text: string): Array<{ text: string; isComplete: boo
     .filter((x) => x.text.length > 0)
 
   return parsed
+}
+
+function defaultDirecting(): Directing {
+  return {
+    status: 'draft',
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+    rotateDeg: 0,
+    brightness: 1,
+    contrast: 1,
+    notes: '',
+  }
+}
+
+function mergeDirecting(prev: Directing, patch: Partial<Directing>): Directing {
+  const nextStatus: DirectingStatus = patch.status ?? prev.status
+  return {
+    status: nextStatus,
+    scale: patch.scale ?? prev.scale,
+    translateX: patch.translateX ?? prev.translateX,
+    translateY: patch.translateY ?? prev.translateY,
+    rotateDeg: patch.rotateDeg ?? prev.rotateDeg,
+    brightness: patch.brightness ?? prev.brightness,
+    contrast: patch.contrast ?? prev.contrast,
+    notes: patch.notes ?? prev.notes,
+  }
 }
 
 function hash32FNV1a(input: string): number {
@@ -182,65 +249,229 @@ async function generateImageMock(sentenceText: string): Promise<string> {
   return svgDataUrl(sentenceText)
 }
 
-export const useBookStore = create<BookState>((set, get) => ({
-  fullText: '',
-  sentences: [],
-  setFullText: (nextText) => {
-    set({ fullText: nextText })
+const STORAGE_KEY = 'picbook.v1'
 
-    const prev = get().sentences
-    const parsed = splitIntoSentences(nextText)
+type PersistedV1 = {
+  version: 1
+  fullText: string
+  sentences: Sentence[]
+  picBooks: PicBook[]
+  wallet: { coins: number }
+}
 
-    const next: Sentence[] = parsed.map((p, idx) => {
-      const prevAt = prev[idx]
-      const canReuse = prevAt && prevAt.text === p.text
+function safeParse(json: string | null): PersistedV1 | null {
+  if (!json) return null
+  try {
+    const v = JSON.parse(json) as PersistedV1
+    if (!v || v.version !== 1) return null
+    return v
+  } catch {
+    return null
+  }
+}
 
-      if (canReuse) {
-        // 같은 위치/같은 문장 텍스트는 상태를 유지한다.
-        const wasComplete = prevAt.isComplete
-        const becameComplete = !wasComplete && p.isComplete
+function loadPersisted(): Partial<PersistedV1> | null {
+  if (typeof window === 'undefined') return null
+  return safeParse(window.localStorage.getItem(STORAGE_KEY))
+}
 
-        // "미완성 → 완성"으로 바뀌는 순간에만 이미지 생성 트리거
-        if (becameComplete && prevAt.status === 'idle') {
-          return {
-            ...prevAt,
-            isComplete: true,
-            status: 'loading',
+function persistSnapshot(state: Pick<BookState, 'fullText' | 'sentences' | 'picBooks' | 'wallet'>) {
+  if (typeof window === 'undefined') return
+  const payload: PersistedV1 = {
+    version: 1,
+    fullText: state.fullText,
+    sentences: state.sentences,
+    picBooks: state.picBooks,
+    wallet: state.wallet,
+  }
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+}
+
+export const useBookStore = create<BookState>((set, get) => {
+  const hydrated = loadPersisted()
+
+  return {
+    fullText: hydrated?.fullText ?? '',
+    sentences: (hydrated?.sentences ?? []).map((s) => ({
+      ...s,
+      directing: s.directing ?? defaultDirecting(),
+    })),
+    picBooks: hydrated?.picBooks ?? [],
+    wallet: hydrated?.wallet ?? { coins: 1200 },
+
+    grantMockCoins: (amount) => {
+      set((state) => {
+        const next = { ...state.wallet, coins: state.wallet.coins + amount }
+        const out = { ...state, wallet: next }
+        persistSnapshot(out)
+        return out
+      })
+    },
+
+    updateDirecting: (sentenceId, patch) => {
+      set((state) => {
+        const nextSentences = state.sentences.map((s) =>
+          s.id === sentenceId ? { ...s, directing: mergeDirecting(s.directing, patch) } : s,
+        )
+        const out = { ...state, sentences: nextSentences }
+        persistSnapshot(out)
+        return out
+      })
+    },
+
+    markDirectingDone: (sentenceId) => {
+      set((state) => {
+        const nextSentences = state.sentences.map((s) =>
+          s.id === sentenceId ? { ...s, directing: mergeDirecting(s.directing, { status: 'done' }) } : s,
+        )
+        const out = { ...state, sentences: nextSentences }
+        persistSnapshot(out)
+        return out
+      })
+    },
+
+    resetDirecting: (sentenceId) => {
+      set((state) => {
+        const nextSentences = state.sentences.map((s) =>
+          s.id === sentenceId ? { ...s, directing: defaultDirecting() } : s,
+        )
+        const out = { ...state, sentences: nextSentences }
+        persistSnapshot(out)
+        return out
+      })
+    },
+
+    canAssemblePicBookFromDraft: () => {
+      const { sentences } = get()
+      if (sentences.length === 0) return { ok: false, reason: '문장이 없습니다.' }
+
+      const notImageReady = sentences.filter((s) => !(s.status === 'done' && s.imageUrl))
+      if (notImageReady.length > 0) {
+        return { ok: false, reason: '모든 문장의 이미지가 완료되어야 픽북으로 묶을 수 있습니다.' }
+      }
+
+      const notDirected = sentences.filter((s) => s.directing.status !== 'done')
+      if (notDirected.length > 0) {
+        return { ok: false, reason: '모든 문장의 디렉팅이 완료되어야 픽북으로 묶을 수 있습니다.' }
+      }
+
+      return { ok: true }
+    },
+
+    assemblePicBookFromDraft: () => {
+      const gate = get().canAssemblePicBookFromDraft()
+      if (!gate.ok) return gate
+
+      const { sentences } = get()
+      const title = `내 픽북 ${new Date().toLocaleString()}`
+      const picBook: PicBook = {
+        id: createId(),
+        title,
+        createdAt: new Date().toISOString(),
+        pages: sentences.map((s) => ({
+          sentenceId: s.id,
+          text: s.text,
+          imageUrl: s.imageUrl ?? '',
+          directing: s.directing,
+        })),
+        price: 490,
+        purchased: false,
+      }
+
+      set((state) => {
+        const out = { ...state, picBooks: [picBook, ...state.picBooks] }
+        persistSnapshot(out)
+        return out
+      })
+
+      return { ok: true, picBook }
+    },
+
+    purchasePicBook: (picBookId) => {
+      const { picBooks, wallet } = get()
+      const book = picBooks.find((b) => b.id === picBookId)
+      if (!book) return { ok: false, reason: '픽북을 찾을 수 없습니다.' }
+      if (book.purchased) return { ok: false, reason: '이미 구매한 픽북입니다.' }
+      if (wallet.coins < book.price) return { ok: false, reason: '코인이 부족합니다. (MVP: 상단의 “코인 충전”을 사용하세요)' }
+
+      set((state) => {
+        const nextBooks = state.picBooks.map((b) =>
+          b.id === picBookId ? { ...b, purchased: true } : b,
+        )
+        const nextWallet = { coins: state.wallet.coins - book.price }
+        const out = { ...state, picBooks: nextBooks, wallet: nextWallet }
+        persistSnapshot(out)
+        return out
+      })
+
+      return { ok: true }
+    },
+
+    setFullText: (nextText) => {
+      set({ fullText: nextText })
+
+      const prev = get().sentences
+      const parsed = splitIntoSentences(nextText)
+
+      const next: Sentence[] = parsed.map((p, idx) => {
+        const prevAt = prev[idx]
+        const canReuse = prevAt && prevAt.text === p.text
+
+        if (canReuse) {
+          // 같은 위치/같은 문장 텍스트는 상태를 유지한다.
+          const wasComplete = prevAt.isComplete
+          const becameComplete = !wasComplete && p.isComplete
+
+          // "미완성 → 완성"으로 바뀌는 순간에만 이미지 생성 트리거
+          if (becameComplete && prevAt.status === 'idle') {
+            return {
+              ...prevAt,
+              isComplete: true,
+              status: 'loading',
+            }
+          }
+
+          return { ...prevAt, isComplete: p.isComplete }
+        }
+
+        const id = createId()
+        return {
+          id,
+          text: p.text,
+          imageUrl: null,
+          status: p.isComplete ? 'loading' : 'idle',
+          isComplete: p.isComplete,
+          directing: defaultDirecting(),
+        }
+      })
+
+      set((state) => {
+        const out = { ...state, sentences: next }
+        persistSnapshot(out)
+        return out
+      })
+
+      // 이미지 생성은 렌더링/입력 흐름을 막지 않도록 비동기로 처리
+      queueMicrotask(() => {
+        const { sentences } = get()
+        for (const s of sentences) {
+          if (s.status === 'loading' && s.isComplete) {
+            // 이미 실행 중이면 중복 호출을 피하기 위해 status만으로 가드한다.
+            void (async () => {
+              const url = await generateImageMock(s.text)
+              set((state) => {
+                const nextSentences = state.sentences.map((it) =>
+                  it.id === s.id ? { ...it, imageUrl: url, status: 'done' as const } : it,
+                )
+                const out = { ...state, sentences: nextSentences }
+                persistSnapshot(out)
+                return out
+              })
+            })()
           }
         }
-
-        return { ...prevAt, isComplete: p.isComplete }
-      }
-
-      const id = createId()
-      return {
-        id,
-        text: p.text,
-        imageUrl: null,
-        status: p.isComplete ? 'loading' : 'idle',
-        isComplete: p.isComplete,
-      }
-    })
-
-    set({ sentences: next })
-
-    // 이미지 생성은 렌더링/입력 흐름을 막지 않도록 비동기로 처리
-    queueMicrotask(() => {
-      const { sentences } = get()
-      for (const s of sentences) {
-        if (s.status === 'loading' && s.isComplete) {
-          // 이미 실행 중이면 중복 호출을 피하기 위해 status만으로 가드한다.
-          void (async () => {
-            const url = await generateImageMock(s.text)
-            set((state) => ({
-              sentences: state.sentences.map((it) =>
-                it.id === s.id ? { ...it, imageUrl: url, status: 'done' } : it,
-              ),
-            }))
-          })()
-        }
-      }
-    })
-  },
-}))
+      })
+    },
+  }
+})
 

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { ChangeEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useBookStore } from '../store/useBookStore'
 
 export function Editor() {
@@ -29,6 +30,13 @@ export function Editor() {
               순차 생성됩니다.
             </p>
           </div>
+          <div className="flex flex-col items-end gap-2">
+            <Link
+              to="/draft/pages"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+            >
+              문장 페이지 보기
+            </Link>
           <div className="text-xs text-slate-500 whitespace-nowrap">
             <div>
               총 <span className="font-medium text-slate-800">{stats.total}</span>문장
@@ -44,6 +52,7 @@ export function Editor() {
                 대기 <span className="font-medium text-slate-800">{stats.idle}</span>
               </span>
             </div>
+          </div>
           </div>
         </div>
       </header>
