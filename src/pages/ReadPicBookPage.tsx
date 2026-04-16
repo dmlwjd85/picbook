@@ -49,6 +49,17 @@ export default function ReadPicBookPage() {
     )
   }
 
+  if (!book.published) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-slate-600">이 픽북은 서점에서 내려진(비공개) 상태입니다.</p>
+        <Link className="mt-3 inline-block text-sm font-semibold text-violet-700" to="/store">
+          서점으로 이동
+        </Link>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-3xl px-4 py-6">

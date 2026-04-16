@@ -39,6 +39,18 @@ export type PicBook = {
   pages: PicBookPage[]
   price: number // MVP: 모의 코인 가격
   purchased: boolean
+  // 마스터가 서점에 올릴지 여부(MVP: 로컬 저장소)
+  published: boolean
+  publishedAt: string | null
+}
+
+function normalizePicBook(input: PicBook): PicBook {
+  // 과거 저장 데이터 호환: published 필드가 없으면 비공개로 취급
+  return {
+    ...input,
+    published: Boolean(input.published),
+    publishedAt: input.publishedAt ?? null,
+  }
 }
 
 type BookState = {
@@ -52,8 +64,11 @@ type BookState = {
   resetDirecting: (sentenceId: string) => void
   canAssemblePicBookFromDraft: () => { ok: true } | { ok: false; reason: string }
   assemblePicBookFromDraft: () => { ok: true; picBook: PicBook } | { ok: false; reason: string }
+  publishPicBook: (picBookId: string) => { ok: true } | { ok: false; reason: string }
+  unpublishPicBook: (picBookId: string) => { ok: true } | { ok: false; reason: string }
   purchasePicBook: (picBookId: string) => { ok: true } | { ok: false; reason: string }
   grantMockCoins: (amount: number) => void
+  exportMasterBundleJson: () => string
 }
 
 function createId(): string {
@@ -296,7 +311,7 @@ export const useBookStore = create<BookState>((set, get) => {
       ...s,
       directing: s.directing ?? defaultDirecting(),
     })),
-    picBooks: hydrated?.picBooks ?? [],
+    picBooks: (hydrated?.picBooks ?? []).map((b) => normalizePicBook(b)),
     wallet: hydrated?.wallet ?? { coins: 1200 },
 
     grantMockCoins: (amount) => {
@@ -376,6 +391,8 @@ export const useBookStore = create<BookState>((set, get) => {
         })),
         price: 490,
         purchased: false,
+        published: false,
+        publishedAt: null,
       }
 
       set((state) => {
@@ -387,10 +404,47 @@ export const useBookStore = create<BookState>((set, get) => {
       return { ok: true, picBook }
     },
 
+    publishPicBook: (picBookId) => {
+      const book = get().picBooks.find((b) => b.id === picBookId)
+      if (!book) return { ok: false, reason: '픽북을 찾을 수 없습니다.' }
+      if (book.published) return { ok: false, reason: '이미 출판된 픽북입니다.' }
+
+      set((state) => {
+        const nextBooks = state.picBooks.map((b) =>
+          b.id === picBookId
+            ? { ...b, published: true, publishedAt: new Date().toISOString() }
+            : b,
+        )
+        const out = { ...state, picBooks: nextBooks }
+        persistSnapshot(out)
+        return out
+      })
+
+      return { ok: true }
+    },
+
+    unpublishPicBook: (picBookId) => {
+      const book = get().picBooks.find((b) => b.id === picBookId)
+      if (!book) return { ok: false, reason: '픽북을 찾을 수 없습니다.' }
+      if (!book.published) return { ok: false, reason: '출판되지 않은 픽북입니다.' }
+
+      set((state) => {
+        const nextBooks = state.picBooks.map((b) =>
+          b.id === picBookId ? { ...b, published: false, publishedAt: null } : b,
+        )
+        const out = { ...state, picBooks: nextBooks }
+        persistSnapshot(out)
+        return out
+      })
+
+      return { ok: true }
+    },
+
     purchasePicBook: (picBookId) => {
       const { picBooks, wallet } = get()
       const book = picBooks.find((b) => b.id === picBookId)
       if (!book) return { ok: false, reason: '픽북을 찾을 수 없습니다.' }
+      if (!book.published) return { ok: false, reason: '서점에 출판되지 않은 픽북은 구매할 수 없습니다.' }
       if (book.purchased) return { ok: false, reason: '이미 구매한 픽북입니다.' }
       if (wallet.coins < book.price) return { ok: false, reason: '코인이 부족합니다. (MVP: 상단의 “코인 충전”을 사용하세요)' }
 
@@ -405,6 +459,23 @@ export const useBookStore = create<BookState>((set, get) => {
       })
 
       return { ok: true }
+    },
+
+    exportMasterBundleJson: () => {
+      const state = get()
+      return JSON.stringify(
+        {
+          version: 1,
+          kind: 'picbook.master_bundle',
+          exportedAt: new Date().toISOString(),
+          // 마스터 작업물(초안 텍스트/문장/픽북 원본). 서버 업로드/앱 배포 파이프라인의 입력으로 사용.
+          fullText: state.fullText,
+          sentences: state.sentences,
+          picBooks: state.picBooks,
+        },
+        null,
+        2,
+      )
     },
 
     setFullText: (nextText) => {

@@ -39,7 +39,9 @@ export default function DraftPages() {
                   alert(res.reason)
                   return
                 }
-                alert(`픽북이 생성되었습니다: ${res.picBook.title}\n책장에서 구매/열람할 수 있어요.`)
+                alert(
+                  `픽북이 생성되었습니다: ${res.picBook.title}\n다음으로 마스터 화면에서 서점에 올리려면 "출판"을 진행해 주세요.`,
+                )
               }}
               className={[
                 'rounded-xl px-4 py-2 text-sm font-semibold border transition',

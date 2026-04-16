@@ -5,16 +5,52 @@ import DraftPages from './pages/DraftPages'
 import DirectingPage from './pages/DirectingPage'
 import LibraryPage from './pages/LibraryPage'
 import ReadPicBookPage from './pages/ReadPicBookPage'
+import HomeRedirect from './pages/HomeRedirect'
+import StorePage from './pages/StorePage'
+import MasterHome from './pages/MasterHome'
+import { MasterRoute } from './components/MasterRoute'
 
 export default function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={<EditorHome />} />
-        <Route path="/draft/pages" element={<DraftPages />} />
-        <Route path="/direct/:sentenceId" element={<DirectingPage />} />
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/store" element={<StorePage />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/read/:picBookId" element={<ReadPicBookPage />} />
+
+        <Route
+          path="/master"
+          element={
+            <MasterRoute>
+              <MasterHome />
+            </MasterRoute>
+          }
+        />
+        <Route
+          path="/editor"
+          element={
+            <MasterRoute>
+              <EditorHome />
+            </MasterRoute>
+          }
+        />
+        <Route
+          path="/draft/pages"
+          element={
+            <MasterRoute>
+              <DraftPages />
+            </MasterRoute>
+          }
+        />
+        <Route
+          path="/direct/:sentenceId"
+          element={
+            <MasterRoute>
+              <DirectingPage />
+            </MasterRoute>
+          }
+        />
       </Route>
     </Routes>
   )

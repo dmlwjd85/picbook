@@ -78,7 +78,7 @@ export function Editor() {
 
       <footer className="px-5 py-4 border-t border-slate-200 text-xs text-slate-500">
         현재 단계의 이미지 생성은 <span className="font-medium text-slate-700">Mock</span>이며,
-        추후 로컬 GPU API(ComfyUI 등)로 교체할 수 있도록 분리돼 있습니다.
+        마스터 툴킷 기준으로 먼저 완성도를 올린 뒤, 추후 Google 모델(예: Nano Banana 계열)로 교체할 수 있게 분리돼 있습니다.
       </footer>
     </section>
   )

@@ -20,45 +20,22 @@ function directingImageStyle(input: {
   }
 }
 
-export default function LibraryPage() {
+export default function StorePage() {
   const picBooks = useBookStore((s) => s.picBooks)
   const wallet = useBookStore((s) => s.wallet)
+  const purchasePicBook = useBookStore((s) => s.purchasePicBook)
   const grantMockCoins = useBookStore((s) => s.grantMockCoins)
 
-  const owned = useMemo(() => picBooks.filter((b) => b.purchased), [picBooks])
-
-  const exportPayload = useMemo(() => {
-    return JSON.stringify(
-      {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        wallet,
-        // 고객 책장은 “구매한 픽북”만 의미가 있습니다.
-        picBooks: owned,
-      },
-      null,
-      2,
-    )
-  }, [owned, wallet])
-
-  const downloadJson = () => {
-    const blob = new Blob([exportPayload], { type: 'application/json;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `picbook-library-${Date.now()}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+  const listings = useMemo(() => picBooks.filter((b) => b.published), [picBooks])
 
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">책장</h1>
+            <h1 className="text-xl font-semibold text-slate-900">픽북 서점</h1>
             <p className="mt-1 text-sm text-slate-600">
-              구매한 픽북만 표시합니다. 새 픽북은 <span className="font-semibold">서점</span>에서 구매해 주세요.
+              마스터가 <span className="font-semibold">출판(publish)</span>한 픽북만 진열됩니다. 구매 후에는 책장에서 열람할 수 있어요.
             </p>
           </div>
 
@@ -74,31 +51,26 @@ export default function LibraryPage() {
               >
                 코인 +500 (모의)
               </button>
-              <button
-                type="button"
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                onClick={downloadJson}
-              >
-                책장보내기(JSON)
-              </button>
               <Link
-                to="/store"
+                to="/library"
                 className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
               >
-                서점 가기
+                내 책장
               </Link>
             </div>
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {owned.length === 0 ? (
+          {listings.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-              아직 구매한 픽북이 없습니다. <span className="font-semibold">서점</span>에서 픽북을 구매해 주세요.
+              아직 서점에 올라온 픽북이 없습니다. 마스터 툴킷에서 픽북을 만들고{' '}
+              <span className="font-semibold">출판</span>해 주세요.
             </div>
           ) : (
-            owned.map((b) => {
+            listings.map((b) => {
               const cover = b.pages[0]
+              const lockedPreview = !b.purchased
               return (
                 <article key={b.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
                   <div className="relative aspect-[16/10] bg-slate-50">
@@ -107,9 +79,19 @@ export default function LibraryPage() {
                         <img
                           src={cover.imageUrl}
                           alt={b.title}
-                          className="absolute inset-0 h-full w-full object-cover"
+                          className={[
+                            'absolute inset-0 h-full w-full object-cover',
+                            lockedPreview ? 'blur-md scale-105' : '',
+                          ].join(' ')}
                           style={directingImageStyle(cover.directing)}
                         />
+                        {lockedPreview ? (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="rounded-2xl bg-white/90 px-4 py-3 border border-slate-200 shadow-sm text-sm font-semibold text-slate-900">
+                              구매 전 미리보기
+                            </div>
+                          </div>
+                        ) : null}
                       </>
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-600">
@@ -123,21 +105,46 @@ export default function LibraryPage() {
                       <div className="min-w-0">
                         <h2 className="text-sm font-semibold text-slate-900 truncate">{b.title}</h2>
                         <p className="mt-1 text-xs text-slate-500">
-                          페이지 {b.pages.length} · 가격 <span className="font-semibold tabular-nums">{b.price}</span> 코인
+                          페이지 {b.pages.length} · 가격{' '}
+                          <span className="font-semibold tabular-nums">{b.price}</span> 코인
                         </p>
                       </div>
 
                       <div className="flex flex-col items-end gap-2 shrink-0">
-                        <span className="text-[11px] rounded-full px-2 py-1 border bg-emerald-50 text-emerald-700 border-emerald-200">
-                          보유
+                        <span
+                          className={[
+                            'text-[11px] rounded-full px-2 py-1 border',
+                            b.purchased
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-slate-50 text-slate-700 border-slate-200',
+                          ].join(' ')}
+                        >
+                          {b.purchased ? '보유' : '미보유'}
                         </span>
 
-                        <Link
-                          to={`/read/${b.id}`}
-                          className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-                        >
-                          열람
-                        </Link>
+                        {b.purchased ? (
+                          <Link
+                            to={`/read/${b.id}`}
+                            className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                          >
+                            열람
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className="rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700"
+                            onClick={() => {
+                              const res = purchasePicBook(b.id)
+                              if (!res.ok) {
+                                alert(res.reason)
+                                return
+                              }
+                              alert('구매가 완료되었습니다. 책장에서 열람할 수 있어요.')
+                            }}
+                          >
+                            구매하기
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
