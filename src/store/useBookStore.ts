@@ -47,35 +47,120 @@ function splitIntoSentences(text: string): Array<{ text: string; isComplete: boo
   return parsed
 }
 
+function hash32FNV1a(input: string): number {
+  // 빠르고 간단한 문자열 해시(결정적). Mock 이미지의 seed로 사용.
+  let h = 0x811c9dc5
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return h >>> 0
+}
+
+function mulberry32(seed: number): () => number {
+  let t = seed >>> 0
+  return () => {
+    t += 0x6d2b79f5
+    let r = Math.imul(t ^ (t >>> 15), 1 | t)
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n))
+}
+
 function svgDataUrl(sentenceText: string): string {
   const safe = sentenceText.length > 52 ? `${sentenceText.slice(0, 52)}…` : sentenceText
+  const seed = hash32FNV1a(sentenceText)
+  const rnd = mulberry32(seed)
+
+  const palettes = [
+    ['#fdf2f8', '#eef2ff', '#ecfeff', '#111827'],
+    ['#fff7ed', '#fef3c7', '#ecfccb', '#1f2937'],
+    ['#f0fdf4', '#e0f2fe', '#ede9fe', '#0f172a'],
+    ['#eff6ff', '#fae8ff', '#fef9c3', '#111827'],
+    ['#f5f3ff', '#e0e7ff', '#cffafe', '#0b1220'],
+  ]
+  const palette = palettes[seed % palettes.length]
+
+  const bgA = palette[0]
+  const bgB = palette[1]
+  const bgC = palette[2]
+  const ink = palette[3]
+
+  const sunX = Math.floor(160 + rnd() * 960)
+  const sunY = Math.floor(110 + rnd() * 220)
+  const sunR = Math.floor(42 + rnd() * 64)
+
+  const hillH = Math.floor(120 + rnd() * 160)
+  const hillWave = Math.floor(80 + rnd() * 140)
+  const hillY = 580 + Math.floor(rnd() * 60)
+
+  const doodles = Array.from({ length: 9 }, () => ({
+    x: Math.floor(80 + rnd() * 1120),
+    y: Math.floor(80 + rnd() * 520),
+    r: Math.floor(10 + rnd() * 28),
+    o: clamp(0.05 + rnd() * 0.12, 0.05, 0.18),
+  }))
+
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="832" viewBox="0 0 1280 832">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f5f3ff"/>
-      <stop offset="55%" stop-color="#eef2ff"/>
-      <stop offset="100%" stop-color="#ecfeff"/>
+      <stop offset="0%" stop-color="${bgA}"/>
+      <stop offset="52%" stop-color="${bgB}"/>
+      <stop offset="100%" stop-color="${bgC}"/>
     </linearGradient>
     <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
-      <feColorMatrix type="saturate" values="0.15" />
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0.18" />
       <feComponentTransfer>
-        <feFuncA type="table" tableValues="0 0.08" />
+        <feFuncA type="table" tableValues="0 0.10" />
       </feComponentTransfer>
     </filter>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2.2" />
+    </filter>
   </defs>
+
   <rect width="1280" height="832" fill="url(#g)"/>
-  <rect width="1280" height="832" filter="url(#paper)" opacity="0.9"/>
-  <g opacity="0.9">
-    <path d="M140 290 C 340 170, 560 170, 760 290 S 1180 410, 1140 560"
-      fill="none" stroke="#111827" stroke-opacity="0.10" stroke-width="10" stroke-linecap="round"/>
-    <path d="M140 320 C 340 200, 560 200, 760 320 S 1180 440, 1140 590"
-      fill="none" stroke="#111827" stroke-opacity="0.08" stroke-width="6" stroke-linecap="round"/>
+  <rect width="1280" height="832" filter="url(#paper)" opacity="0.95"/>
+
+  <!-- 하늘의 점/도형(문장 seed 기반으로 매번 다름) -->
+  <g fill="${ink}">
+    ${doodles
+      .map((d) => `<circle cx="${d.x}" cy="${d.y}" r="${d.r}" opacity="${d.o}"/>`)
+      .join('\n    ')}
   </g>
-  <g font-family="ui-serif, Georgia, 'Times New Roman', serif" fill="#111827">
-    <text x="72" y="740" font-size="36" opacity="0.65">Picturing Book (Mock)</text>
-    <text x="72" y="788" font-size="44" opacity="0.92">${escapeXml(safe)}</text>
+
+  <!-- 태양 -->
+  <g opacity="0.92">
+    <circle cx="${sunX}" cy="${sunY}" r="${sunR}" fill="${ink}" opacity="0.08"/>
+    <circle cx="${sunX}" cy="${sunY}" r="${Math.max(18, sunR - 18)}" fill="${ink}" opacity="0.06"/>
+  </g>
+
+  <!-- 언덕(간단한 풍경) -->
+  <path
+    d="M0 ${hillY} C 220 ${hillY - hillH}, 520 ${hillY + hillWave}, 800 ${hillY - hillH + 28} S 1100 ${hillY + hillWave}, 1280 ${hillY - 40} L 1280 832 L 0 832 Z"
+    fill="${ink}" opacity="0.06"
+  />
+  <path
+    d="M0 ${hillY + 36} C 260 ${hillY - hillH + 60}, 540 ${hillY + hillWave + 30}, 820 ${hillY - hillH + 68} S 1110 ${hillY + hillWave + 20}, 1280 ${hillY + 10} L 1280 832 L 0 832 Z"
+    fill="${ink}" opacity="0.045"
+  />
+
+  <!-- 스케치 라인 -->
+  <g fill="none" stroke="${ink}" stroke-linecap="round">
+    <path d="M120 300 C 320 180, 560 190, 770 305 S 1170 420, 1135 560" stroke-opacity="0.10" stroke-width="10"/>
+    <path d="M120 332 C 320 210, 560 220, 770 335 S 1170 455, 1135 592" stroke-opacity="0.08" stroke-width="6"/>
+  </g>
+
+  <!-- 캡션 -->
+  <g font-family="ui-serif, Georgia, 'Times New Roman', serif" fill="${ink}">
+    <text x="72" y="740" font-size="34" opacity="0.62">Picturing Book (Mock • seed ${seed})</text>
+    <text x="72" y="790" font-size="44" opacity="0.92">${escapeXml(safe)}</text>
   </g>
 </svg>`
 
