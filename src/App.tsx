@@ -8,6 +8,8 @@ import ReadPicBookPage from './pages/ReadPicBookPage'
 import HomeRedirect from './pages/HomeRedirect'
 import StorePage from './pages/StorePage'
 import MasterHome from './pages/MasterHome'
+import SceneTimelinePage from './pages/SceneTimelinePage'
+import WordSceneEditorPage from './pages/WordSceneEditorPage'
 import { MasterRoute } from './components/MasterRoute'
 
 export default function App() {
@@ -40,6 +42,22 @@ export default function App() {
           element={
             <MasterRoute>
               <DraftPages />
+            </MasterRoute>
+          }
+        />
+        <Route
+          path="/editor/scenes"
+          element={
+            <MasterRoute>
+              <SceneTimelinePage />
+            </MasterRoute>
+          }
+        />
+        <Route
+          path="/editor/word-scenes"
+          element={
+            <MasterRoute>
+              <WordSceneEditorPage />
             </MasterRoute>
           }
         />
