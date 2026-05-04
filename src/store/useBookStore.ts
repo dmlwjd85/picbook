@@ -28,7 +28,17 @@ export type Sentence = {
   isComplete: boolean
   /** 타임라인에서 이 장면을 보여줄 대략적 길이(초). 편집/미리보기용. */
   durationSec: number
+  /** 이 문장을 이해시키기 위해 타자 진행에 맞춰 보여줄 낱말 장면 id 목록 */
+  wordSceneIds: string[]
   directing: Directing
+}
+
+export type PicBookWordScene = {
+  id: string
+  word: string
+  prompt: string
+  imageUrl: string
+  durationSec: number
 }
 
 export type PicBookPage = {
@@ -36,6 +46,7 @@ export type PicBookPage = {
   text: string
   imageUrl: string
   directing: Directing
+  wordScenes: PicBookWordScene[]
 }
 
 export type PicBook = {
@@ -65,6 +76,10 @@ function normalizePicBook(input: PicBook): PicBook {
   // 과거 저장 데이터 호환: published 필드가 없으면 비공개로 취급
   return {
     ...input,
+    pages: (input.pages ?? []).map((page) => ({
+      ...page,
+      wordScenes: page.wordScenes ?? [],
+    })),
     published: Boolean(input.published),
     publishedAt: input.publishedAt ?? null,
   }
@@ -84,6 +99,8 @@ type BookState = {
   /** 외부(제미나이 등)에서 만든 장면 이미지 URL 또는 data URL */
   setSentenceScene: (sentenceId: string, imageUrl: string | null) => void
   setSentenceDuration: (sentenceId: string, durationSec: number) => void
+  setSentenceWordSceneIds: (sentenceId: string, wordSceneIds: string[]) => void
+  autoLinkWordScenesToSentences: () => { ok: true; linked: number } | { ok: false; reason: string }
   setTimelineOrder: (orderedSentenceIds: string[]) => void
   moveTimeline: (sentenceId: string, direction: 'up' | 'down') => void
   addWordScenesFromInput: (input: string) => { ok: true; added: number } | { ok: false; reason: string }
@@ -477,8 +494,20 @@ function normalizeSentenceRow(s: Sentence): Sentence {
   return {
     ...s,
     durationSec: typeof s.durationSec === 'number' && s.durationSec > 0 ? s.durationSec : 4,
+    wordSceneIds: Array.isArray(s.wordSceneIds) ? s.wordSceneIds : [],
     directing: s.directing ?? defaultDirecting(),
   }
+}
+
+function normalizeComparableText(input: string): string {
+  return input.toLocaleLowerCase().replace(/\s+/g, '')
+}
+
+function findMatchingWordSceneIds(sentenceText: string, wordScenes: WordScene[]): string[] {
+  const normalizedSentence = normalizeComparableText(sentenceText)
+  return wordScenes
+    .filter((scene) => scene.imageUrl && normalizedSentence.includes(normalizeComparableText(scene.word)))
+    .map((scene) => scene.id)
 }
 
 function normalizeWordScene(s: WordScene): WordScene {
@@ -656,6 +685,40 @@ export const useBookStore = create<BookState>((set, get) => {
         persistSnapshot(out)
         return out
       })
+    },
+
+    setSentenceWordSceneIds: (sentenceId, wordSceneIds) => {
+      set((state) => {
+        const valid = new Set(state.wordScenes.map((scene) => scene.id))
+        const nextIds = Array.from(new Set(wordSceneIds.filter((id) => valid.has(id))))
+        const nextSentences = state.sentences.map((s) =>
+          s.id === sentenceId ? { ...s, wordSceneIds: nextIds } : s,
+        )
+        const out = { ...state, sentences: nextSentences }
+        persistSnapshot(out)
+        return out
+      })
+    },
+
+    autoLinkWordScenesToSentences: () => {
+      const readyScenes = get().wordScenes.filter((scene) => scene.imageUrl)
+      if (readyScenes.length === 0) {
+        return { ok: false, reason: '연결할 수 있는 완료된 낱말 장면이 없습니다.' }
+      }
+
+      let linked = 0
+      set((state) => {
+        const nextSentences = state.sentences.map((sentence) => {
+          const ids = findMatchingWordSceneIds(sentence.text, readyScenes)
+          if (ids.length > 0) linked += ids.length
+          return { ...sentence, wordSceneIds: ids }
+        })
+        const out = { ...state, sentences: nextSentences }
+        persistSnapshot(out)
+        return out
+      })
+
+      return { ok: true, linked }
     },
 
     setTimelineOrder: (orderedSentenceIds) => {
@@ -973,6 +1036,7 @@ export const useBookStore = create<BookState>((set, get) => {
       if (!gate.ok) return gate
 
       const ordered = get().getOrderedSentences()
+      const wordScenesById = Object.fromEntries(get().wordScenes.map((scene) => [scene.id, scene])) as Record<string, WordScene>
       const title = `내 픽북 ${new Date().toLocaleString()}`
       const picBook: PicBook = {
         id: createId(),
@@ -983,6 +1047,16 @@ export const useBookStore = create<BookState>((set, get) => {
           text: s.text,
           imageUrl: s.imageUrl ?? '',
           directing: s.directing,
+          wordScenes: s.wordSceneIds
+            .map((id) => wordScenesById[id])
+            .filter((scene): scene is WordScene => Boolean(scene?.imageUrl))
+            .map((scene) => ({
+              id: scene.id,
+              word: scene.word,
+              prompt: scene.prompt,
+              imageUrl: scene.imageUrl ?? '',
+              durationSec: scene.durationSec,
+            })),
         })),
         price: 490,
         purchased: false,
@@ -1098,6 +1172,7 @@ export const useBookStore = create<BookState>((set, get) => {
           status: 'idle' as const,
           isComplete: p.isComplete,
           durationSec: 4,
+            wordSceneIds: findMatchingWordSceneIds(p.text, get().wordScenes),
           directing: defaultDirecting(),
         }
       })

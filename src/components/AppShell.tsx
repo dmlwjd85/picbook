@@ -53,7 +53,7 @@ export function AppShell() {
                       ].join(' ')
                     }
                   >
-                    마스터
+                    출간 관리
                   </NavLink>
                   <NavLink
                     to="/editor"
@@ -64,7 +64,7 @@ export function AppShell() {
                       ].join(' ')
                     }
                   >
-                    툴킷
+                    장면 생성
                   </NavLink>
                   <NavLink
                     to="/draft/pages"
@@ -75,7 +75,7 @@ export function AppShell() {
                       ].join(' ')
                     }
                   >
-                    문장 페이지
+                    문장 편집
                   </NavLink>
                   <NavLink
                     to="/editor/scenes"
@@ -86,7 +86,7 @@ export function AppShell() {
                       ].join(' ')
                     }
                   >
-                    장면·타임라인
+                    문장 타임라인
                   </NavLink>
                   <NavLink
                     to="/editor/word-scenes"
@@ -97,7 +97,7 @@ export function AppShell() {
                       ].join(' ')
                     }
                   >
-                    연결 에디터
+                    장면 연결
                   </NavLink>
                 </>
               ) : null}
