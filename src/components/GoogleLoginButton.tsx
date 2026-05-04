@@ -3,9 +3,11 @@ import { useUiStore } from '../store/useUiStore'
 
 export function GoogleLoginButton() {
   const signInWithGoogleCredential = useUiStore((s) => s.signInWithGoogleCredential)
+  const runtimeClientId = useUiStore((s) => s.googleClientId)
   const [error, setError] = useState<string | null>(null)
   const hostRef = useRef<HTMLDivElement | null>(null)
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+  const envClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined
+  const clientId = runtimeClientId || envClientId
 
   useEffect(() => {
     let cancelled = false
@@ -62,7 +64,7 @@ export function GoogleLoginButton() {
     }
   }, [clientId, signInWithGoogleCredential])
 
-  const visibleError = !clientId ? 'VITE_GOOGLE_CLIENT_ID가 없어 구글 로그인 버튼을 표시할 수 없습니다.' : error
+  const visibleError = !clientId ? '상단 설정에서 Google Client ID를 먼저 저장하세요.' : error
 
   return (
     <div className="flex flex-col items-end gap-1">

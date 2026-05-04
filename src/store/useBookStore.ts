@@ -307,7 +307,11 @@ function getImageProvider(): ImageProvider {
   if (explicit === 'gemini') return 'gemini'
 
   // 기본 정책: 키가 있으면 Nano Banana(Gemini API) 우선, 없으면 Mock
-  return import.meta.env.VITE_GEMINI_API_KEY ? 'gemini' : 'mock'
+  return getGeminiApiKey() ? 'gemini' : 'mock'
+}
+
+function getGeminiApiKey(): string {
+  return useUiStore.getState().geminiApiKey || ((import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ?? '')
 }
 
 function clipText(s: string, max: number): string {
@@ -369,7 +373,7 @@ async function generateSentenceImage(input: { fullText: string; sentence: Senten
   }
 
   if (provider === 'gemini') {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
+    const apiKey = getGeminiApiKey()
     if (!apiKey) {
       // 키가 없는데 provider가 gemini로 강제된 경우
       const delay = 250 + Math.floor(Math.random() * 250)
@@ -408,27 +412,22 @@ async function generateWordSceneImageDataUrl(input: { fullText: string; scene: W
   }
 
   if (provider === 'gemini') {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
+    const apiKey = getGeminiApiKey()
     if (!apiKey) {
-      const delay = 250 + Math.floor(Math.random() * 250)
-      await new Promise((r) => setTimeout(r, delay))
-      return svgDataUrl(mockText)
+      throw new Error('Gemini API Key가 없어 Nano Banana 장면을 만들 수 없습니다.')
     }
 
     const model = (import.meta.env.VITE_GEMINI_IMAGE_MODEL as string | undefined) ?? 'gemini-2.5-flash-image'
     const prompt = buildWordScenePrompt({ fullText: input.fullText, word: input.scene.word, prompt: input.scene.prompt })
     try {
       return await generateNanoBananaImageDataUrl({ apiKey, model, prompt })
-    } catch {
-      const delay = 250 + Math.floor(Math.random() * 250)
-      await new Promise((r) => setTimeout(r, delay))
-      return svgDataUrl(mockText)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Nano Banana 생성에 실패했습니다.'
+      throw new Error(message)
     }
   }
 
-  const delay = 650 + Math.floor(Math.random() * 850)
-  await new Promise((r) => setTimeout(r, delay))
-  return svgDataUrl(mockText)
+  throw new Error('Gemini API Key를 먼저 설정해야 의미 있는 Nano Banana 이미지를 만들 수 있습니다.')
 }
 
 const STORAGE_KEY = 'picbook.v1'
@@ -742,6 +741,9 @@ export const useBookStore = create<BookState>((set, get) => {
     generateWordSceneImage: (sceneId) => {
       if (useUiStore.getState().role !== 'master') {
         return { ok: false, reason: '마스터 모드에서만 낱말 장면을 생성할 수 있습니다.' }
+      }
+      if (!getGeminiApiKey()) {
+        return { ok: false, reason: '상단 설정에서 Gemini API Key를 저장해야 의미 있는 Nano Banana 이미지를 만들 수 있습니다.' }
       }
 
       const scene = get().wordScenes.find((x) => x.id === sceneId)

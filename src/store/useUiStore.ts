@@ -2,6 +2,8 @@ import { create } from 'zustand'
 
 const ROLE_KEY = 'picbook.role'
 const GOOGLE_USER_KEY = 'picbook.googleUser'
+const GOOGLE_CLIENT_ID_KEY = 'picbook.runtime.googleClientId'
+const GEMINI_API_KEY = 'picbook.runtime.geminiApiKey'
 
 export type AppRole = 'customer' | 'master'
 
@@ -36,6 +38,21 @@ function readGoogleUserFromStorage(): GoogleUser | null {
   }
 }
 
+function readRuntimeValue(key: string): string {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem(key)?.trim() ?? ''
+}
+
+function writeRuntimeValue(key: string, value: string) {
+  if (typeof window === 'undefined') return
+  const next = value.trim()
+  if (next) {
+    window.localStorage.setItem(key, next)
+    return
+  }
+  window.localStorage.removeItem(key)
+}
+
 function decodeJwtPayload(credential: string): Record<string, unknown> | null {
   const [, payload] = credential.split('.')
   if (!payload) return null
@@ -57,7 +74,11 @@ function decodeJwtPayload(credential: string): Record<string, unknown> | null {
 type UiState = {
   role: AppRole
   googleUser: GoogleUser | null
+  googleClientId: string
+  geminiApiKey: string
   setRole: (role: AppRole) => void
+  setRuntimeGoogleClientId: (clientId: string) => void
+  setRuntimeGeminiApiKey: (apiKey: string) => void
   signInWithGoogleCredential: (credential: string) => { ok: true; user: GoogleUser } | { ok: false; reason: string }
   signOutGoogle: () => void
   unlockMasterWithPin: (pin: string) => { ok: true } | { ok: false; reason: string }
@@ -66,11 +87,21 @@ type UiState = {
 export const useUiStore = create<UiState>((set) => ({
   role: readRoleFromStorage(),
   googleUser: readGoogleUserFromStorage(),
+  googleClientId: readRuntimeValue(GOOGLE_CLIENT_ID_KEY),
+  geminiApiKey: readRuntimeValue(GEMINI_API_KEY),
   setRole: (role) => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ROLE_KEY, role)
     }
     set({ role })
+  },
+  setRuntimeGoogleClientId: (clientId) => {
+    writeRuntimeValue(GOOGLE_CLIENT_ID_KEY, clientId)
+    set({ googleClientId: clientId.trim() })
+  },
+  setRuntimeGeminiApiKey: (apiKey) => {
+    writeRuntimeValue(GEMINI_API_KEY, apiKey)
+    set({ geminiApiKey: apiKey.trim() })
   },
   signInWithGoogleCredential: (credential) => {
     const payload = decodeJwtPayload(credential)
@@ -124,6 +155,12 @@ if (typeof window !== 'undefined') {
     }
     if (e.key === GOOGLE_USER_KEY) {
       useUiStore.setState({ googleUser: readGoogleUserFromStorage() })
+    }
+    if (e.key === GOOGLE_CLIENT_ID_KEY) {
+      useUiStore.setState({ googleClientId: readRuntimeValue(GOOGLE_CLIENT_ID_KEY) })
+    }
+    if (e.key === GEMINI_API_KEY) {
+      useUiStore.setState({ geminiApiKey: readRuntimeValue(GEMINI_API_KEY) })
     }
   })
 }

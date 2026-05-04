@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { downloadDataUrl, downloadTextFile, safeFileName } from '../lib/downloads'
 import { useBookStore } from '../store/useBookStore'
+import { useUiStore } from '../store/useUiStore'
 
 export function WordSceneToolkit() {
   const [input, setInput] = useState('')
@@ -12,18 +13,46 @@ export function WordSceneToolkit() {
   const removeWordScene = useBookStore((s) => s.removeWordScene)
   const updateWordScenePrompt = useBookStore((s) => s.updateWordScenePrompt)
   const exportWordScenesJson = useBookStore((s) => s.exportWordScenesJson)
+  const geminiApiKey = useUiStore((s) => s.geminiApiKey)
 
   const ordered = orderWordScenes(wordScenes, wordSceneOrder)
   const doneCount = wordScenes.filter((scene) => scene.status === 'done' && scene.imageUrl).length
   const loadingCount = wordScenes.filter((scene) => scene.status === 'loading').length
+  const hasGeminiApiKey = Boolean(geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY)
 
-  const addScenes = () => {
+  const generateIdleScenes = () => {
+    if (!hasGeminiApiKey) {
+      alert('상단 설정에서 Gemini API Key를 먼저 저장해 주세요.')
+      return
+    }
+    const targets = useBookStore
+      .getState()
+      .wordScenes.filter((scene) => scene.status !== 'loading' && !scene.imageUrl)
+
+    if (targets.length === 0) {
+      alert('생성할 대기 장면이 없습니다.')
+      return
+    }
+
+    for (const scene of targets) {
+      const res = generateWordSceneImage(scene.id)
+      if (!res.ok) {
+        alert(res.reason)
+        break
+      }
+    }
+  }
+
+  const addScenes = (autoGenerate: boolean) => {
     const res = addWordScenesFromInput(input)
     if (!res.ok) {
       alert(res.reason)
       return
     }
     setInput('')
+    if (autoGenerate) {
+      window.setTimeout(generateIdleScenes, 0)
+    }
   }
 
   const downloadBundle = () => {
@@ -42,6 +71,11 @@ export function WordSceneToolkit() {
             <h2 className="text-lg font-semibold text-slate-900">낱말 장면 생성</h2>
             <p className="mt-1 text-sm text-slate-600">
               낱말을 공백이나 줄바꿈으로 입력하면 장면 후보를 만들고 Nano Banana로 이미지를 생성합니다.
+            </p>
+            <p className={['mt-2 text-xs font-semibold', hasGeminiApiKey ? 'text-emerald-700' : 'text-amber-700'].join(' ')}>
+              {hasGeminiApiKey
+                ? 'Gemini API Key가 준비되어 실제 Nano Banana를 호출합니다.'
+                : '상단 설정에서 Gemini API Key를 저장해야 의미 있는 이미지를 만들 수 있습니다.'}
             </p>
           </div>
           <Link
@@ -73,9 +107,23 @@ export function WordSceneToolkit() {
               <button
                 type="button"
                 className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-                onClick={addScenes}
+                onClick={() => addScenes(false)}
               >
                 낱말 추가
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700"
+                onClick={() => addScenes(true)}
+              >
+                추가 후 Nano 생성
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-900 hover:bg-violet-100"
+                onClick={generateIdleScenes}
+              >
+                전체 Nano 생성
               </button>
               <button
                 type="button"

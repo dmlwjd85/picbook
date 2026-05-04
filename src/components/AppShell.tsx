@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { GoogleLoginButton } from './GoogleLoginButton'
+import { RuntimeSettings } from './RuntimeSettings'
 import { useUiStore } from '../store/useUiStore'
 
 export function AppShell() {
@@ -104,6 +105,7 @@ export function AppShell() {
           </div>
 
           <div className="flex items-center gap-2">
+            <RuntimeSettings />
             <span className="hidden sm:inline text-xs text-slate-500 whitespace-nowrap">
               모드: <span className="font-semibold text-slate-700">{role === 'master' ? '마스터' : '고객'}</span>
             </span>
