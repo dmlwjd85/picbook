@@ -69,6 +69,7 @@ export default function App() {
             </MasterRoute>
           }
         />
+        <Route path="*" element={<HomeRedirect />} />
       </Route>
     </Routes>
   )

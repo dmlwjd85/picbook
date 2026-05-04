@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { downloadDataUrl, downloadTextFile, safeFileName } from '../lib/downloads'
+import { requestGeminiAccessToken } from '../lib/googleGeminiAuth'
 import { useBookStore } from '../store/useBookStore'
 import { useUiStore } from '../store/useUiStore'
 
@@ -16,6 +17,9 @@ export function WordSceneToolkit() {
   const geminiApiKey = useUiStore((s) => s.geminiApiKey)
   const geminiAccessToken = useUiStore((s) => s.geminiAccessToken)
   const geminiAccessTokenExpiresAt = useUiStore((s) => s.geminiAccessTokenExpiresAt)
+  const googleUser = useUiStore((s) => s.googleUser)
+  const setGoogleGeminiAccessToken = useUiStore((s) => s.setGoogleGeminiAccessToken)
+  const getGoogleClientId = useUiStore((s) => s.getGoogleClientId)
 
   const ordered = orderWordScenes(wordScenes, wordSceneOrder)
   const doneCount = wordScenes.filter((scene) => scene.status === 'done' && scene.imageUrl).length
@@ -23,11 +27,7 @@ export function WordSceneToolkit() {
   const hasGoogleGeminiAccess = Boolean(geminiAccessToken && geminiAccessTokenExpiresAt > 0)
   const hasGeminiAuth = Boolean(geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || hasGoogleGeminiAccess)
 
-  const generateIdleScenes = () => {
-    if (!hasGeminiAuth) {
-      alert('구글 로그인으로 Gemini 권한을 승인하거나 상단 설정에서 Gemini API Key를 저장해 주세요.')
-      return
-    }
+  const runGenerateIdleScenes = () => {
     const targets = useBookStore
       .getState()
       .wordScenes.filter((scene) => scene.status !== 'loading' && !scene.imageUrl)
@@ -44,6 +44,33 @@ export function WordSceneToolkit() {
         break
       }
     }
+  }
+
+  const generateIdleScenes = () => {
+    if (hasGeminiAuth) {
+      runGenerateIdleScenes()
+      return
+    }
+
+    if (!googleUser) {
+      alert('먼저 구글 로그인을 해 주세요.')
+      return
+    }
+
+    const clientId = getGoogleClientId()
+    if (!clientId) {
+      alert('구글 로그인을 위한 Client ID가 없습니다. 상단 설정에서 Google Client ID를 저장해 주세요.')
+      return
+    }
+
+    requestGeminiAccessToken({
+      clientId,
+      onSuccess: (accessToken, expiresInSec) => {
+        setGoogleGeminiAccessToken(accessToken, expiresInSec)
+        window.setTimeout(runGenerateIdleScenes, 0)
+      },
+      onError: (message) => alert(message),
+    })
   }
 
   const addScenes = (autoGenerate: boolean) => {
@@ -75,12 +102,14 @@ export function WordSceneToolkit() {
             <p className="mt-1 text-sm text-slate-600">
               낱말을 공백이나 줄바꿈으로 입력하면 장면 후보를 만들고 Nano Banana로 이미지를 생성합니다.
             </p>
-            <p className={['mt-2 text-xs font-semibold', hasGeminiAuth ? 'text-emerald-700' : 'text-amber-700'].join(' ')}>
+            <p className={['mt-2 text-xs font-semibold', hasGeminiAuth || googleUser ? 'text-emerald-700' : 'text-amber-700'].join(' ')}>
               {hasGoogleGeminiAccess
                 ? '구글 로그인으로 Gemini 권한이 연결되어 실제 Nano Banana를 호출합니다.'
                 : hasGeminiAuth
                   ? 'Gemini API Key가 준비되어 실제 Nano Banana를 호출합니다.'
-                  : '구글 로그인으로 Gemini 권한을 승인하면 API Key 없이 이미지를 만들 수 있습니다.'}
+                  : googleUser
+                    ? '생성 버튼을 누르면 구글 Gemini 권한을 자동으로 요청합니다.'
+                    : '구글 로그인 후 생성 버튼을 누르면 Nano Banana 권한을 자동 연결합니다.'}
             </p>
           </div>
           <Link

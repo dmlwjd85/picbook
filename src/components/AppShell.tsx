@@ -9,6 +9,7 @@ export function AppShell() {
   const unlockMasterWithPin = useUiStore((s) => s.unlockMasterWithPin)
   const setRole = useUiStore((s) => s.setRole)
   const signOutGoogle = useUiStore((s) => s.signOutGoogle)
+  const canCreate = role === 'master' || Boolean(googleUser)
 
   return (
     <div className="h-full w-full bg-slate-100 flex flex-col">
@@ -42,7 +43,7 @@ export function AppShell() {
                 책장
               </NavLink>
 
-              {role === 'master' ? (
+              {canCreate ? (
                 <>
                   <NavLink
                     to="/master"
@@ -110,7 +111,7 @@ export function AppShell() {
               모드: <span className="font-semibold text-slate-700">{role === 'master' ? '마스터' : '고객'}</span>
             </span>
 
-            {role === 'master' ? (
+            {canCreate ? (
               <>
                 {googleUser ? (
                   <div className="hidden md:flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1">

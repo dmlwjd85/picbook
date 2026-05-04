@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { requestGeminiAccessToken } from '../lib/googleGeminiAuth'
 import { useUiStore } from '../store/useUiStore'
 
 export function GoogleLoginButton() {
@@ -33,7 +34,16 @@ export function GoogleLoginButton() {
           }
           const res = signInWithGoogleCredential(credential)
           if (!res.ok) setError(res.reason)
-          if (res.ok) requestGeminiAccessToken(clientId, setGoogleGeminiAccessToken, setError)
+          if (res.ok) {
+            requestGeminiAccessToken({
+              clientId,
+              onSuccess: (accessToken, expiresInSec) => {
+                setGoogleGeminiAccessToken(accessToken, expiresInSec)
+                setError(null)
+              },
+              onError: setError,
+            })
+          }
         },
       })
       googleId.renderButton(hostRef.current, {
@@ -74,31 +84,4 @@ export function GoogleLoginButton() {
       {visibleError ? <div className="max-w-[220px] text-right text-[11px] leading-snug text-amber-700">{visibleError}</div> : null}
     </div>
   )
-}
-
-function requestGeminiAccessToken(
-  clientId: string,
-  setGoogleGeminiAccessToken: (accessToken: string, expiresInSec: number) => void,
-  setError: (message: string | null) => void,
-) {
-  const oauth2 = window.google?.accounts?.oauth2
-  if (!oauth2) {
-    setError('구글 OAuth 권한 요청 모듈을 불러오지 못했습니다.')
-    return
-  }
-
-  const tokenClient = oauth2.initTokenClient({
-    client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/generative-language',
-    callback: (response) => {
-      if (response.error || !response.access_token) {
-        setError(response.error_description ?? 'Gemini 권한 승인이 필요합니다.')
-        return
-      }
-      setGoogleGeminiAccessToken(response.access_token, response.expires_in ?? 3600)
-      setError(null)
-    },
-  })
-
-  tokenClient.requestAccessToken({ prompt: 'consent' })
 }

@@ -104,6 +104,8 @@ type UiState = {
   geminiApiKey: string
   geminiAccessToken: string
   geminiAccessTokenExpiresAt: number
+  getGoogleClientId: () => string
+  hasUsableGeminiAuth: () => boolean
   setRole: (role: AppRole) => void
   setRuntimeGoogleClientId: (clientId: string) => void
   setRuntimeGeminiApiKey: (apiKey: string) => void
@@ -120,6 +122,14 @@ export const useUiStore = create<UiState>((set) => ({
   geminiApiKey: readRuntimeValue(GEMINI_API_KEY),
   geminiAccessToken: readValidGeminiAccessToken(),
   geminiAccessTokenExpiresAt: readGeminiAccessTokenExpiresAt(),
+  getGoogleClientId: () => {
+    return readRuntimeValue(GOOGLE_CLIENT_ID_KEY) || ((import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? '')
+  },
+  hasUsableGeminiAuth: () => {
+    const apiKey = readRuntimeValue(GEMINI_API_KEY) || ((import.meta.env.VITE_GEMINI_API_KEY as string | undefined) ?? '')
+    const token = readValidGeminiAccessToken()
+    return Boolean(apiKey || token)
+  },
   setRole: (role) => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ROLE_KEY, role)
