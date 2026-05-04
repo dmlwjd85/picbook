@@ -4,6 +4,8 @@ import { useUiStore } from '../store/useUiStore'
 export function RuntimeSettings() {
   const googleClientId = useUiStore((s) => s.googleClientId)
   const geminiApiKey = useUiStore((s) => s.geminiApiKey)
+  const geminiAccessToken = useUiStore((s) => s.geminiAccessToken)
+  const geminiAccessTokenExpiresAt = useUiStore((s) => s.geminiAccessTokenExpiresAt)
   const setRuntimeGoogleClientId = useUiStore((s) => s.setRuntimeGoogleClientId)
   const setRuntimeGeminiApiKey = useUiStore((s) => s.setRuntimeGeminiApiKey)
   const [clientIdDraft, setClientIdDraft] = useState(googleClientId)
@@ -12,7 +14,8 @@ export function RuntimeSettings() {
   const hasEnvGoogleClientId = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID)
   const hasEnvGeminiApiKey = Boolean(import.meta.env.VITE_GEMINI_API_KEY)
   const googleReady = Boolean(googleClientId || hasEnvGoogleClientId)
-  const geminiReady = Boolean(geminiApiKey || hasEnvGeminiApiKey)
+  const googleGeminiReady = Boolean(geminiAccessToken && geminiAccessTokenExpiresAt > 0)
+  const geminiReady = Boolean(geminiApiKey || hasEnvGeminiApiKey || googleGeminiReady)
 
   return (
     <details className="relative">
@@ -22,8 +25,8 @@ export function RuntimeSettings() {
       <div className="absolute right-0 z-20 mt-2 w-[min(92vw,420px)] rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-xl">
         <h2 className="text-sm font-semibold text-slate-900">로그인 · Nano 설정</h2>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          GitHub Secrets가 없을 때 브라우저에 임시 저장해서 바로 테스트합니다. API Key는 이 브라우저의 localStorage에
-          저장되므로 공용 PC에서는 사용 후 지우세요.
+          구글 로그인 후 Gemini 권한을 승인하면 API Key를 직접 입력하지 않아도 Nano Banana를 호출합니다. API Key 입력은
+          OAuth가 막힌 환경에서만 쓰는 보조 경로입니다.
         </p>
 
         <label className="mt-4 block text-xs font-semibold text-slate-700">
@@ -46,8 +49,17 @@ export function RuntimeSettings() {
           </button>
         </div>
 
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="text-xs font-semibold text-slate-700">구글 로그인 기반 Nano 권한</div>
+          <StatusText
+            ready={googleGeminiReady}
+            readyText="구글 로그인으로 Nano 권한 연결됨"
+            emptyText="구글 로그인 후 권한 승인 필요"
+          />
+        </div>
+
         <label className="mt-4 block text-xs font-semibold text-slate-700">
-          Gemini API Key
+          Gemini API Key (보조)
           <input
             value={geminiKeyDraft}
             onChange={(e) => setGeminiKeyDraft(e.target.value)}

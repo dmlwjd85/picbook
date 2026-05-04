@@ -14,15 +14,18 @@ export function WordSceneToolkit() {
   const updateWordScenePrompt = useBookStore((s) => s.updateWordScenePrompt)
   const exportWordScenesJson = useBookStore((s) => s.exportWordScenesJson)
   const geminiApiKey = useUiStore((s) => s.geminiApiKey)
+  const geminiAccessToken = useUiStore((s) => s.geminiAccessToken)
+  const geminiAccessTokenExpiresAt = useUiStore((s) => s.geminiAccessTokenExpiresAt)
 
   const ordered = orderWordScenes(wordScenes, wordSceneOrder)
   const doneCount = wordScenes.filter((scene) => scene.status === 'done' && scene.imageUrl).length
   const loadingCount = wordScenes.filter((scene) => scene.status === 'loading').length
-  const hasGeminiApiKey = Boolean(geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY)
+  const hasGoogleGeminiAccess = Boolean(geminiAccessToken && geminiAccessTokenExpiresAt > 0)
+  const hasGeminiAuth = Boolean(geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || hasGoogleGeminiAccess)
 
   const generateIdleScenes = () => {
-    if (!hasGeminiApiKey) {
-      alert('상단 설정에서 Gemini API Key를 먼저 저장해 주세요.')
+    if (!hasGeminiAuth) {
+      alert('구글 로그인으로 Gemini 권한을 승인하거나 상단 설정에서 Gemini API Key를 저장해 주세요.')
       return
     }
     const targets = useBookStore
@@ -72,10 +75,12 @@ export function WordSceneToolkit() {
             <p className="mt-1 text-sm text-slate-600">
               낱말을 공백이나 줄바꿈으로 입력하면 장면 후보를 만들고 Nano Banana로 이미지를 생성합니다.
             </p>
-            <p className={['mt-2 text-xs font-semibold', hasGeminiApiKey ? 'text-emerald-700' : 'text-amber-700'].join(' ')}>
-              {hasGeminiApiKey
-                ? 'Gemini API Key가 준비되어 실제 Nano Banana를 호출합니다.'
-                : '상단 설정에서 Gemini API Key를 저장해야 의미 있는 이미지를 만들 수 있습니다.'}
+            <p className={['mt-2 text-xs font-semibold', hasGeminiAuth ? 'text-emerald-700' : 'text-amber-700'].join(' ')}>
+              {hasGoogleGeminiAccess
+                ? '구글 로그인으로 Gemini 권한이 연결되어 실제 Nano Banana를 호출합니다.'
+                : hasGeminiAuth
+                  ? 'Gemini API Key가 준비되어 실제 Nano Banana를 호출합니다.'
+                  : '구글 로그인으로 Gemini 권한을 승인하면 API Key 없이 이미지를 만들 수 있습니다.'}
             </p>
           </div>
           <Link

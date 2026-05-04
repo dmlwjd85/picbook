@@ -24,10 +24,31 @@ type GoogleAccountsId = {
   disableAutoSelect: () => void
 }
 
+type GoogleOAuthTokenResponse = {
+  access_token?: string
+  expires_in?: number
+  error?: string
+  error_description?: string
+}
+
+type GoogleOAuthTokenClient = {
+  requestAccessToken: (overrideConfig?: { prompt?: '' | 'none' | 'consent' | 'select_account' }) => void
+}
+
+type GoogleOAuthTokenClientConfig = {
+  client_id: string
+  scope: string
+  callback: (response: GoogleOAuthTokenResponse) => void
+  prompt?: '' | 'none' | 'consent' | 'select_account'
+}
+
 interface Window {
   google?: {
     accounts?: {
       id?: GoogleAccountsId
+      oauth2?: {
+        initTokenClient: (config: GoogleOAuthTokenClientConfig) => GoogleOAuthTokenClient
+      }
     }
   }
 }

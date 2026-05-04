@@ -4,6 +4,8 @@ const ROLE_KEY = 'picbook.role'
 const GOOGLE_USER_KEY = 'picbook.googleUser'
 const GOOGLE_CLIENT_ID_KEY = 'picbook.runtime.googleClientId'
 const GEMINI_API_KEY = 'picbook.runtime.geminiApiKey'
+const GEMINI_ACCESS_TOKEN_KEY = 'picbook.session.geminiAccessToken'
+const GEMINI_ACCESS_TOKEN_EXPIRES_AT_KEY = 'picbook.session.geminiAccessTokenExpiresAt'
 
 export type AppRole = 'customer' | 'master'
 
@@ -53,6 +55,30 @@ function writeRuntimeValue(key: string, value: string) {
   window.localStorage.removeItem(key)
 }
 
+function readSessionValue(key: string): string {
+  if (typeof window === 'undefined') return ''
+  return window.sessionStorage.getItem(key)?.trim() ?? ''
+}
+
+function readGeminiAccessTokenExpiresAt(): number {
+  const raw = readSessionValue(GEMINI_ACCESS_TOKEN_EXPIRES_AT_KEY)
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function readValidGeminiAccessToken(): string {
+  const token = readSessionValue(GEMINI_ACCESS_TOKEN_KEY)
+  const expiresAt = readGeminiAccessTokenExpiresAt()
+  // 만료 직전 토큰은 재요청하도록 여유 시간을 둡니다.
+  return token && expiresAt > Date.now() + 60_000 ? token : ''
+}
+
+function clearGeminiAccessToken() {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.removeItem(GEMINI_ACCESS_TOKEN_KEY)
+  window.sessionStorage.removeItem(GEMINI_ACCESS_TOKEN_EXPIRES_AT_KEY)
+}
+
 function decodeJwtPayload(credential: string): Record<string, unknown> | null {
   const [, payload] = credential.split('.')
   if (!payload) return null
@@ -76,9 +102,12 @@ type UiState = {
   googleUser: GoogleUser | null
   googleClientId: string
   geminiApiKey: string
+  geminiAccessToken: string
+  geminiAccessTokenExpiresAt: number
   setRole: (role: AppRole) => void
   setRuntimeGoogleClientId: (clientId: string) => void
   setRuntimeGeminiApiKey: (apiKey: string) => void
+  setGoogleGeminiAccessToken: (accessToken: string, expiresInSec: number) => void
   signInWithGoogleCredential: (credential: string) => { ok: true; user: GoogleUser } | { ok: false; reason: string }
   signOutGoogle: () => void
   unlockMasterWithPin: (pin: string) => { ok: true } | { ok: false; reason: string }
@@ -89,6 +118,8 @@ export const useUiStore = create<UiState>((set) => ({
   googleUser: readGoogleUserFromStorage(),
   googleClientId: readRuntimeValue(GOOGLE_CLIENT_ID_KEY),
   geminiApiKey: readRuntimeValue(GEMINI_API_KEY),
+  geminiAccessToken: readValidGeminiAccessToken(),
+  geminiAccessTokenExpiresAt: readGeminiAccessTokenExpiresAt(),
   setRole: (role) => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ROLE_KEY, role)
@@ -102,6 +133,19 @@ export const useUiStore = create<UiState>((set) => ({
   setRuntimeGeminiApiKey: (apiKey) => {
     writeRuntimeValue(GEMINI_API_KEY, apiKey)
     set({ geminiApiKey: apiKey.trim() })
+  },
+  setGoogleGeminiAccessToken: (accessToken, expiresInSec) => {
+    const token = accessToken.trim()
+    const expiresAt = token ? Date.now() + Math.max(60, expiresInSec) * 1000 : 0
+    if (typeof window !== 'undefined') {
+      if (token) {
+        window.sessionStorage.setItem(GEMINI_ACCESS_TOKEN_KEY, token)
+        window.sessionStorage.setItem(GEMINI_ACCESS_TOKEN_EXPIRES_AT_KEY, String(expiresAt))
+      } else {
+        clearGeminiAccessToken()
+      }
+    }
+    set({ geminiAccessToken: token, geminiAccessTokenExpiresAt: expiresAt })
   },
   signInWithGoogleCredential: (credential) => {
     const payload = decodeJwtPayload(credential)
@@ -126,8 +170,9 @@ export const useUiStore = create<UiState>((set) => ({
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(GOOGLE_USER_KEY)
       window.localStorage.setItem(ROLE_KEY, 'customer')
+      clearGeminiAccessToken()
     }
-    set({ googleUser: null, role: 'customer' })
+    set({ googleUser: null, role: 'customer', geminiAccessToken: '', geminiAccessTokenExpiresAt: 0 })
   },
   unlockMasterWithPin: (pin) => {
     const expected = import.meta.env.VITE_MASTER_PIN ?? 'picbook'

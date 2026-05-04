@@ -37,13 +37,17 @@ function extractFirstInlineImageDataUrl(resp: GeminiGenerateContentResponse): st
 }
 
 export async function generateNanoBananaImageDataUrl(input: {
-  apiKey: string
+  apiKey?: string
+  accessToken?: string
   model: string
   prompt: string
 }): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    input.model,
-  )}:generateContent?key=${encodeURIComponent(input.apiKey)}`
+  if (!input.apiKey && !input.accessToken) {
+    throw new Error('Gemini 인증 정보가 없습니다.')
+  }
+
+  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(input.model)}:generateContent`
+  const url = input.apiKey ? `${baseUrl}?key=${encodeURIComponent(input.apiKey)}` : baseUrl
 
   // 공식 가이드: 이미지 출력을 위해 responseModalities에 IMAGE를 포함합니다.
   // 문서: https://ai.google.dev/gemini-api/docs/image-generation
@@ -61,7 +65,10 @@ export async function generateNanoBananaImageDataUrl(input: {
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(input.accessToken ? { Authorization: `Bearer ${input.accessToken}` } : {}),
+    },
     body: JSON.stringify(body),
   })
 
