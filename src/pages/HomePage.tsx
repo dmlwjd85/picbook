@@ -16,18 +16,18 @@ export default function HomePage() {
             to="/editor"
             className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md"
           >
-            <h2 className="text-lg font-semibold text-slate-900">편집자용</h2>
+            <h2 className="text-lg font-semibold text-slate-900">만들기</h2>
             <p className="mt-2 text-sm text-slate-600">
-              문장·이미지 레이어·타이밍(몇 글자에서 무엇이 일어날지)을 구성하고 JSON 팩으로 보냅니다.
+              연습 문장과 그림을 겹쳐 올리고, 「몇 글째 치면 무엇이 보일지」만 정하면 됩니다. 마지막에 파일로 저장해 배포합니다.
             </p>
           </Link>
           <Link
             to="/player"
             className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-emerald-300 hover:shadow-md"
           >
-            <h2 className="text-lg font-semibold text-slate-900">사용자용</h2>
+            <h2 className="text-lg font-semibold text-slate-900">연습하기</h2>
             <p className="mt-2 text-sm text-slate-600">
-              배포된 팩 파일을 열고, 문장을 따라 타자하며 편집된 화면을 봅니다.
+              받은 팩 파일을 열고, 한 문장씩 따라 치면서 위쪽 화면이 어떻게 바뀌는지 봅니다.
             </p>
           </Link>
         </div>

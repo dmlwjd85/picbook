@@ -31,8 +31,9 @@ export function VisualStage({ layers }: Props) {
         )
       })}
       {layers.every((l) => !l.visible || !l.imageUrl) ? (
-        <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">
-          표시 중인 레이어가 없습니다. 큐로 이미지를 보이게 하세요.
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-500">
+          <span>아직 화면에 올라온 그림이 없어요.</span>
+          <span className="text-xs text-slate-600">아래에서 「몇 글째」마다 그림을 보이게 설정해 보세요.</span>
         </div>
       ) : null}
     </div>
