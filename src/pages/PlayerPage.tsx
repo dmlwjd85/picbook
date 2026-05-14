@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createSamplePack } from '../data/samplePack'
+import { createSeparationThreePowersDemoPack } from '../data/separationThreePowersDemoPack'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { parsePackJson } from '../lib/parsePack'
 import type { ReadingPack } from '../types/pack'
@@ -45,6 +46,21 @@ export default function PlayerPage() {
     setSentenceIndex(0)
   }, [])
 
+  const loadSeparationDemo = useCallback(() => {
+    setPack(createSeparationThreePowersDemoPack())
+    setSentenceIndex(0)
+  }, [])
+
+  const demoSlideLabel = useMemo(() => {
+    if (pack?.id !== 'demo-separation-three-powers' || !sentence) return null
+    const milestones = [0, 11, 22, 32, 42, 52]
+    let slide = 0
+    for (let i = 0; i < milestones.length; i++) {
+      if (typed.length >= milestones[i]) slide = i + 1
+    }
+    return slide
+  }, [pack?.id, sentence, typed.length])
+
   const target = sentence?.text ?? ''
   const complete = target.length > 0 && typed === target
   const lastSentence = pack ? sentenceIndex >= pack.sentences.length - 1 : true
@@ -78,6 +94,14 @@ export default function PlayerPage() {
             >
               샘플 팩
             </button>
+            <button
+              type="button"
+              className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-900 shadow-sm hover:bg-indigo-100"
+              onClick={loadSeparationDemo}
+              title="삼권분립 문장 1개, 타이핑 진행에 따라 그림 6장이 바뀝니다."
+            >
+              삼권분립 6장 테스트
+            </button>
           </div>
         </header>
 
@@ -98,6 +122,11 @@ export default function PlayerPage() {
             </div>
 
             <VisualStage layers={layers} />
+            {demoSlideLabel !== null ? (
+              <p className="text-center text-xs font-medium text-indigo-700">
+                지금 보이는 그림: <span className="font-mono">{demoSlideLabel}</span> / 6 (타이핑 글자 수에 따라 바뀝니다)
+              </p>
+            ) : null}
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="mb-3 text-sm font-medium text-slate-700">이번 문장</p>
