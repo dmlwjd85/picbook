@@ -5,18 +5,10 @@ import type { ReadingPack } from '../types/pack'
 const TEXT =
   '삼권분립은 한 국가기관이 나라의 중요한 일을 마음대로 처리할 수 없게 서로를 견제하고 균형을 이뤄내기 위한 것이다.'
 
-/**
- * 무료 플레이스홀더 이미지(시드마다 다른 장면).
- * 실제 서비스에서는 제미나이 등으로 만든 URL로 바꾸면 됩니다.
- */
-const SLIDE_URLS = [
-  'https://picsum.photos/seed/samgwon-slide1/1280/720',
-  'https://picsum.photos/seed/samgwon-slide2/1280/720',
-  'https://picsum.photos/seed/samgwon-slide3/1280/720',
-  'https://picsum.photos/seed/samgwon-slide4/1280/720',
-  'https://picsum.photos/seed/samgwon-slide5/1280/720',
-  'https://picsum.photos/seed/samgwon-slide6/1280/720',
-]
+const base = import.meta.env.BASE_URL
+
+/** 이 저장소에 포함된 삼권분립 일러스트 6장 (public/demo) */
+const SLIDE_URLS = [1, 2, 3, 4, 5, 6].map((n) => `${base}demo/samgwon-${n}.png`)
 
 /** 타이핑 글자 수 구간(대략 6등분)마다 그림이 바뀜 */
 const CHAR_MILESTONES = [0, 11, 22, 32, 42, 52] as const
@@ -46,7 +38,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     id: 'demo-separation-three-powers',
     title: '삼권분립 — 한 문장·그림 6장',
     description:
-      '한 문장을 따라 치면, 글자 수에 맞춰 그림이 여섯 번 바뀝니다. (테스트용 플레이스홀더 이미지)',
+      '한 문장을 따라 치면, 글자 수에 맞춰 그림이 여섯 번 바뀝니다. (앱에 포함된 일러스트)',
     author: 'PicBook 데모',
     updatedAt: new Date().toISOString(),
     sentences: [
