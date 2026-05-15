@@ -102,9 +102,9 @@ export default function PlayerPage() {
               type="button"
               className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-900 shadow-sm hover:bg-indigo-100"
               onClick={loadSeparationDemo}
-              title="삼권분립 문장 1개, 타이핑 진행에 따라 그림 6장이 바뀝니다."
+              title="삼권분립 데모: 부처 순차 등장, 중간 장면 전환, 독재자·꼭두각시 장면, 견제 장면까지 타이핑에 맞춰 바뀝니다."
             >
-              삼권분립 6장 테스트
+              삼권분립 연출 테스트
             </button>
           </div>
         </header>
