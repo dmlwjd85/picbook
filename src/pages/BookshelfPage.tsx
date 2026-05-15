@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { UserLogoutButton } from '../components/UserLogoutButton'
 import { LIBRARY_BOOKS } from '../data/libraryBooks'
 import { parsePackJson } from '../lib/parsePack'
 import { usePlaySessionStore } from '../state/playSessionStore'
@@ -47,12 +48,15 @@ export default function BookshelfPage() {
               {profile?.name ? `${profile.name}님, 어떤 책을 읽을까요?` : '책을 골라 주세요'}
             </h1>
           </div>
-          <Link
-            to="/master/login"
-            className="rounded-lg border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
-          >
-            마스터 로그인
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <UserLogoutButton className="rounded-lg border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/60" />
+            <Link
+              to="/master/login"
+              className="rounded-lg border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
+            >
+              마스터 로그인
+            </Link>
+          </div>
         </div>
       </header>
 

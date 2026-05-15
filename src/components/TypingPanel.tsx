@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import { syncTypingFromRaw } from '../lib/typingMatch'
 
 type Props = {
   target: string
   typed: string
   onTypedChange: (next: string) => void
   disabled?: boolean
-}
-
-/** 입력이 목표 문장 앞부분과 얼마나 일치하는지 계산 (한글·붙여넣기 공통) */
-function longestMatchingPrefix(input: string, target: string): string {
-  let i = 0
-  const limit = Math.min(input.length, target.length)
-  while (i < limit && input[i] === target[i]) i += 1
-  return target.slice(0, i)
 }
 
 /**
@@ -27,10 +20,9 @@ export function TypingPanel({ target, typed, onTypedChange, disabled }: Props) {
     if (!composingRef.current) setDraft(typed)
   }, [typed])
 
-  const applyValue = (raw: string) => {
-    const v = longestMatchingPrefix(raw, target)
-    setDraft(v)
-    if (v !== typed) onTypedChange(v)
+  const pushRaw = (raw: string) => {
+    setDraft(raw)
+    syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
   return (
@@ -51,16 +43,11 @@ export function TypingPanel({ target, typed, onTypedChange, disabled }: Props) {
         }}
         onCompositionEnd={(e) => {
           composingRef.current = false
-          applyValue(e.currentTarget.value)
+          pushRaw(e.currentTarget.value)
         }}
         onChange={(e) => {
           if (disabled) return
-          const next = e.target.value
-          if (composingRef.current) {
-            setDraft(next)
-            return
-          }
-          applyValue(next)
+          pushRaw(e.target.value)
         }}
       />
       <div className="flex flex-wrap gap-2 text-xs text-slate-500">

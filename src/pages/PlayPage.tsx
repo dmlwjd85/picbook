@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingPanel } from '../components/TypingPanel'
+import { UserLogoutButton } from '../components/UserLogoutButton'
 import { VisualStage } from '../components/VisualStage'
 import { getLibraryBook } from '../data/libraryBooks'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
@@ -135,9 +136,13 @@ export default function PlayPage() {
               </p>
             </div>
           </div>
-          <div className="hidden shrink-0 text-right text-xs text-stone-500 lg:block">
-            <span className="font-mono text-stone-700">{progressPct}%</span>
-            <span className="ml-1">입력</span>
+          <div className="flex shrink-0 items-center gap-2">
+            <UserLogoutButton className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-600 hover:bg-white lg:hidden" />
+            <div className="hidden text-right text-xs text-stone-500 lg:block">
+              <span className="font-mono text-stone-700">{progressPct}%</span>
+              <span className="ml-1">입력</span>
+            </div>
+            <UserLogoutButton className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600 hover:bg-white lg:inline-flex" />
           </div>
         </div>
       </header>

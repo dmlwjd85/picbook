@@ -1,13 +1,14 @@
 import { createId } from '../lib/ids'
+import { charRangeSteps } from '../lib/cueCharSteps'
 import { cueAfterFirstChar, mergeTypedSegments } from '../lib/typedScriptSegments'
 import type { Cue, LayerAnchorLabel, ReadingPack } from '../types/pack'
 
-/** 낱막 첫 글자를 친 뒤 큐 적용(띄어쓰기만 친 순간에는 이전 연출 유지) */
+/** 낱막 첫 글자를 친 뒤(띄어쓰기 직후 X) */
 const W = cueAfterFirstChar
 
-/**
- * 제작용(하이픈 오른쪽은 연출 메모 — 사용자에게 노출하지 않음).
- */
+/** typed.length 기준 — 글자마다 연출 */
+const C = (n: number) => n
+
 const SCRIPT_PARTS = [
   '삼권분립은 - 장면설명은 삭제(사법 ~나타나요. 부분)',
   '한 국가기관이 나라의 중요한 일을 - 타이핑 되는동안 조금씩 맨 왼쪽의 사법부가 나머지 화면을 찌그러뜨리며 꽉 채움',
@@ -31,7 +32,6 @@ const CHECK_ANCHORS: LayerAnchorLabel[] = [
   { text: '행정부', leftPct: 80, topPct: 56 },
 ]
 
-/** 주요 장면 전환(낱막 첫 글자 기준) */
 export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, W(6), W(25), W(39), W(48)] as const
 
 const W3 = 33.34
@@ -40,6 +40,40 @@ function splitRemain(jw: number): { lw: number; ex: number } {
   const rem = 100 - jw
   const half = rem / 2
   return { lw: half, ex: jw + half }
+}
+
+function squeezeCue(charIndex: number, jw: number, layerJustice: string, layerLegis: string, layerExec: string): Cue {
+  const { lw, ex } = splitRemain(jw)
+  return {
+    id: createId(),
+    charIndex,
+    effects: [
+      {
+        kind: 'layerTransform',
+        layerId: layerJustice,
+        x: 0,
+        y: 0,
+        width: jw,
+        fillHeight: true,
+      },
+      {
+        kind: 'layerTransform',
+        layerId: layerLegis,
+        x: jw,
+        y: 0,
+        width: lw,
+        fillHeight: true,
+      },
+      {
+        kind: 'layerTransform',
+        layerId: layerExec,
+        x: ex,
+        y: 0,
+        width: lw,
+        fillHeight: true,
+      },
+    ],
+  }
 }
 
 export function createSeparationThreePowersDemoPack(): ReadingPack {
@@ -54,47 +88,24 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
   const urlLegis = SLIDE_URLS[1]!
   const urlExec = SLIDE_URLS[2]!
 
-  const squeezeSteps: { charIndex: number; jw: number }[] = [
-    { charIndex: W(6), jw: 41 },
-    { charIndex: W(8), jw: 52 },
-    { charIndex: W(14), jw: 62 },
-    { charIndex: W(18), jw: 71 },
-    { charIndex: W(22), jw: 88 },
-  ]
+  /** 한~일을 구간: 글자마다 사법 확대 (7~23) */
+  const squeezeCues: Cue[] = charRangeSteps(7, 23, 41, 88).map(({ charIndex, value }) =>
+    squeezeCue(charIndex, value, layerJustice, layerLegis, layerExec),
+  )
 
-  const squeezeCues: Cue[] = squeezeSteps.map(({ charIndex, jw }) => {
-    const { lw, ex } = splitRemain(jw)
-    return {
-      id: createId(),
-      charIndex,
-      effects: [
-        {
-          kind: 'layerTransform' as const,
-          layerId: layerJustice,
-          x: 0,
-          y: 0,
-          width: jw,
-          fillHeight: true,
-        },
-        {
-          kind: 'layerTransform' as const,
-          layerId: layerLegis,
-          x: jw,
-          y: 0,
-          width: lw,
-          fillHeight: true,
-        },
-        {
-          kind: 'layerTransform' as const,
-          layerId: layerExec,
-          x: ex,
-          y: 0,
-          width: lw,
-          fillHeight: true,
-        },
-      ],
-    }
-  })
+  /** 독재 구간: 글자마다 클로즈업 (27~34), 빨간 X는 「수」(index 34) 입력 시점 = charIndex 35 */
+  const dictatorZoomCues: Cue[] = charRangeSteps(27, 34, 1.04, 1.28).map(({ charIndex, value }) => ({
+    id: createId(),
+    charIndex,
+    effects: [
+      {
+        kind: 'layerTransform',
+        layerId: layerDictator,
+        scale: value,
+        panY: -Math.round((value - 1) * 28),
+      },
+    ],
+  }))
 
   const cues: Cue[] = [
     {
@@ -142,36 +153,15 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
         { kind: 'layerStampOverlay', layerId: layerDictator, stamp: null },
       ],
     },
+    ...dictatorZoomCues,
     {
       id: createId(),
-      charIndex: W(30),
-      effects: [
-        {
-          kind: 'layerTransform',
-          layerId: layerDictator,
-          scale: 1.1,
-          panY: -4,
-        },
-      ],
-    },
-    {
-      id: createId(),
-      charIndex: W(34),
-      effects: [{ kind: 'layerTransform', layerId: layerDictator, scale: 1.22, panY: -7 }],
-    },
-    {
-      id: createId(),
-      charIndex: W(36),
-      effects: [{ kind: 'layerTransform', layerId: layerDictator, scale: 1.34, panY: -10 }],
-    },
-    {
-      id: createId(),
-      charIndex: W(39),
+      charIndex: 35,
       effects: [{ kind: 'layerStampOverlay', layerId: layerDictator, stamp: 'red-x' }],
     },
     {
       id: createId(),
-      charIndex: W(39) + 1,
+      charIndex: W(39),
       effects: [
         { kind: 'layerHide', layerId: layerDictator },
         { kind: 'layerStampOverlay', layerId: layerDictator, stamp: null },
@@ -191,21 +181,9 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
         { kind: 'layerAnchorLabels', layerId: layerStory, labels: CHECK_ANCHORS },
       ],
     },
-    {
-      id: createId(),
-      charIndex: W(43),
-      effects: [{ kind: 'layerTransform', layerId: layerStory, panX: -16, panY: 2 }],
-    },
-    {
-      id: createId(),
-      charIndex: W(43) + 2,
-      effects: [{ kind: 'layerTransform', layerId: layerStory, panX: 16, panY: 2 }],
-    },
-    {
-      id: createId(),
-      charIndex: W(43) + 4,
-      effects: [{ kind: 'layerTransform', layerId: layerStory, panX: 0, panY: -14 }],
-    },
+    { id: createId(), charIndex: C(41), effects: [{ kind: 'layerTransform', layerId: layerStory, panX: -16, panY: 2 }] },
+    { id: createId(), charIndex: C(43), effects: [{ kind: 'layerTransform', layerId: layerStory, panX: 16, panY: 2 }] },
+    { id: createId(), charIndex: C(45), effects: [{ kind: 'layerTransform', layerId: layerStory, panX: 0, panY: -14 }] },
     {
       id: createId(),
       charIndex: W(48),
@@ -225,21 +203,11 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
         },
       ],
     },
-    {
+    ...charRangeSteps(49, TEXT.length - 1, 1.1, 1.32).map(({ charIndex, value }) => ({
       id: createId(),
-      charIndex: W(52),
-      effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.14 }],
-    },
-    {
-      id: createId(),
-      charIndex: W(57),
-      effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.22 }],
-    },
-    {
-      id: createId(),
-      charIndex: W(60),
-      effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.32 }],
-    },
+      charIndex,
+      effects: [{ kind: 'layerTransform' as const, layerId: layerStory, scale: value }],
+    })),
   ]
 
   return {

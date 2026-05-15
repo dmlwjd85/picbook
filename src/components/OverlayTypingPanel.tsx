@@ -1,17 +1,11 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { syncTypingFromRaw } from '../lib/typingMatch'
 
 type Props = {
   target: string
   typed: string
   onTypedChange: (next: string) => void
   disabled?: boolean
-}
-
-function longestMatchingPrefix(input: string, target: string): string {
-  let i = 0
-  const limit = Math.min(input.length, target.length)
-  while (i < limit && input[i] === target[i]) i += 1
-  return target.slice(0, i)
 }
 
 const TEXT =
@@ -23,26 +17,14 @@ const TEXT =
 export function OverlayTypingPanel({ target, typed, onTypedChange, disabled }: Props) {
   const [draft, setDraft] = useState(typed)
   const composingRef = useRef(false)
-  const areaRef = useRef<HTMLTextAreaElement>(null)
-
   useEffect(() => {
     if (!composingRef.current) setDraft(typed)
   }, [typed])
 
-  const applyValue = (raw: string) => {
-    const v = longestMatchingPrefix(raw, target)
-    setDraft(v)
-    if (v !== typed) onTypedChange(v)
-  }
-
-  const onDigit = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const pushRaw = (raw: string) => {
     if (disabled) return
-    const next = e.target.value
-    if (composingRef.current) {
-      setDraft(next)
-      return
-    }
-    applyValue(next)
+    setDraft(raw)
+    syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
   return (
@@ -58,7 +40,6 @@ export function OverlayTypingPanel({ target, typed, onTypedChange, disabled }: P
         </p>
 
         <textarea
-          ref={areaRef}
           rows={4}
           disabled={disabled}
           value={draft}
@@ -74,9 +55,9 @@ export function OverlayTypingPanel({ target, typed, onTypedChange, disabled }: P
           }}
           onCompositionEnd={(e) => {
             composingRef.current = false
-            applyValue(e.currentTarget.value)
+            pushRaw(e.currentTarget.value)
           }}
-          onChange={onDigit}
+          onChange={(e) => pushRaw(e.target.value)}
         />
       </div>
 
