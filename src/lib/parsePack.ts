@@ -14,6 +14,9 @@ export function parsePackJson(raw: string): { ok: true; pack: ReadingPack } | { 
       if (!s.id || typeof s.text !== 'string') return { ok: false, error: '문장 데이터가 올바르지 않습니다.' }
       if (!Array.isArray(s.layers)) return { ok: false, error: '레이어 배열이 없습니다.' }
       if (!Array.isArray(s.cues)) return { ok: false, error: '큐 배열이 없습니다.' }
+      if (s.captions !== undefined && !Array.isArray(s.captions)) {
+        return { ok: false, error: 'captions는 배열이어야 합니다.' }
+      }
     }
     return { ok: true, pack: o }
   } catch {

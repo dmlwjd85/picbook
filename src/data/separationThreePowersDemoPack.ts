@@ -10,6 +10,16 @@ const base = import.meta.env.BASE_URL
 /** 이 저장소에 포함된 삼권분립 일러스트 6장 (public/demo) */
 const SLIDE_URLS = [1, 2, 3, 4, 5, 6].map((n) => `${base}demo/samgwon-${n}.png`)
 
+/** 그림 전환과 같은 글자 수에 맞춰 하단에 보일 한글 */
+const CAPTIONS: { charIndex: number; text: string }[] = [
+  { charIndex: 0, text: '세 가지 권력으로 나눈 제도예요' },
+  { charIndex: 11, text: '법을 만드는 힘, 입법' },
+  { charIndex: 22, text: '나라를 운영하는 힘, 행정' },
+  { charIndex: 32, text: '공정하게 판단하는 힘, 사법' },
+  { charIndex: 42, text: '어느 한쪽도 혼자 독단할 수 없어요' },
+  { charIndex: 52, text: '서로 견제하며 균형을 맞춥니다' },
+]
+
 /** 타이핑 글자 수 구간(대략 6등분)마다 그림이 바뀜 */
 const CHAR_MILESTONES = [0, 11, 22, 32, 42, 52] as const
 
@@ -38,7 +48,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     id: 'demo-separation-three-powers',
     title: '삼권분립 — 한 문장·그림 6장',
     description:
-      '한 문장을 따라 치면, 글자 수에 맞춰 그림이 여섯 번 바뀝니다. (앱에 포함된 일러스트)',
+      '한 문장을 따라 치면, 글자 수에 맞춰 그림이 여섯 번 바뀌고 하단에 짧은 설명이 나옵니다. (앱에 포함된 일러스트)',
     author: 'PicBook 데모',
     updatedAt: new Date().toISOString(),
     sentences: [
@@ -60,6 +70,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
           },
         ],
         cues,
+        captions: CAPTIONS,
       },
     ],
   }

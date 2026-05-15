@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { computeLayerSnapshot } from '../lib/cueEngine'
+import { getActiveCaption } from '../lib/getActiveCaption'
 import { summarizeEffect } from '../lib/cueLabels'
 import { parsePackJson } from '../lib/parsePack'
 import { usePackEditorStore } from '../state/packEditorStore'
@@ -379,7 +380,7 @@ export default function EditorPage() {
             </label>
           </div>
           <div className="mt-4">
-            <VisualStage layers={previewLayers} />
+            <VisualStage layers={previewLayers} overlayCaption={getActiveCaption(sentence.captions, previewLen)} />
           </div>
         </section>
       </div>

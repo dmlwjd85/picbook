@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { createSamplePack } from '../data/samplePack'
 import { createSeparationThreePowersDemoPack } from '../data/separationThreePowersDemoPack'
 import { computeLayerSnapshot } from '../lib/cueEngine'
+import { getActiveCaption } from '../lib/getActiveCaption'
 import { parsePackJson } from '../lib/parsePack'
 import type { ReadingPack } from '../types/pack'
 import { TypingPanel } from '../components/TypingPanel'
@@ -121,7 +122,7 @@ export default function PlayerPage() {
               {pack.description ? <p className="mt-2 text-sm text-slate-600">{pack.description}</p> : null}
             </div>
 
-            <VisualStage layers={layers} />
+            <VisualStage layers={layers} overlayCaption={getActiveCaption(sentence?.captions, typed.length)} />
             {demoSlideLabel !== null ? (
               <p className="text-center text-xs font-medium text-indigo-700">
                 지금 보이는 그림: <span className="font-mono">{demoSlideLabel}</span> / 6 (타이핑 글자 수에 따라 바뀝니다)

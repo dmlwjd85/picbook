@@ -51,6 +51,11 @@ export type SentenceBlock = {
   /** 문장 진입 시 초기 레이어 구성 */
   layers: LayerState[]
   cues: Cue[]
+  /**
+   * 타이핑 글자 수가 charIndex 이상일 때 보일 짧은 한글 안내(스테이지 하단 오버레이).
+   * charIndex는 보통 그림 큐와 맞춥니다.
+   */
+  captions?: { charIndex: number; text: string }[]
 }
 
 export type ReadingPack = {
