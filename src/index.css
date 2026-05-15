@@ -14,6 +14,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 실행 화면: 모바일에서 스크롤·키보드로 연출창이 밀리지 않게 */
+html.play-active,
+html.play-active body {
+  overflow: hidden;
+  height: 100%;
+  height: 100dvh;
+}
+
+html.play-active #root {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 @keyframes stamp-in {
   from {
     opacity: 0;

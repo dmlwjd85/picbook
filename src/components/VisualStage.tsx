@@ -4,6 +4,8 @@ type Props = {
   layers: LayerState[]
   /** 그림 위·아래에 겹쳐 보일 짧은 한글 (선택) */
   overlayCaption?: string | null
+  /** true면 부모 높이에 맞춤(모바일 고정 연출창) */
+  embedded?: boolean
 }
 
 function RedXStamp() {
@@ -51,11 +53,17 @@ function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabel
  * fillHeight 레이어는 세로를 꽉 채우고, plateCaption이 있으면 레이어 안 하단에 제목 막대를 둔다.
  * anchorLabels가 있으면 이미지 위에 고정 라벨을 겹친다.
  */
-export function VisualStage({ layers, overlayCaption }: Props) {
+export function VisualStage({ layers, overlayCaption, embedded = false }: Props) {
   const hasImage = layers.some((l) => l.visible && l.imageUrl)
 
   return (
-    <div className="relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner">
+    <div
+      className={
+        embedded
+          ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
+          : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+      }
+    >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
       {layers.map((l) => {
         if (!l.visible || !l.imageUrl) return null
@@ -76,7 +84,7 @@ export function VisualStage({ layers, overlayCaption }: Props) {
         return (
           <div
             key={l.id}
-            className="absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 transition-all duration-700 ease-out"
+            className="absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 transition-[transform,opacity,left,width,top] duration-500 ease-out will-change-transform max-lg:duration-[420ms] lg:duration-700"
             style={{
               left: `${l.x}%`,
               width: `${l.width}%`,
