@@ -4,13 +4,14 @@ import type { Cue, LayerAnchorLabel, ReadingPack } from '../types/pack'
 
 /**
  * 제작용(하이픈 오른쪽은 연출 메모 — 사용자에게 노출하지 않음).
+ * 화면 전환 charIndex는 띄어쓰기 뒤 낱막이 시작할 때(첫 글자)에 맞춘다.
  */
 const SCRIPT_PARTS = [
   '삼권분립은 - 장면설명은 삭제(사법 ~나타나요. 부분)',
   '한 국가기관이 나라의 중요한 일을 - 타이핑 되는동안 조금씩 맨 왼쪽의 사법부가 나머지 화면을 찌그러뜨리며 꽉 채움',
   '마음대로 처리할 수 없게 - 그림자 느낌의 법복을 입은 독재자가 나타나며 세 건물에 연결된 꼭두각시 줄을 잡는 장면으로 수정',
-  '서로를 견제하고 - 밧줄이 있던 원래 이미지에 텍스트는 각각의 손목에만 사법부, 입법부, 행정부 표기, 설명하는 텍스트 삭제',
-  '균형을 이뤄내기 위한 것이다. - 이미지에 떠있는 설명하는 글들은 삭제',
+  '서로를 견제하고 - 밧줄이 있던 원래 이미지에 텍스트는 각각의 손목에만 사법부, 입법부, 행정부 표기, 화면이 왼쪽 오른쪽 위로 한번씩 치우치는 효과',
+  '균형을 이뤄내기 위한 것이다. - 점점 빛을 중심으로 클로즈 업',
 ] as const
 
 const TEXT = mergeTypedSegments(SCRIPT_PARTS)
@@ -36,13 +37,7 @@ const CHECK_ANCHORS: LayerAnchorLabel[] = [
   { text: '행정부', leftPct: 80, topPct: 56 },
 ]
 
-const CAPTIONS: { charIndex: number; text: string }[] = [
-  { charIndex: 6, text: '한쪽이 나머지를 밀어 내고 화면을 가득 채우기도 해요' },
-  { charIndex: 25, text: '권력이 한곳에 쏠리면 이런 위험도 생겨요' },
-  { charIndex: 48, text: '그래서 균형과 평화를 지향해요' },
-]
-
-/** 「지금 보이는 그림」 단계(1~5) */
+/** 「지금 보이는 그림」 단계(1~5) — 낱막 시작 시점 */
 export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, 6, 25, 39, 48] as const
 
 const W3 = 33.34
@@ -56,11 +51,11 @@ function splitRemain(jw: number): { lw: number; ex: number } {
 
 /**
  * 삼권분립 데모 팩.
- * - 0·2·4: 세 부처 삼분할 + 하단 제목 막대.
- * - 6~21: 한 글자씩 사법 폭을 넓히며 입법·행정을 찌그러뜨림, 23에서 사법만 꽉 채움(scale 0.88).
- * - 25: 법복·그림자 독재자 꼭두각시 장면.
- * - 39: 밧줄 견제 원본 이미지 + 손목 라벨만.
- * - 48: 텍스트 없는 균형·평화 이미지.
+ * - 0·2·4: 「삼권분립은」 타이핑 중 사법·입법·행정 삼분할(한 낱막 안).
+ * - 6·8·14·18·22: 「한…일을」 각 낱막 시작마다 사법 확대, 24에서 사법만 꽉 채움.
+ * - 25: 독재자 장면.
+ * - 39·43·47: 견제 장면 + 좌·우·위로 한 번씩 치우침.
+ * - 48·52·57·60: 균형 장면, 빛 중심으로 점점 클로즈업.
  */
 export function createSeparationThreePowersDemoPack(): ReadingPack {
   const sentenceId = createId()
@@ -76,11 +71,10 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
 
   const squeezeSteps: { charIndex: number; jw: number }[] = [
     { charIndex: 6, jw: 41 },
-    { charIndex: 9, jw: 52 },
-    { charIndex: 12, jw: 62 },
-    { charIndex: 15, jw: 71 },
-    { charIndex: 18, jw: 79 },
-    { charIndex: 21, jw: 88 },
+    { charIndex: 8, jw: 52 },
+    { charIndex: 14, jw: 62 },
+    { charIndex: 18, jw: 71 },
+    { charIndex: 22, jw: 88 },
   ]
 
   const squeezeCues: Cue[] = squeezeSteps.map(({ charIndex, jw }) => {
@@ -145,7 +139,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     ...squeezeCues,
     {
       id: createId(),
-      charIndex: 23,
+      charIndex: 24,
       effects: [
         { kind: 'layerHide', layerId: layerLegis },
         { kind: 'layerHide', layerId: layerExec },
@@ -182,9 +176,36 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
           x: 0,
           y: 0,
           width: 100,
+          scale: 1,
           fillHeight: true,
+          panX: -5,
+          panY: 0,
         },
         { kind: 'layerAnchorLabels', layerId: layerStory, labels: CHECK_ANCHORS },
+      ],
+    },
+    {
+      id: createId(),
+      charIndex: 43,
+      effects: [
+        {
+          kind: 'layerTransform',
+          layerId: layerStory,
+          panX: 5,
+          panY: 0,
+        },
+      ],
+    },
+    {
+      id: createId(),
+      charIndex: 47,
+      effects: [
+        {
+          kind: 'layerTransform',
+          layerId: layerStory,
+          panX: 0,
+          panY: -4,
+        },
       ],
     },
     {
@@ -193,7 +214,33 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
       effects: [
         { kind: 'layerImage', layerId: layerStory, imageUrl: BALANCE_NOTEXT_URL },
         { kind: 'layerAnchorLabels', layerId: layerStory, labels: null },
+        {
+          kind: 'layerTransform',
+          layerId: layerStory,
+          x: 0,
+          y: 0,
+          width: 100,
+          scale: 1.06,
+          fillHeight: true,
+          panX: 0,
+          panY: 0,
+        },
       ],
+    },
+    {
+      id: createId(),
+      charIndex: 52,
+      effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.14 }],
+    },
+    {
+      id: createId(),
+      charIndex: 57,
+      effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.22 }],
+    },
+    {
+      id: createId(),
+      charIndex: 60,
+      effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.32 }],
     },
   ]
 
@@ -221,6 +268,8 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             y: 0,
             width: 100,
             scale: 1,
+            panX: 0,
+            panY: 0,
             fillHeight: true,
             anchorLabels: null,
           },
@@ -235,6 +284,8 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             y: 0,
             width: W3,
             scale: 1,
+            panX: 0,
+            panY: 0,
             fillHeight: true,
             plateCaption: '사법부',
           },
@@ -249,6 +300,8 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             y: 0,
             width: 33.33,
             scale: 1,
+            panX: 0,
+            panY: 0,
             fillHeight: true,
             plateCaption: '입법부',
           },
@@ -263,6 +316,8 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             y: 0,
             width: 33.33,
             scale: 1,
+            panX: 0,
+            panY: 0,
             fillHeight: true,
             plateCaption: '행정부',
           },
@@ -277,11 +332,12 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             y: 0,
             width: 100,
             scale: 1,
+            panX: 0,
+            panY: 0,
             fillHeight: true,
           },
         ],
         cues,
-        captions: CAPTIONS,
       },
     ],
   }

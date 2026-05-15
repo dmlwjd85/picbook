@@ -30,6 +30,8 @@ function applyEffect(map: Map<string, LayerState>, eff: CueEffect): void {
       if (eff.width !== undefined) layer.width = eff.width
       if (eff.scale !== undefined) layer.scale = eff.scale
       if (eff.fillHeight !== undefined) layer.fillHeight = eff.fillHeight
+      if (eff.panX !== undefined) layer.panX = eff.panX
+      if (eff.panY !== undefined) layer.panY = eff.panY
       break
     }
     default:

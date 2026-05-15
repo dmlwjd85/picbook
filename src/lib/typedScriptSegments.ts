@@ -14,3 +14,16 @@ export function takeTypingPart(line: string): string {
 export function mergeTypedSegments(segments: readonly string[]): string {
   return segments.map(takeTypingPart).filter(Boolean).join(' ')
 }
+
+/** 띄어쓰기 뒤 각 낱막이 시작하는 charIndex 목록 */
+export function wordStartIndices(text: string): number[] {
+  const out: number[] = []
+  let i = 0
+  while (i < text.length) {
+    while (i < text.length && text[i] === ' ') i++
+    if (i >= text.length) break
+    out.push(i)
+    while (i < text.length && text[i] !== ' ') i++
+  }
+  return out
+}

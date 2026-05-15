@@ -46,6 +46,9 @@ export function VisualStage({ layers, overlayCaption }: Props) {
         const plate = l.plateCaption?.trim()
         const hasPlate = Boolean(plate)
         const anchors = l.anchorLabels
+        const panX = l.panX ?? 0
+        const panY = l.panY ?? 0
+        const transformOrigin = fill && hasPlate ? 'left center' : 'center center'
 
         return (
           <div
@@ -56,8 +59,8 @@ export function VisualStage({ layers, overlayCaption }: Props) {
               width: `${l.width}%`,
               ...(fill ? { top: 0, height: '100%' } : { top: `${l.y}%` }),
               opacity: l.opacity,
-              transform: `scale(${l.scale})`,
-              transformOrigin: fill ? 'left center' : 'center center',
+              transform: `translate(${panX}%, ${panY}%) scale(${l.scale})`,
+              transformOrigin,
             }}
           >
             {hasPlate ? (

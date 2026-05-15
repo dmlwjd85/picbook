@@ -30,6 +30,9 @@ export type LayerState = {
   y: number
   width: number
   scale: number
+  /** 레이어 기준 가로·세로 이동(%, translate). 견제 장면 흔들림 등. */
+  panX?: number
+  panY?: number
   /**
    * true면 세로를 스테이지 전체에 맞춤(top 0, height 100%).
    * 삼분할·전체 덮기 등에 사용.
@@ -58,6 +61,8 @@ export type CueEffect =
       width?: number
       scale?: number
       fillHeight?: boolean
+      panX?: number
+      panY?: number
     }
 
 /**
