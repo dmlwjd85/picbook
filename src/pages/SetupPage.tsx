@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { isValidSixDigitPassword, useUserProfileStore } from '../state/userProfileStore'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { SixDigitPasswordFields } from '../components/SixDigitPasswordFields'
+import { isValidSixDigitPassword } from '../lib/password'
+import { useUserProfileStore } from '../state/userProfileStore'
 
 export default function SetupPage() {
   const navigate = useNavigate()
@@ -62,35 +64,12 @@ export default function SetupPage() {
             />
           </label>
 
-          <label className="mt-4 block text-sm font-medium text-stone-700">
-            비밀번호 (숫자 6자리)
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="\d*"
-              maxLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              autoComplete="new-password"
-              className="mt-1.5 w-full rounded-xl border border-stone-200 px-4 py-3 text-center font-mono text-xl tracking-[0.35em] text-stone-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-              placeholder="••••••"
-            />
-          </label>
-
-          <label className="mt-4 block text-sm font-medium text-stone-700">
-            비밀번호 확인
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="\d*"
-              maxLength={6}
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              autoComplete="new-password"
-              className="mt-1.5 w-full rounded-xl border border-stone-200 px-4 py-3 text-center font-mono text-xl tracking-[0.35em] text-stone-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-              placeholder="••••••"
-            />
-          </label>
+          <SixDigitPasswordFields
+            password={password}
+            confirm={confirm}
+            onPasswordChange={setPassword}
+            onConfirmChange={setConfirm}
+          />
 
           {error ? <p className="mt-3 text-sm font-medium text-red-600">{error}</p> : null}
 
@@ -101,6 +80,15 @@ export default function SetupPage() {
             책장으로 가기
           </button>
         </form>
+
+        <p className="mt-6 text-center text-xs text-stone-500">
+          <Link
+            to="/master/login"
+            className="text-stone-600 underline-offset-2 hover:text-stone-800 hover:underline"
+          >
+            마스터 로그인 (편집·관리)
+          </Link>
+        </p>
       </div>
     </div>
   )

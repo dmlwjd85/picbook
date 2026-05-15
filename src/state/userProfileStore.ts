@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { isValidSixDigitPassword } from '../lib/password'
+
+export { isValidSixDigitPassword }
 
 const STORAGE_KEY = 'picbook.user.profile.v1'
 
@@ -39,7 +42,3 @@ export const useUserProfileStore = create<UserProfileStore>()(
     },
   ),
 )
-
-export function isValidSixDigitPassword(value: string): boolean {
-  return /^\d{6}$/.test(value)
-}

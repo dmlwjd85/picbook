@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { RequireMaster } from './components/RequireMaster'
 import { RequireProfile } from './components/RequireProfile'
 import BookshelfPage from './pages/BookshelfPage'
 import EditorPage from './pages/EditorPage'
 import HomePage from './pages/HomePage'
+import MasterLoginPage from './pages/MasterLoginPage'
+import MasterSetupPage from './pages/MasterSetupPage'
 import PlayPage from './pages/PlayPage'
 import SetupPage from './pages/SetupPage'
 
@@ -28,7 +31,16 @@ export default function App() {
             </RequireProfile>
           }
         />
-        <Route path="/editor" element={<EditorPage />} />
+        <Route path="/master/setup" element={<MasterSetupPage />} />
+        <Route path="/master/login" element={<MasterLoginPage />} />
+        <Route
+          path="/editor"
+          element={
+            <RequireMaster>
+              <EditorPage />
+            </RequireMaster>
+          }
+        />
         <Route path="/player" element={<Navigate to="/bookshelf" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

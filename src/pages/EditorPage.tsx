@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useMasterAuthStore } from '../state/masterAuthStore'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { getActiveCaption } from '../lib/getActiveCaption'
 import { summarizeEffect } from '../lib/cueLabels'
@@ -34,6 +35,8 @@ function ImageFormatGuide() {
 }
 
 export default function EditorPage() {
+  const navigate = useNavigate()
+  const logout = useMasterAuthStore((s) => s.logout)
   const pack = usePackEditorStore((s) => s.pack)
   const activeSentenceIndex = usePackEditorStore((s) => s.activeSentenceIndex)
   const setActiveSentenceIndex = usePackEditorStore((s) => s.setActiveSentenceIndex)
@@ -128,10 +131,10 @@ export default function EditorPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <Link to="/" className="text-xs font-medium text-indigo-600 hover:underline">
-              ← 처음으로
+            <Link to="/bookshelf" className="text-xs font-medium text-indigo-600 hover:underline">
+              ← 책장
             </Link>
-            <h1 className="text-2xl font-bold text-slate-900">내가 만드는 연습 팩</h1>
+            <h1 className="text-2xl font-bold text-slate-900">마스터 · 연습 팩 만들기</h1>
             <p className="mt-1 max-w-xl text-sm text-slate-600">어려운 말 없이, 문장 → 그림 → 「몇 글째에 뭐가 보일지」 순서로만 채우면 됩니다.</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -160,11 +163,21 @@ export default function EditorPage() {
               저장 파일 내려받기
             </button>
             <Link
-              to="/player"
+              to="/bookshelf"
               className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 hover:bg-emerald-100"
             >
-              연습 화면에서 테스트
+              책장에서 테스트
             </Link>
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900"
+              onClick={() => {
+                logout()
+                navigate('/master/login', { replace: true })
+              }}
+            >
+              마스터 로그아웃
+            </button>
           </div>
         </header>
 

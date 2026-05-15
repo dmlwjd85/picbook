@@ -48,10 +48,10 @@ export default function BookshelfPage() {
             </h1>
           </div>
           <Link
-            to="/editor"
+            to="/master/login"
             className="rounded-lg border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
           >
-            만들기 (편집)
+            마스터 로그인
           </Link>
         </div>
       </header>
