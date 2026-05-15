@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createSamplePack } from '../data/samplePack'
-import { createSeparationThreePowersDemoPack } from '../data/separationThreePowersDemoPack'
+import {
+  createSeparationThreePowersDemoPack,
+  SEPARATION_DEMO_VISUAL_MILESTONES,
+} from '../data/separationThreePowersDemoPack'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { getActiveCaption } from '../lib/getActiveCaption'
 import { parsePackJson } from '../lib/parsePack'
@@ -54,7 +57,7 @@ export default function PlayerPage() {
 
   const demoSlideLabel = useMemo(() => {
     if (pack?.id !== 'demo-separation-three-powers' || !sentence) return null
-    const milestones = [0, 11, 22, 32, 42, 52]
+    const milestones = SEPARATION_DEMO_VISUAL_MILESTONES
     let slide = 0
     for (let i = 0; i < milestones.length; i++) {
       if (typed.length >= milestones[i]) slide = i + 1
@@ -125,7 +128,8 @@ export default function PlayerPage() {
             <VisualStage layers={layers} overlayCaption={getActiveCaption(sentence?.captions, typed.length)} />
             {demoSlideLabel !== null ? (
               <p className="text-center text-xs font-medium text-indigo-700">
-                지금 보이는 그림: <span className="font-mono">{demoSlideLabel}</span> / 6 (타이핑 글자 수에 따라 바뀝니다)
+                지금 보이는 그림: <span className="font-mono">{demoSlideLabel}</span> /{' '}
+                {SEPARATION_DEMO_VISUAL_MILESTONES.length} (타이핑 글자 수에 따라 바뀝니다)
               </p>
             ) : null}
 
