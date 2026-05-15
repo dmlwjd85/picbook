@@ -26,6 +26,7 @@ function applyEffect(map: Map<string, LayerState>, eff: CueEffect): void {
       if (eff.y !== undefined) layer.y = eff.y
       if (eff.width !== undefined) layer.width = eff.width
       if (eff.scale !== undefined) layer.scale = eff.scale
+      if (eff.fillHeight !== undefined) layer.fillHeight = eff.fillHeight
       break
     }
     default:

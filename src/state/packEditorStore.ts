@@ -22,6 +22,8 @@ function defaultLayer(): LayerState {
     y: 12,
     width: 36,
     scale: 1,
+    fillHeight: false,
+    plateCaption: null,
   }
 }
 

@@ -4,45 +4,51 @@ import type { Cue, ReadingPack } from '../types/pack'
 
 /**
  * 제작용(하이픈 오른쪽은 연출 메모 — 사용자에게 노출하지 않음).
- * mergeTypedSegments 로 타이핑 문장만 추출한다.
  */
 const SCRIPT_PARTS = [
-  '삼권분립은 - 사법부 입법부 행정부가 차례로 화면을 삼분할해서 나오게',
-  '한 국가기관이 나라의 중요한 일을 - 하는동안 2,3,4 장면이 나오게',
-  '마음대로 처리할 수 없게 - 독재자가 첫번째 장면 위에 세 건물에 연결된 꼭두각시 줄을 잡고 있는 장면',
-  '서로를 견제하고',
-  '균형을 이뤄내기 위한 것이다. - 원래 균형, 평화 느낌의 이미지는 그대로 두고 이미지에 떠있던 텍스트만 삭제',
+  '삼권분립은 - 사법부 입법부 행정부(각각 하단에 제목 텍스트 표기)가 차례로 화면을 꽉 채울 수 있게 삼분할해서 나오게',
+  '한 국가기관이 나라의 중요한 일을 - 하는동안 맨 왼쪽의 사법부가 나머지 화면을 찌그러뜨리며 꽉 채움',
+  '마음대로 처리할 수 없게 - 그림자 느낌의 법복을 입은 독재자가 첫번째 장면 위에 세 건물에 연결된 꼭두각시 줄을 잡고 있는 장면으로 수정',
+  '서로를 견제하고 - 아래쪽 이미지 3개는 그림 가리므로 삭제, 텍스트는 각각의 손목에만 사법부, 입법부, 행정부 표기',
+  '균형을 이뤄내기 위한 것이다. - 원래 균형, 평화 느낌의 이미지는 그대로 두고 이미지에 떠있는 텍스트는 삭제',
 ] as const
 
 const TEXT = mergeTypedSegments(SCRIPT_PARTS)
 
 const base = import.meta.env.BASE_URL
 
-/** public/demo 일러스트 (samgwon-1~6) */
+/** 기존 건물 클립 일러스트 (삼분할·사법 확장 구간) */
 const SLIDE_URLS = [1, 2, 3, 4, 5, 6].map((n) => `${base}demo/samgwon-${n}.png`)
 
-/** 독재자·꼭두각시 줄 장면 (마음대로… 구간) */
-const DICTATOR_URL = `${base}demo/samgwon-dictator.png`
+/** 법복·그림자 톤 독재·꼭두각시 장면 */
+const DICTATOR_ROBE_URL = `${base}demo/samgwon-dictator-robe.png`
 
-/** 사용자용 하단 캡션(연출 메모와 무관) */
+/** 견제 장면: 손목 라벨만 있는 일러스트(하단 썸네일 없음) */
+const CHECK_WRISTS_URL = `${base}demo/samgwon-check-wrists.png`
+
+/** 균형·평화 톤, 이미지 내 플로팅 텍스트 없음 */
+const BALANCE_NOTEXT_URL = `${base}demo/samgwon-balance-notext.png`
+
 const CAPTIONS: { charIndex: number; text: string }[] = [
-  { charIndex: 0, text: '사법·입법·행정, 세 권력이 가로로 나란히 나타나요' },
-  { charIndex: 6, text: '한 기관이 나라의 일을 독점하면 어떤 모습일까요?' },
-  { charIndex: 25, text: '힘이 한곳으로 쏠리면 이런 위험도 생겨요' },
-  { charIndex: 39, text: '그래서 서로를 견제합니다' },
-  { charIndex: 48, text: '균형과 평화를 지향하는 제도예요' },
+  { charIndex: 0, text: '사법·입법·행정이 가로로 나란히, 각각 이름과 함께 나타나요' },
+  { charIndex: 6, text: '한쪽이 나머지를 밀어 내고 화면을 가득 채우기도 해요' },
+  { charIndex: 25, text: '권력이 한곳에 쏠리면 이런 위험도 생겨요' },
+  { charIndex: 39, text: '서로의 손목을 잡듯 견제합니다' },
+  { charIndex: 48, text: '그래서 균형과 평화를 지향해요' },
 ]
 
-/** 플레이어 「지금 보이는 그림」 단계(1~7) */
-export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, 6, 12, 18, 25, 39, 48] as const
+/** 「지금 보이는 그림」 단계(1~5) */
+export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, 6, 25, 39, 48] as const
+
+const W3 = 33.34
 
 /**
  * 삼권분립 데모 팩.
- * - 0·2·4: 「삼권분립은」 타이핑 중 사법·입법·행정이 화면 가로 삼분할로 등장.
- * - 6·12·18: 「한 국가기관이…」 구간에 상단 장면 2·3·4번 전환(세 분할은 숨김).
- * - 25: 「마음대로…」— 독재·꼭두각시 일러스트.
- * - 39: 「서로를 견제하고」— 견제 장면 + 하단에 세 부처 축소 복귀.
- * - 48: 「균형을…」— 평화·균형 느낌의 마지막 장면(samgwon-6, 이미지 내 텍스트 없음).
+ * - 0·2·4: 세 부처 삼분할 + 하단 제목 막대(fillHeight·plateCaption).
+ * - 6~24: 왼쪽 사법부만 세로 풀 + 가로로 찌그러진 듯한 scale로 나머지 구역 대체.
+ * - 25: 법복·그림자 독재자 꼭두각시 장면.
+ * - 39: 손목 라벨 견제 일러스트만(하단 3썸네일 없음).
+ * - 48: 텍스트 없는 균형·평화 일러스트.
  */
 export function createSeparationThreePowersDemoPack(): ReadingPack {
   const sentenceId = createId()
@@ -85,33 +91,26 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
       id: createId(),
       charIndex: 6,
       effects: [
-        { kind: 'layerHide', layerId: layerJustice },
         { kind: 'layerHide', layerId: layerLegis },
         { kind: 'layerHide', layerId: layerExec },
-        { kind: 'layerShow', layerId: layerStory },
-        { kind: 'layerImage', layerId: layerStory, imageUrl: SLIDE_URLS[1]! },
+        {
+          kind: 'layerTransform',
+          layerId: layerJustice,
+          x: 0,
+          y: 0,
+          width: 100,
+          scale: 0.88,
+          fillHeight: true,
+        },
       ],
-    },
-    {
-      id: createId(),
-      charIndex: 12,
-      effects: [{ kind: 'layerImage', layerId: layerStory, imageUrl: SLIDE_URLS[2]! }],
-    },
-    {
-      id: createId(),
-      charIndex: 18,
-      effects: [{ kind: 'layerImage', layerId: layerStory, imageUrl: SLIDE_URLS[3]! }],
     },
     {
       id: createId(),
       charIndex: 25,
       effects: [
-        { kind: 'layerHide', layerId: layerStory },
         { kind: 'layerHide', layerId: layerJustice },
-        { kind: 'layerHide', layerId: layerLegis },
-        { kind: 'layerHide', layerId: layerExec },
         { kind: 'layerShow', layerId: layerDictator },
-        { kind: 'layerImage', layerId: layerDictator, imageUrl: DICTATOR_URL },
+        { kind: 'layerImage', layerId: layerDictator, imageUrl: DICTATOR_ROBE_URL },
       ],
     },
     {
@@ -119,44 +118,22 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
       charIndex: 39,
       effects: [
         { kind: 'layerHide', layerId: layerDictator },
-        { kind: 'layerShow', layerId: layerJustice },
-        { kind: 'layerShow', layerId: layerLegis },
-        { kind: 'layerShow', layerId: layerExec },
-        {
-          kind: 'layerTransform',
-          layerId: layerJustice,
-          x: 6,
-          y: 68,
-          width: 26,
-        },
-        {
-          kind: 'layerTransform',
-          layerId: layerLegis,
-          x: 37,
-          y: 68,
-          width: 26,
-        },
-        {
-          kind: 'layerTransform',
-          layerId: layerExec,
-          x: 68,
-          y: 68,
-          width: 26,
-        },
         { kind: 'layerShow', layerId: layerStory },
-        { kind: 'layerImage', layerId: layerStory, imageUrl: SLIDE_URLS[4]! },
+        { kind: 'layerImage', layerId: layerStory, imageUrl: CHECK_WRISTS_URL },
+        {
+          kind: 'layerTransform',
+          layerId: layerStory,
+          x: 0,
+          y: 0,
+          width: 100,
+          fillHeight: true,
+        },
       ],
     },
     {
       id: createId(),
       charIndex: 48,
-      effects: [
-        { kind: 'layerHide', layerId: layerJustice },
-        { kind: 'layerHide', layerId: layerLegis },
-        { kind: 'layerHide', layerId: layerExec },
-        { kind: 'layerImage', layerId: layerStory, imageUrl: SLIDE_URLS[5]! },
-        { kind: 'layerTransform', layerId: layerStory, x: 3, y: 4, width: 94 },
-      ],
+      effects: [{ kind: 'layerImage', layerId: layerStory, imageUrl: BALANCE_NOTEXT_URL }],
     },
   ]
 
@@ -165,7 +142,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     id: 'demo-separation-three-powers',
     title: '삼권분립 — 장면별 연출 데모',
     description:
-      '세 권력이 나란히 등장한 뒤, 이야기 장면과 견제·균형 장면이 타이핑에 맞춰 바뀝니다. (앱에 포함된 일러스트)',
+      '세 권력 삼분할, 한쪽 독점, 꼭두각시 위험, 손목 견제, 균형 장면이 타이핑에 맞춰 이어집니다. (앱에 포함된 일러스트)',
     author: 'PicBook 데모',
     updatedAt: new Date().toISOString(),
     sentences: [
@@ -175,15 +152,16 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
         layers: [
           {
             id: layerStory,
-            label: '상단 장면',
+            label: '견제·균형 장면',
             zIndex: 1,
             imageUrl: null,
             visible: false,
             opacity: 1,
-            x: 5,
-            y: 4,
-            width: 90,
+            x: 0,
+            y: 0,
+            width: 100,
             scale: 1,
+            fillHeight: true,
           },
           {
             id: layerJustice,
@@ -192,10 +170,12 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             imageUrl: null,
             visible: false,
             opacity: 1,
-            x: 1,
-            y: 6,
-            width: 32,
+            x: 0,
+            y: 0,
+            width: W3,
             scale: 1,
+            fillHeight: true,
+            plateCaption: '사법부',
           },
           {
             id: layerLegis,
@@ -204,10 +184,12 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             imageUrl: null,
             visible: false,
             opacity: 1,
-            x: 34,
-            y: 6,
-            width: 32,
+            x: W3,
+            y: 0,
+            width: 33.33,
             scale: 1,
+            fillHeight: true,
+            plateCaption: '입법부',
           },
           {
             id: layerExec,
@@ -216,10 +198,12 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             imageUrl: null,
             visible: false,
             opacity: 1,
-            x: 67,
-            y: 6,
-            width: 32,
+            x: 66.67,
+            y: 0,
+            width: 33.33,
             scale: 1,
+            fillHeight: true,
+            plateCaption: '행정부',
           },
           {
             id: layerDictator,
@@ -232,6 +216,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             y: 0,
             width: 100,
             scale: 1,
+            fillHeight: true,
           },
         ],
         cues,

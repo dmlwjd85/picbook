@@ -23,6 +23,16 @@ export type LayerState = {
   y: number
   width: number
   scale: number
+  /**
+   * true면 세로를 스테이지 전체에 맞춤(top 0, height 100%).
+   * 삼분할·전체 덮기 등에 사용.
+   */
+  fillHeight?: boolean
+  /**
+   * 있으면 레이어 하단에 짧은 제목 막대(예: 사법부).
+   * fillHeight와 함께 쓰면 이미지 위·제목 막대 아래 배치.
+   */
+  plateCaption?: string | null
 }
 
 export type CueEffect =
@@ -37,6 +47,7 @@ export type CueEffect =
       y?: number
       width?: number
       scale?: number
+      fillHeight?: boolean
     }
 
 /**
