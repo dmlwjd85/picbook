@@ -2,6 +2,10 @@
  * PicBook 독서 팩 포맷.
  * - 문장마다 타이핑 선두 일치 글자 수(charIndex)를 기준으로 화면 큐가 적용된다.
  * - 되감기(백스페이스) 시 해당 글자 수 이하로 다시 계산한다.
+ *
+ * 제작 규칙(내부): 한 줄을 `타이핑할 내용 - 연출 설명`으로 적을 수 있다.
+ * 하이픈 왼쪽만 사용자 타이핑에 쓰이고, 오른쪽은 연출 메모이므로 앱·JSON에는 넣지 않는다.
+ * (`src/lib/typedScriptSegments.ts`의 takeTypingPart / mergeTypedSegments 참고)
  */
 
 export const PACK_FORMAT_VERSION = 1 as const
@@ -47,6 +51,7 @@ export type Cue = {
 
 export type SentenceBlock = {
   id: string
+  /** 사용자에게 보이는 타이핑 목표 문자열(연출 메모 미포함). */
   text: string
   /** 문장 진입 시 초기 레이어 구성 */
   layers: LayerState[]
