@@ -21,6 +21,9 @@ function applyEffect(map: Map<string, LayerState>, eff: CueEffect): void {
     case 'layerOpacity':
       layer.opacity = Math.max(0, Math.min(1, eff.opacity))
       break
+    case 'layerAnchorLabels':
+      layer.anchorLabels = eff.labels ?? null
+      break
     case 'layerTransform': {
       if (eff.x !== undefined) layer.x = eff.x
       if (eff.y !== undefined) layer.y = eff.y

@@ -12,6 +12,8 @@ export function summarizeEffect(e: CueEffect, layerName: (id: string) => string)
       return `「${name}」 그림 바꾸기`
     case 'layerOpacity':
       return `「${name}」 투명도 ${e.opacity}`
+    case 'layerAnchorLabels':
+      return `「${name}」 고정 라벨 ${e.labels?.length ?? 0}개`
     case 'layerTransform':
       return `「${name}」 위치·크기 조정`
     default: {

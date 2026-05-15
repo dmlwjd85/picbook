@@ -24,6 +24,7 @@ function defaultLayer(): LayerState {
     scale: 1,
     fillHeight: false,
     plateCaption: null,
+    anchorLabels: null,
   }
 }
 

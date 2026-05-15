@@ -10,6 +10,13 @@
 
 export const PACK_FORMAT_VERSION = 1 as const
 
+/** 이미지 위에 겹치는 짧은 라벨(스테이지 기준 % 위치) */
+export type LayerAnchorLabel = {
+  text: string
+  leftPct: number
+  topPct: number
+}
+
 /** 스테이지 위 한 겹(이미지 레이어) */
 export type LayerState = {
   id: string
@@ -33,6 +40,8 @@ export type LayerState = {
    * fillHeight와 함께 쓰면 이미지 위·제목 막대 아래 배치.
    */
   plateCaption?: string | null
+  /** 이미지 위 절대 위치 라벨(견제 장면 손목 등). 없으면 표시하지 않음. */
+  anchorLabels?: LayerAnchorLabel[] | null
 }
 
 export type CueEffect =
@@ -40,6 +49,7 @@ export type CueEffect =
   | { kind: 'layerHide'; layerId: string }
   | { kind: 'layerImage'; layerId: string; imageUrl: string }
   | { kind: 'layerOpacity'; layerId: string; opacity: number }
+  | { kind: 'layerAnchorLabels'; layerId: string; labels: LayerAnchorLabel[] | null }
   | {
       kind: 'layerTransform'
       layerId: string

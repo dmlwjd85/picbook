@@ -6,10 +6,33 @@ type Props = {
   overlayCaption?: string | null
 }
 
+function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabels']> }) {
+  const list = labels.filter((b) => b.text.trim())
+  if (list.length === 0) return null
+  return (
+    <>
+      {list.map((a, i) => (
+        <span
+          key={i}
+          className="pointer-events-none absolute z-[1] whitespace-nowrap rounded bg-black/78 px-2 py-0.5 text-[clamp(0.55rem,1.4vw,0.82rem)] font-bold text-white shadow-md ring-1 ring-white/25"
+          style={{
+            left: `${a.leftPct}%`,
+            top: `${a.topPct}%`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          {a.text}
+        </span>
+      ))}
+    </>
+  )
+}
+
 /**
  * 편집자·사용자 공통: 레이어 스택을 스테이지 위에 겹쳐 그린다.
  * overlayCaption이 있으면 하단에 읽기 쉬운 말풍선 스타일로 띄운다.
  * fillHeight 레이어는 세로를 꽉 채우고, plateCaption이 있으면 레이어 안 하단에 제목 막대를 둔다.
+ * anchorLabels가 있으면 이미지 위에 고정 라벨을 겹친다.
  */
 export function VisualStage({ layers, overlayCaption }: Props) {
   const hasImage = layers.some((l) => l.visible && l.imageUrl)
@@ -22,6 +45,7 @@ export function VisualStage({ layers, overlayCaption }: Props) {
         const fill = l.fillHeight === true
         const plate = l.plateCaption?.trim()
         const hasPlate = Boolean(plate)
+        const anchors = l.anchorLabels
 
         return (
           <div
@@ -44,15 +68,22 @@ export function VisualStage({ layers, overlayCaption }: Props) {
                     alt={l.label}
                     className="absolute inset-0 h-full w-full object-cover"
                   />
+                  {anchors ? <AnchorOverlay labels={anchors} /> : null}
                 </div>
                 <div className="shrink-0 border-t border-white/10 bg-black/82 px-1 py-2 text-center text-[clamp(0.7rem,1.8vw,1rem)] font-bold tracking-tight text-white">
                   {plate}
                 </div>
               </div>
             ) : fill ? (
-              <img src={l.imageUrl} alt={l.label} className="h-full w-full object-cover" />
+              <div className="relative h-full w-full">
+                <img src={l.imageUrl} alt={l.label} className="h-full w-full object-cover" />
+                {anchors ? <AnchorOverlay labels={anchors} /> : null}
+              </div>
             ) : (
-              <img src={l.imageUrl} alt={l.label} className="block h-auto w-full object-cover" />
+              <div className="relative w-full">
+                <img src={l.imageUrl} alt={l.label} className="block h-auto w-full object-cover" />
+                {anchors ? <AnchorOverlay labels={anchors} /> : null}
+              </div>
             )}
           </div>
         )
