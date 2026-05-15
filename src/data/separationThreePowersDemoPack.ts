@@ -1,16 +1,18 @@
 import { createId } from '../lib/ids'
-import { mergeTypedSegments } from '../lib/typedScriptSegments'
+import { cueAfterFirstChar, mergeTypedSegments } from '../lib/typedScriptSegments'
 import type { Cue, LayerAnchorLabel, ReadingPack } from '../types/pack'
+
+/** 낱막 첫 글자를 친 뒤 큐 적용(띄어쓰기만 친 순간에는 이전 연출 유지) */
+const W = cueAfterFirstChar
 
 /**
  * 제작용(하이픈 오른쪽은 연출 메모 — 사용자에게 노출하지 않음).
- * 화면 전환 charIndex는 띄어쓰기 뒤 낱막이 시작할 때(첫 글자)에 맞춘다.
  */
 const SCRIPT_PARTS = [
   '삼권분립은 - 장면설명은 삭제(사법 ~나타나요. 부분)',
   '한 국가기관이 나라의 중요한 일을 - 타이핑 되는동안 조금씩 맨 왼쪽의 사법부가 나머지 화면을 찌그러뜨리며 꽉 채움',
-  '마음대로 처리할 수 없게 - 그림자 느낌의 법복을 입은 독재자가 나타나며 세 건물에 연결된 꼭두각시 줄을 잡는 장면으로 수정',
-  '서로를 견제하고 - 밧줄이 있던 원래 이미지에 텍스트는 각각의 손목에만 사법부, 입법부, 행정부 표기, 화면이 왼쪽 오른쪽 위로 한번씩 치우치는 효과',
+  '마음대로 처리할 수 없게 - 얼굴 부분으로 점점 클로즈업하다가 빨간 X 표시 후 다음 장면',
+  '서로를 견제하고 - 중앙 시작, 이후 왼쪽·오른쪽·위로 더 크게 흔들렸다가 다음으로',
   '균형을 이뤄내기 위한 것이다. - 점점 빛을 중심으로 클로즈 업',
 ] as const
 
@@ -18,45 +20,28 @@ const TEXT = mergeTypedSegments(SCRIPT_PARTS)
 
 const base = import.meta.env.BASE_URL
 
-/** 기존 건물 클립 일러스트 (삼분할·사법 확장 구간) */
 const SLIDE_URLS = [1, 2, 3, 4, 5, 6].map((n) => `${base}demo/samgwon-${n}.png`)
-
-/** 법복·그림자 톤 독재·꼭두각시 장면 */
 const DICTATOR_ROBE_URL = `${base}demo/samgwon-dictator-robe.png`
-
-/** 견제 장면: 밧줄 일러스트(원본 samgwon-5) */
 const CHECK_ROPE_URL = SLIDE_URLS[4]!
-
-/** 균형·평화 톤, 이미지 내 플로팅 텍스트 없음 */
 const BALANCE_NOTEXT_URL = `${base}demo/samgwon-balance-notext.png`
 
-/** samgwon-5 위 손목 라벨(좌·상·우 손) */
 const CHECK_ANCHORS: LayerAnchorLabel[] = [
   { text: '사법부', leftPct: 20, topPct: 56 },
   { text: '입법부', leftPct: 50, topPct: 26 },
   { text: '행정부', leftPct: 80, topPct: 56 },
 ]
 
-/** 「지금 보이는 그림」 단계(1~5) — 낱막 시작 시점 */
-export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, 6, 25, 39, 48] as const
+/** 주요 장면 전환(낱막 첫 글자 기준) */
+export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, W(6), W(25), W(39), W(48)] as const
 
 const W3 = 33.34
 
-/** 사법 폭이 jw일 때 입법·행정이 나머지를 반씩 나눔 */
 function splitRemain(jw: number): { lw: number; ex: number } {
   const rem = 100 - jw
   const half = rem / 2
   return { lw: half, ex: jw + half }
 }
 
-/**
- * 삼권분립 데모 팩.
- * - 0·2·4: 「삼권분립은」 타이핑 중 사법·입법·행정 삼분할(한 낱막 안).
- * - 6·8·14·18·22: 「한…일을」 각 낱막 시작마다 사법 확대, 24에서 사법만 꽉 채움.
- * - 25: 독재자 장면.
- * - 39·43·47: 견제 장면 + 좌·우·위로 한 번씩 치우침.
- * - 48·52·57·60: 균형 장면, 빛 중심으로 점점 클로즈업.
- */
 export function createSeparationThreePowersDemoPack(): ReadingPack {
   const sentenceId = createId()
   const layerStory = createId()
@@ -70,11 +55,11 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
   const urlExec = SLIDE_URLS[2]!
 
   const squeezeSteps: { charIndex: number; jw: number }[] = [
-    { charIndex: 6, jw: 41 },
-    { charIndex: 8, jw: 52 },
-    { charIndex: 14, jw: 62 },
-    { charIndex: 18, jw: 71 },
-    { charIndex: 22, jw: 88 },
+    { charIndex: W(6), jw: 41 },
+    { charIndex: W(8), jw: 52 },
+    { charIndex: W(14), jw: 62 },
+    { charIndex: W(18), jw: 71 },
+    { charIndex: W(22), jw: 88 },
   ]
 
   const squeezeCues: Cue[] = squeezeSteps.map(({ charIndex, jw }) => {
@@ -139,35 +124,57 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     ...squeezeCues,
     {
       id: createId(),
-      charIndex: 24,
+      charIndex: W(25),
       effects: [
         { kind: 'layerHide', layerId: layerLegis },
         { kind: 'layerHide', layerId: layerExec },
+        { kind: 'layerHide', layerId: layerJustice },
+        { kind: 'layerShow', layerId: layerDictator },
+        { kind: 'layerImage', layerId: layerDictator, imageUrl: DICTATOR_ROBE_URL },
         {
           kind: 'layerTransform',
-          layerId: layerJustice,
-          x: 0,
-          y: 0,
-          width: 100,
-          scale: 0.88,
+          layerId: layerDictator,
+          scale: 1,
+          panX: 0,
+          panY: 0,
           fillHeight: true,
+        },
+        { kind: 'layerStampOverlay', layerId: layerDictator, stamp: null },
+      ],
+    },
+    {
+      id: createId(),
+      charIndex: W(30),
+      effects: [
+        {
+          kind: 'layerTransform',
+          layerId: layerDictator,
+          scale: 1.1,
+          panY: -4,
         },
       ],
     },
     {
       id: createId(),
-      charIndex: 25,
-      effects: [
-        { kind: 'layerHide', layerId: layerJustice },
-        { kind: 'layerShow', layerId: layerDictator },
-        { kind: 'layerImage', layerId: layerDictator, imageUrl: DICTATOR_ROBE_URL },
-      ],
+      charIndex: W(34),
+      effects: [{ kind: 'layerTransform', layerId: layerDictator, scale: 1.22, panY: -7 }],
     },
     {
       id: createId(),
-      charIndex: 39,
+      charIndex: W(36),
+      effects: [{ kind: 'layerTransform', layerId: layerDictator, scale: 1.34, panY: -10 }],
+    },
+    {
+      id: createId(),
+      charIndex: W(39),
+      effects: [{ kind: 'layerStampOverlay', layerId: layerDictator, stamp: 'red-x' }],
+    },
+    {
+      id: createId(),
+      charIndex: W(39) + 1,
       effects: [
         { kind: 'layerHide', layerId: layerDictator },
+        { kind: 'layerStampOverlay', layerId: layerDictator, stamp: null },
         { kind: 'layerShow', layerId: layerStory },
         { kind: 'layerImage', layerId: layerStory, imageUrl: CHECK_ROPE_URL },
         {
@@ -178,7 +185,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
           width: 100,
           scale: 1,
           fillHeight: true,
-          panX: -5,
+          panX: 0,
           panY: 0,
         },
         { kind: 'layerAnchorLabels', layerId: layerStory, labels: CHECK_ANCHORS },
@@ -186,31 +193,22 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     },
     {
       id: createId(),
-      charIndex: 43,
-      effects: [
-        {
-          kind: 'layerTransform',
-          layerId: layerStory,
-          panX: 5,
-          panY: 0,
-        },
-      ],
+      charIndex: W(43),
+      effects: [{ kind: 'layerTransform', layerId: layerStory, panX: -16, panY: 2 }],
     },
     {
       id: createId(),
-      charIndex: 47,
-      effects: [
-        {
-          kind: 'layerTransform',
-          layerId: layerStory,
-          panX: 0,
-          panY: -4,
-        },
-      ],
+      charIndex: W(43) + 2,
+      effects: [{ kind: 'layerTransform', layerId: layerStory, panX: 16, panY: 2 }],
     },
     {
       id: createId(),
-      charIndex: 48,
+      charIndex: W(43) + 4,
+      effects: [{ kind: 'layerTransform', layerId: layerStory, panX: 0, panY: -14 }],
+    },
+    {
+      id: createId(),
+      charIndex: W(48),
       effects: [
         { kind: 'layerImage', layerId: layerStory, imageUrl: BALANCE_NOTEXT_URL },
         { kind: 'layerAnchorLabels', layerId: layerStory, labels: null },
@@ -229,17 +227,17 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
     },
     {
       id: createId(),
-      charIndex: 52,
+      charIndex: W(52),
       effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.14 }],
     },
     {
       id: createId(),
-      charIndex: 57,
+      charIndex: W(57),
       effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.22 }],
     },
     {
       id: createId(),
-      charIndex: 60,
+      charIndex: W(60),
       effects: [{ kind: 'layerTransform', layerId: layerStory, scale: 1.32 }],
     },
   ]
@@ -272,6 +270,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             panY: 0,
             fillHeight: true,
             anchorLabels: null,
+            stampOverlay: null,
           },
           {
             id: layerJustice,
@@ -335,6 +334,7 @@ export function createSeparationThreePowersDemoPack(): ReadingPack {
             panX: 0,
             panY: 0,
             fillHeight: true,
+            stampOverlay: null,
           },
         ],
         cues,

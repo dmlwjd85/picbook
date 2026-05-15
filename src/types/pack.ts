@@ -45,6 +45,8 @@ export type LayerState = {
   plateCaption?: string | null
   /** 이미지 위 절대 위치 라벨(견제 장면 손목 등). 없으면 표시하지 않음. */
   anchorLabels?: LayerAnchorLabel[] | null
+  /** 이미지 위 스탬프(예: 빨간 X). */
+  stampOverlay?: 'red-x' | null
 }
 
 export type CueEffect =
@@ -53,6 +55,7 @@ export type CueEffect =
   | { kind: 'layerImage'; layerId: string; imageUrl: string }
   | { kind: 'layerOpacity'; layerId: string; opacity: number }
   | { kind: 'layerAnchorLabels'; layerId: string; labels: LayerAnchorLabel[] | null }
+  | { kind: 'layerStampOverlay'; layerId: string; stamp: 'red-x' | null }
   | {
       kind: 'layerTransform'
       layerId: string

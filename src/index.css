@@ -12,3 +12,14 @@ body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
 }
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

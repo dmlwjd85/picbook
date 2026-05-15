@@ -27,6 +27,7 @@ function defaultLayer(): LayerState {
     fillHeight: false,
     plateCaption: null,
     anchorLabels: null,
+    stampOverlay: null,
   }
 }
 

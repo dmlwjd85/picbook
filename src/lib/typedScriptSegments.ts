@@ -15,6 +15,14 @@ export function mergeTypedSegments(segments: readonly string[]): string {
   return segments.map(takeTypingPart).filter(Boolean).join(' ')
 }
 
+/**
+ * 낱막이 시작하는 인덱스(띄어쓰기 직후)가 아니라, 그 낱막의 첫 글자를 친 뒤에 큐가 적용되도록 한다.
+ * (띄어쓰기만 친 순간에는 이전 연출 유지)
+ */
+export function cueAfterFirstChar(wordStartIndex: number): number {
+  return wordStartIndex + 1
+}
+
 /** 띄어쓰기 뒤 각 낱막이 시작하는 charIndex 목록 */
 export function wordStartIndices(text: string): number[] {
   const out: number[] = []

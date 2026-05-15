@@ -6,6 +6,23 @@ type Props = {
   overlayCaption?: string | null
 }
 
+function RedXStamp() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-black/30"
+      style={{ animation: 'stamp-in 0.4s ease-out' }}
+    >
+      <span
+        className="select-none font-black leading-none text-red-600 drop-shadow-[0_0_24px_rgba(220,38,38,0.85)]"
+        style={{ fontSize: 'clamp(4rem, 22vw, 9rem)' }}
+        aria-hidden
+      >
+        ✕
+      </span>
+    </div>
+  )
+}
+
 function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabels']> }) {
   const list = labels.filter((b) => b.text.trim())
   if (list.length === 0) return null
@@ -48,7 +65,13 @@ export function VisualStage({ layers, overlayCaption }: Props) {
         const anchors = l.anchorLabels
         const panX = l.panX ?? 0
         const panY = l.panY ?? 0
-        const transformOrigin = fill && hasPlate ? 'left center' : 'center center'
+        const transformOrigin =
+          l.stampOverlay === 'red-x' || (fill && !hasPlate && l.scale > 1.05)
+            ? 'center 22%'
+            : fill && hasPlate
+              ? 'left center'
+              : 'center center'
+        const faceZoom = fill && !hasPlate && (l.scale ?? 1) > 1.02
 
         return (
           <div
@@ -79,8 +102,14 @@ export function VisualStage({ layers, overlayCaption }: Props) {
               </div>
             ) : fill ? (
               <div className="relative h-full w-full">
-                <img src={l.imageUrl} alt={l.label} className="h-full w-full object-cover" />
+                <img
+                  src={l.imageUrl}
+                  alt={l.label}
+                  className="h-full w-full object-cover"
+                  style={faceZoom ? { objectPosition: 'center 18%' } : undefined}
+                />
                 {anchors ? <AnchorOverlay labels={anchors} /> : null}
+                {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
               </div>
             ) : (
               <div className="relative w-full">

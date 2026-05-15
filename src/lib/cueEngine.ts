@@ -24,6 +24,9 @@ function applyEffect(map: Map<string, LayerState>, eff: CueEffect): void {
     case 'layerAnchorLabels':
       layer.anchorLabels = eff.labels ?? null
       break
+    case 'layerStampOverlay':
+      layer.stampOverlay = eff.stamp
+      break
     case 'layerTransform': {
       if (eff.x !== undefined) layer.x = eff.x
       if (eff.y !== undefined) layer.y = eff.y
