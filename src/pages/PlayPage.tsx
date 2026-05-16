@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { VisualStage } from '../components/VisualStage'
 import { getLibraryBook } from '../data/libraryBooks'
-import { isSamePackContent, loadCatalogPack } from '../lib/loadCatalogPack'
+import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
@@ -62,8 +62,6 @@ export default function PlayPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const navigate = useNavigate()
   const profile = useUserProfileStore((s) => s.profile)
-  const sessionPack = usePlaySessionStore((s) => s.pack)
-  const sessionBookId = usePlaySessionStore((s) => s.bookId)
   const setSession = usePlaySessionStore((s) => s.setSession)
   const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
   const keyboardInset = useKeyboardInset()
@@ -71,6 +69,8 @@ export default function PlayPage() {
   const [pack, setPack] = useState<ReadingPack | null>(null)
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [typed, setTyped] = useState('')
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const loadedRef = useRef<string | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.add('play-active')
@@ -87,26 +87,39 @@ export default function PlayPage() {
       return
     }
     const book = getLibraryBook(bookId)
-    if (book && !book.comingSoon) {
+    if (!book || book.comingSoon) {
+      navigate('/bookshelf', { replace: true })
+      return
+    }
+
+    const loadKey = `${book.id}@${book.contentVersion}`
+    if (loadedRef.current === loadKey) return
+
+    try {
+      setLoadError(null)
       const loaded = loadCatalogPack(book)
-      if (sessionPack && sessionBookId === bookId && isSamePackContent(sessionPack, loaded)) {
-        setPack(sessionPack)
-        return
-      }
+      loadedRef.current = loadKey
       setSession(book.id, loaded)
       setPack(loaded)
       setSentenceIndex(0)
       setTyped('')
-      return
+    } catch (e) {
+      loadedRef.current = null
+      setPack(null)
+      setLoadError(e instanceof Error ? e.message : '책을 불러오지 못했습니다.')
     }
-    navigate('/bookshelf', { replace: true })
-  }, [bookId, sessionPack, sessionBookId, setSession, navigate, isUnlocked])
+  }, [bookId, navigate, setSession, isUnlocked])
 
-  const sentence = pack?.sentences[sentenceIndex]
+  const safeSentenceIndex =
+    pack && pack.sentences.length > 0
+      ? Math.min(Math.max(0, sentenceIndex), pack.sentences.length - 1)
+      : 0
+
+  const sentence = pack?.sentences[safeSentenceIndex]
 
   useEffect(() => {
     setTyped('')
-  }, [sentenceIndex, sentence?.id])
+  }, [safeSentenceIndex, sentence?.id])
 
   const layers = useMemo(() => {
     if (!sentence) return []
@@ -115,12 +128,23 @@ export default function PlayPage() {
 
   const target = sentence?.text ?? ''
   const complete = target.length > 0 && typed === target
-  const lastSentence = pack ? sentenceIndex >= pack.sentences.length - 1 : true
+  const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-stone-100 px-6 text-center">
+        <p className="text-sm font-medium text-red-600">{loadError}</p>
+        <Link to="/bookshelf" className="rounded-xl bg-amber-800 px-4 py-2 text-sm font-bold text-white">
+          책장으로
+        </Link>
+      </div>
+    )
+  }
 
   if (!pack || !sentence) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-stone-100 text-stone-600">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-stone-100 text-stone-600">
         책을 불러오는 중…
       </div>
     )
@@ -140,7 +164,7 @@ export default function PlayPage() {
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold text-stone-900 sm:text-lg">{pack.title}</h1>
               <p className="text-[11px] text-stone-500 sm:text-xs">
-                {profile?.name} · {sentenceIndex + 1}/{pack.sentences.length}
+                {profile?.name} · {safeSentenceIndex + 1}/{pack.sentences.length}
                 <span className="ml-1.5 font-mono text-stone-600 lg:hidden">{progressPct}%</span>
               </p>
             </div>
@@ -189,7 +213,9 @@ export default function PlayPage() {
               complete={complete}
               lastSentence={lastSentence}
               progressPct={progressPct}
-              onNext={() => setSentenceIndex((i) => i + 1)}
+              onNext={() =>
+                setSentenceIndex((i) => Math.min(i + 1, (pack?.sentences.length ?? 1) - 1))
+              }
             />
           </div>
 
@@ -207,7 +233,9 @@ export default function PlayPage() {
                 complete={complete}
                 lastSentence={lastSentence}
                 progressPct={progressPct}
-                onNext={() => setSentenceIndex((i) => i + 1)}
+                onNext={() =>
+                  setSentenceIndex((i) => Math.min(i + 1, (pack?.sentences.length ?? 1) - 1))
+                }
               />
             </div>
           </div>

@@ -1,4 +1,6 @@
 import type { ReadingPack } from '../types/pack'
+import { getCachedPack } from '../lib/packCache'
+import { getPackContentVersion } from './packContentVersions'
 import { createSeparationIntroSentence } from './separationIntroSentence'
 import { createSeparationMainSentence } from './separationMainSentence'
 import { createSeparationOutroSentence } from './separationOutroSentence'
@@ -6,19 +8,26 @@ import { W } from './separationPackShared'
 
 export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, W(6), W(25), W(39), W(48)] as const
 
-export function createSeparationThreePowersDemoPack(): ReadingPack {
+const BOOK_ID = 'demo-separation-three-powers'
+
+function buildSeparationThreePowersDemoPack(): ReadingPack {
   return {
     formatVersion: 1,
-    id: 'demo-separation-three-powers',
+    id: BOOK_ID,
     title: '삼권분립',
     description:
       '권력분립의 헌법적 의미부터 삼권 견제·균형, 국민의 자유와 권리 보장까지 타이핑에 맞춰 이어지는 PicBook.',
     author: 'PicBook',
-    updatedAt: new Date().toISOString(),
+    updatedAt: '2026-05-17T00:00:00.000Z',
     sentences: [
       createSeparationIntroSentence(),
       createSeparationMainSentence(),
       createSeparationOutroSentence(),
     ],
   }
+}
+
+export function createSeparationThreePowersDemoPack(): ReadingPack {
+  const version = getPackContentVersion(BOOK_ID)
+  return getCachedPack(`${BOOK_ID}@${version}`, buildSeparationThreePowersDemoPack)
 }

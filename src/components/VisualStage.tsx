@@ -1,5 +1,10 @@
 import type { LayerState } from '../types/pack'
 
+const IMG_PROPS = {
+  decoding: 'async' as const,
+  loading: 'lazy' as const,
+}
+
 type Props = {
   layers: LayerState[]
   /** 그림 위·아래에 겹쳐 보일 짧은 한글 (선택) */
@@ -101,6 +106,7 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
                     src={l.imageUrl}
                     alt={l.label}
                     className="absolute inset-0 h-full w-full object-cover"
+                    {...IMG_PROPS}
                   />
                   {anchors ? <AnchorOverlay labels={anchors} /> : null}
                 </div>
@@ -115,13 +121,19 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
                   alt={l.label}
                   className="h-full w-full object-cover"
                   style={faceZoom ? { objectPosition: 'center 18%' } : undefined}
+                  {...IMG_PROPS}
                 />
                 {anchors ? <AnchorOverlay labels={anchors} /> : null}
                 {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
               </div>
             ) : (
               <div className="relative w-full">
-                <img src={l.imageUrl} alt={l.label} className="block h-auto w-full object-cover" />
+                <img
+                  src={l.imageUrl}
+                  alt={l.label}
+                  className="block h-auto w-full object-cover"
+                  {...IMG_PROPS}
+                />
                 {anchors ? <AnchorOverlay labels={anchors} /> : null}
               </div>
             )}

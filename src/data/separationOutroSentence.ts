@@ -28,6 +28,11 @@ export function createSeparationOutroSentence(): SentenceBlock {
   const cues: Cue[] = [
     {
       id: createId(),
+      charIndex: 0,
+      effects: showScene(POWERS_OUTRO_IMAGES.citizensStatic, 0.92),
+    },
+    {
+      id: createId(),
       charIndex: idxAfter(OUTRO_TEXT, '국민'),
       effects: showScene(POWERS_OUTRO_IMAGES.citizensStatic),
     },
