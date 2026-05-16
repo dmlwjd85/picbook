@@ -1,9 +1,11 @@
-import { startTransition, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
+import { SentenceNavBar } from '../components/SentenceNavBar'
 import { VisualStage } from '../components/VisualStage'
+import { useSwipeSentences } from '../hooks/useSwipeSentences'
 import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
@@ -145,6 +147,39 @@ export default function PlayPage() {
   const complete = target.length > 0 && typed === target
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0
+  const sentenceCount = pack?.sentences.length ?? 0
+
+  const goToSentence = useCallback(
+    (index: number) => {
+      if (sentenceCount === 0) return
+      setSentenceIndex(Math.min(Math.max(0, index), sentenceCount - 1))
+    },
+    [sentenceCount],
+  )
+
+  const goPrevSentence = useCallback(() => {
+    setSentenceIndex((i) => Math.max(0, i - 1))
+  }, [])
+
+  const goNextSentence = useCallback(() => {
+    setSentenceIndex((i) => Math.min(i + 1, Math.max(0, sentenceCount - 1)))
+  }, [sentenceCount])
+
+  const swipeHandlers = useSwipeSentences({
+    onPrev: goPrevSentence,
+    onNext: goNextSentence,
+  })
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat) return
+      if (!complete || lastSentence) return
+      e.preventDefault()
+      goNextSentence()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [complete, lastSentence, goNextSentence])
 
   if (loadError) {
     return (
@@ -170,7 +205,10 @@ export default function PlayPage() {
   }
 
   return (
-    <div className="play-shell flex h-[100dvh] flex-col overflow-hidden bg-stone-100 lg:min-h-full lg:h-auto lg:overflow-visible">
+    <div
+      className="play-shell flex h-[100dvh] flex-col overflow-hidden bg-stone-100 lg:min-h-full lg:h-auto lg:overflow-visible"
+      {...swipeHandlers}
+    >
       <header className="z-20 shrink-0 border-b border-stone-200 bg-white px-3 py-2 shadow-sm sm:px-5 sm:py-2.5">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -198,6 +236,23 @@ export default function PlayPage() {
           </div>
         </div>
       </header>
+
+      <div className="z-20 shrink-0 border-b border-stone-200 bg-stone-50 px-3 py-2 sm:px-5">
+        <div className="mx-auto max-w-6xl">
+          <SentenceNavBar
+            total={pack.sentences.length}
+            current={safeSentenceIndex}
+            onSelect={goToSentence}
+            onPrev={goPrevSentence}
+            onNext={goNextSentence}
+            canPrev={safeSentenceIndex > 0}
+            canNext={safeSentenceIndex < pack.sentences.length - 1}
+          />
+          <p className="mt-1.5 text-center text-[10px] text-stone-500 lg:hidden">
+            좌우 스와이프로 문장을 넘길 수 있어요 · 완료 후 Enter로 다음 문장
+          </p>
+        </div>
+      </div>
 
       {/* 모바일: 연출 고정 */}
       <div
@@ -232,9 +287,7 @@ export default function PlayPage() {
               complete={complete}
               lastSentence={lastSentence}
               progressPct={progressPct}
-              onNext={() =>
-                setSentenceIndex((i) => Math.min(i + 1, (pack?.sentences.length ?? 1) - 1))
-              }
+              onNext={goNextSentence}
             />
           </div>
 
@@ -252,9 +305,7 @@ export default function PlayPage() {
                 complete={complete}
                 lastSentence={lastSentence}
                 progressPct={progressPct}
-                onNext={() =>
-                  setSentenceIndex((i) => Math.min(i + 1, (pack?.sentences.length ?? 1) - 1))
-                }
+                onNext={goNextSentence}
               />
             </div>
           </div>

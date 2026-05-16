@@ -2,14 +2,12 @@ import type { LayerState } from '../types/pack'
 
 const IMG_PROPS = {
   decoding: 'async' as const,
-  loading: 'lazy' as const,
+  loading: 'eager' as const,
 }
 
 type Props = {
   layers: LayerState[]
-  /** 그림 위·아래에 겹쳐 보일 짧은 한글 (선택) */
   overlayCaption?: string | null
-  /** true면 부모 높이에 맞춤(모바일 고정 연출창) */
   embedded?: boolean
 }
 
@@ -24,7 +22,7 @@ function RedXStamp() {
         style={{ fontSize: 'clamp(4rem, 22vw, 9rem)' }}
         aria-hidden
       >
-        ✕
+        ?
       </span>
     </div>
   )
@@ -52,14 +50,10 @@ function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabel
   )
 }
 
-/**
- * 편집자·사용자 공통: 레이어 스택을 스테이지 위에 겹쳐 그린다.
- * overlayCaption이 있으면 하단에 읽기 쉬운 말풍선 스타일로 띄운다.
- * fillHeight 레이어는 세로를 꽉 채우고, plateCaption이 있으면 레이어 안 하단에 제목 막대를 둔다.
- * anchorLabels가 있으면 이미지 위에 고정 라벨을 겹친다.
- */
+/** ???????? ???. ?? ???????? ??????? pan???? ????? ?? ??. */
 export function VisualStage({ layers, overlayCaption, embedded = false }: Props) {
-  const hasImage = layers.some((l) => l.visible && l.imageUrl)
+  const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
+  const hasImage = visibleLayers.length > 0
 
   return (
     <div
@@ -70,14 +64,14 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
       }
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
-      {layers.map((l) => {
-        if (!l.visible || !l.imageUrl) return null
+      {visibleLayers.map((l) => {
         const fill = l.fillHeight === true
         const plate = l.plateCaption?.trim()
         const hasPlate = Boolean(plate)
         const anchors = l.anchorLabels
         const panX = l.panX ?? 0
         const panY = l.panY ?? 0
+        const imageUrl = l.imageUrl!
         const transformOrigin =
           l.stampOverlay === 'red-x' || (fill && !hasPlate && l.scale > 1.05)
             ? 'center 22%'
@@ -85,73 +79,84 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
               ? 'left center'
               : 'center center'
         const faceZoom = fill && !hasPlate && (l.scale ?? 1) > 1.02
+        const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
 
         return (
           <div
             key={l.id}
-            className="absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 transition-[transform,opacity,left,width,top] duration-500 ease-out will-change-transform max-lg:duration-[420ms] lg:duration-700"
+            className={`absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 will-change-transform ${layoutMotion}`}
             style={{
               left: `${l.x}%`,
               width: `${l.width}%`,
+              zIndex: l.zIndex,
               ...(fill ? { top: 0, height: '100%' } : { top: `${l.y}%` }),
               opacity: l.opacity,
-              transform: `translate(${panX}%, ${panY}%) scale(${l.scale})`,
-              transformOrigin,
             }}
           >
-            {hasPlate ? (
-              <div className="flex h-full min-h-0 flex-col">
-                <div className="relative min-h-0 flex-1">
-                  <img
-                    src={l.imageUrl}
-                    alt={l.label}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    {...IMG_PROPS}
-                  />
-                  {anchors ? <AnchorOverlay labels={anchors} /> : null}
-                </div>
-                <div className="shrink-0 border-t border-white/10 bg-black/82 px-1 py-2 text-center text-[clamp(0.7rem,1.8vw,1rem)] font-bold tracking-tight text-white">
-                  {plate}
-                </div>
+            <div
+              className="h-full w-full transition-transform duration-[420ms] ease-out"
+              style={{ transform: `scale(${l.scale})`, transformOrigin }}
+            >
+              <div className="h-full w-full" style={{ transform: `translate(${panX}%, ${panY}%)` }}>
+                {hasPlate ? (
+                  <div className="flex h-full min-h-0 flex-col">
+                    <div className="relative min-h-0 flex-1">
+                      <img
+                        key={imageUrl}
+                        src={imageUrl}
+                        alt={l.label}
+                        className="layer-fade-in absolute inset-0 h-full w-full object-cover"
+                        {...IMG_PROPS}
+                      />
+                      {anchors ? <AnchorOverlay labels={anchors} /> : null}
+                    </div>
+                    <div className="shrink-0 border-t border-white/10 bg-black/82 px-1 py-2 text-center text-[clamp(0.7rem,1.8vw,1rem)] font-bold tracking-tight text-white">
+                      {plate}
+                    </div>
+                  </div>
+                ) : fill ? (
+                  <div className="relative h-full w-full">
+                    <img
+                      key={imageUrl}
+                      src={imageUrl}
+                      alt={l.label}
+                      className="layer-fade-in h-full w-full object-cover"
+                      style={faceZoom ? { objectPosition: 'center 18%' } : undefined}
+                      {...IMG_PROPS}
+                    />
+                    {anchors ? <AnchorOverlay labels={anchors} /> : null}
+                    {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
+                  </div>
+                ) : (
+                  <div className="relative w-full">
+                    <img
+                      key={imageUrl}
+                      src={imageUrl}
+                      alt={l.label}
+                      className="layer-fade-in block h-auto w-full object-cover"
+                      {...IMG_PROPS}
+                    />
+                    {anchors ? <AnchorOverlay labels={anchors} /> : null}
+                  </div>
+                )}
               </div>
-            ) : fill ? (
-              <div className="relative h-full w-full">
-                <img
-                  src={l.imageUrl}
-                  alt={l.label}
-                  className="h-full w-full object-cover"
-                  style={faceZoom ? { objectPosition: 'center 18%' } : undefined}
-                  {...IMG_PROPS}
-                />
-                {anchors ? <AnchorOverlay labels={anchors} /> : null}
-                {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
-              </div>
-            ) : (
-              <div className="relative w-full">
-                <img
-                  src={l.imageUrl}
-                  alt={l.label}
-                  className="block h-auto w-full object-cover"
-                  {...IMG_PROPS}
-                />
-                {anchors ? <AnchorOverlay labels={anchors} /> : null}
-              </div>
-            )}
+            </div>
           </div>
         )
       })}
       {!hasImage ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-500">
-          <span>아직 화면에 올라온 그림이 없어요.</span>
-          <span className="text-xs text-slate-600">아래에서 「몇 글째」마다 그림을 보이게 설정해 보세요.</span>
+          <span>??? ???????????????????</span>
+          <span className="text-xs text-slate-600">?????? ??? ???????????????????????</span>
         </div>
       ) : null}
 
       {overlayCaption ? (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-3 pb-[5%] pt-16"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[5%] pt-16"
           style={{
-            background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, transparent 100%)',
+            background:
+              'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, transparent 100%)',
           }}
         >
           <p

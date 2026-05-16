@@ -35,7 +35,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     subtitle: '타자 연동 연출',
     blurb: '권력분립·삼권 견제·국민의 자유와 권리까지, 타이핑에 맞춰 이어지는 역사 PicBook(3문장).',
     author: 'PicBook',
-    coverImage: `${base}demo/samgwon-dictator.png`,
+    coverImage: `${base}demo/powers/powers-cover.png`,
     magazineTone: 'from-amber-600 via-orange-500 to-rose-600',
     productKey: normalizeProductKey('PICBOOK-3POWERS-2026'),
     productKeyDisplay: 'PICBOOK-3POWERS-2026',
