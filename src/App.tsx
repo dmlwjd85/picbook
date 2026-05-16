@@ -7,9 +7,13 @@ import EditorPage from './pages/EditorPage'
 import HomePage from './pages/HomePage'
 import MasterLoginPage from './pages/MasterLoginPage'
 import MasterSetupPage from './pages/MasterSetupPage'
+import { PlayErrorBoundary } from './components/PlayErrorBoundary'
 import PlayPage from './pages/PlayPage'
 import LoginPage from './pages/LoginPage'
 import SetupPage from './pages/SetupPage'
+import { prewarmCatalogPacks } from './lib/prewarmPacks'
+
+prewarmCatalogPacks()
 
 export default function App() {
   return (
@@ -31,7 +35,9 @@ export default function App() {
           path="/play/:bookId"
           element={
             <RequireProfile>
-              <PlayPage />
+              <PlayErrorBoundary>
+                <PlayPage />
+              </PlayErrorBoundary>
             </RequireProfile>
           }
         />

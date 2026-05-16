@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingPanel } from '../components/TypingPanel'
@@ -6,11 +6,10 @@ import { UserLogoutButton } from '../components/UserLogoutButton'
 import { VisualStage } from '../components/VisualStage'
 import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
-import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { usePlaySessionStore } from '../state/playSessionStore'
-import { useUserProfileStore } from '../state/userProfileStore'
+import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
 
 function PlayActions({
@@ -61,16 +60,18 @@ function PlayActions({
 export default function PlayPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const navigate = useNavigate()
-  const profile = useUserProfileStore((s) => s.profile)
+  const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
+  const isBookUnlocked = useUserAccountStore((s) =>
+    Boolean(bookId && s.getActiveAccount()?.unlockedIds.includes(bookId)),
+  )
   const setSession = usePlaySessionStore((s) => s.setSession)
-  const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
   const keyboardInset = useKeyboardInset()
 
   const [pack, setPack] = useState<ReadingPack | null>(null)
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [typed, setTyped] = useState('')
   const [loadError, setLoadError] = useState<string | null>(null)
-  const loadedRef = useRef<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     document.documentElement.classList.add('play-active')
@@ -78,11 +79,13 @@ export default function PlayPage() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
     if (!bookId) {
       navigate('/bookshelf', { replace: true })
       return
     }
-    if (!isUnlocked(bookId)) {
+    if (!isBookUnlocked) {
       navigate('/bookshelf?tab=store', { replace: true })
       return
     }
@@ -92,23 +95,35 @@ export default function PlayPage() {
       return
     }
 
-    const loadKey = `${book.id}@${book.contentVersion}`
-    if (loadedRef.current === loadKey) return
+    setLoading(true)
+    setLoadError(null)
+    setPack(null)
 
-    try {
-      setLoadError(null)
-      const loaded = loadCatalogPack(book)
-      loadedRef.current = loadKey
-      setSession(book.id, loaded)
-      setPack(loaded)
-      setSentenceIndex(0)
-      setTyped('')
-    } catch (e) {
-      loadedRef.current = null
-      setPack(null)
-      setLoadError(e instanceof Error ? e.message : '책을 불러오지 못했습니다.')
+    const load = () => {
+      if (cancelled) return
+      try {
+        const loaded = loadCatalogPack(book)
+        if (cancelled) return
+        setSession(book.id, loaded)
+        startTransition(() => {
+          setPack(loaded)
+          setSentenceIndex(0)
+          setTyped('')
+          setLoading(false)
+        })
+      } catch (e) {
+        if (cancelled) return
+        setLoadError(e instanceof Error ? e.message : '책을 불러오지 못했습니다.')
+        setLoading(false)
+      }
     }
-  }, [bookId, navigate, setSession, isUnlocked])
+
+    const tid = window.setTimeout(load, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(tid)
+    }
+  }, [bookId, isBookUnlocked, navigate, setSession])
 
   const safeSentenceIndex =
     pack && pack.sentences.length > 0
@@ -142,10 +157,14 @@ export default function PlayPage() {
     )
   }
 
-  if (!pack || !sentence) {
+  if (loading || !pack || !sentence) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-stone-100 text-stone-600">
-        책을 불러오는 중…
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-stone-100 text-stone-600">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-amber-700 border-t-transparent"
+          aria-hidden
+        />
+        <p className="text-sm">책을 불러오는 중…</p>
       </div>
     )
   }
@@ -164,7 +183,7 @@ export default function PlayPage() {
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold text-stone-900 sm:text-lg">{pack.title}</h1>
               <p className="text-[11px] text-stone-500 sm:text-xs">
-                {profile?.name} · {safeSentenceIndex + 1}/{pack.sentences.length}
+                {profileName ?? '읽는 중'} · {safeSentenceIndex + 1}/{pack.sentences.length}
                 <span className="ml-1.5 font-mono text-stone-600 lg:hidden">{progressPct}%</span>
               </p>
             </div>

@@ -3,9 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { MagazineShelf } from '../components/bookshelf/MagazineShelf'
 import { PicbookStore } from '../components/bookshelf/PicbookStore'
 import { UserLogoutButton } from '../components/UserLogoutButton'
-import { getCatalogItem } from '../data/picbookCatalog'
-import { loadCatalogPack } from '../lib/loadCatalogPack'
-import { usePlaySessionStore } from '../state/playSessionStore'
 import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 
@@ -15,7 +12,6 @@ export default function BookshelfPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
-  const setSession = usePlaySessionStore((s) => s.setSession)
   const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
 
   const tabParam = searchParams.get('tab')
@@ -36,10 +32,7 @@ export default function BookshelfPage() {
       switchTab('store')
       return
     }
-    const book = getCatalogItem(bookId)
-    if (!book || book.comingSoon) return
-    setSession(book.id, loadCatalogPack(book))
-    navigate(`/play/${book.id}`)
+    navigate(`/play/${bookId}`)
   }
 
   return (

@@ -3,7 +3,7 @@
  * 이미 구매(잠금 해제)한 사용자에게도 재생 시 최신 팩이 자동 적용된다.
  */
 export const PACK_CONTENT_VERSIONS: Record<string, string> = {
-  'demo-separation-three-powers': '6',
+  'demo-separation-three-powers': '7',
 }
 
 export function getPackContentVersion(bookId: string): string {
