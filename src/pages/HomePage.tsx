@@ -1,9 +1,9 @@
 import { Navigate } from 'react-router-dom'
-import { useUserProfileStore } from '../state/userProfileStore'
+import { useUserAccountStore } from '../state/userAccountStore'
 
-/** 루트: 프로필 유무에 따라 설정 또는 책장으로 이동 */
+/** 루트: 로그인 세션 있으면 책장, 없으면 로그인 */
 export default function HomePage() {
-  const profile = useUserProfileStore((s) => s.profile)
-  if (!profile) return <Navigate to="/setup" replace />
+  const sessionKey = useUserAccountStore((s) => s.sessionKey)
+  if (!sessionKey) return <Navigate to="/login" replace />
   return <Navigate to="/bookshelf" replace />
 }

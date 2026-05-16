@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import MasterLoginPage from './pages/MasterLoginPage'
 import MasterSetupPage from './pages/MasterSetupPage'
 import PlayPage from './pages/PlayPage'
+import LoginPage from './pages/LoginPage'
 import SetupPage from './pages/SetupPage'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
       <PersistGate>
         <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/setup" element={<SetupPage />} />
         <Route
           path="/bookshelf"

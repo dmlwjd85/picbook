@@ -1,17 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { SixDigitPasswordFields } from '../components/SixDigitPasswordFields'
 import { isValidSixDigitPassword } from '../lib/password'
 import { useUserAccountStore } from '../state/userAccountStore'
 
-export default function SetupPage() {
+export default function LoginPage() {
   const navigate = useNavigate()
   const sessionKey = useUserAccountStore((s) => s.sessionKey)
-  const register = useUserAccountStore((s) => s.register)
+  const login = useUserAccountStore((s) => s.login)
 
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   if (sessionKey) {
@@ -21,20 +19,11 @@ export default function SetupPage() {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError(null)
-    const trimmed = name.trim()
-    if (trimmed.length < 1) {
-      setError('이름을 입력해 주세요.')
-      return
-    }
     if (!isValidSixDigitPassword(password)) {
       setError('비밀번호는 숫자 6자리로 입력해 주세요.')
       return
     }
-    if (password !== confirm) {
-      setError('비밀번호가 서로 다릅니다. 다시 확인해 주세요.')
-      return
-    }
-    const result = register(trimmed, password)
+    const result = login(name, password)
     if (!result.ok) {
       setError(result.error)
       return
@@ -46,9 +35,9 @@ export default function SetupPage() {
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-gradient-to-b from-amber-100 via-amber-50 to-stone-100 px-4 py-12">
       <div className="w-full max-w-md">
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-amber-900/70">PicBook</p>
-        <h1 className="mt-2 text-center text-2xl font-bold text-stone-900">처음 오신 걸 환영해요</h1>
+        <h1 className="mt-2 text-center text-2xl font-bold text-stone-900">다시 오신 것을 환영해요</h1>
         <p className="mt-2 text-center text-sm text-stone-600">
-          이름과 6자리 비밀번호를 등록하면, 이 기기에서 다시 로그인할 때 구매한 PicBook이 유지됩니다.
+          이름과 비밀번호로 로그인하면 구매한 PicBook·서재가 그대로 이어집니다.
         </p>
 
         <form
@@ -62,18 +51,26 @@ export default function SetupPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={20}
-              autoComplete="nickname"
+              autoComplete="username"
               className="mt-1.5 w-full rounded-xl border border-stone-200 px-4 py-3 text-base text-stone-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
               placeholder="예: 정의정"
             />
           </label>
 
-          <SixDigitPasswordFields
-            password={password}
-            confirm={confirm}
-            onPasswordChange={setPassword}
-            onConfirmChange={setConfirm}
-          />
+          <div className="mt-4">
+            <p className="text-sm font-medium text-stone-700">비밀번호 (6자리)</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              pattern="\d*"
+              maxLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              autoComplete="current-password"
+              className="mt-1.5 w-full rounded-xl border border-stone-200 px-4 py-3 text-center font-mono text-xl tracking-[0.35em] text-stone-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              placeholder="••••••"
+            />
+          </div>
 
           {error ? <p className="mt-3 text-sm font-medium text-red-600">{error}</p> : null}
 
@@ -81,21 +78,14 @@ export default function SetupPage() {
             type="submit"
             className="mt-6 w-full rounded-xl bg-amber-800 py-3.5 text-sm font-bold text-amber-50 shadow-md transition hover:bg-amber-900"
           >
-            등록하고 책장으로
+            로그인
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-stone-500">
-          이미 등록하셨나요?{' '}
-          <Link to="/login" className="font-semibold text-amber-900 underline-offset-2 hover:underline">
-            로그인
-          </Link>
-          <span className="mx-2 text-stone-300">·</span>
-          <Link
-            to="/master/login"
-            className="text-stone-600 underline-offset-2 hover:text-stone-800 hover:underline"
-          >
-            마스터
+          처음이신가요?{' '}
+          <Link to="/setup" className="font-semibold text-amber-900 underline-offset-2 hover:underline">
+            이름 등록하기
           </Link>
         </p>
       </div>

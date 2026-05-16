@@ -6,14 +6,14 @@ import { UserLogoutButton } from '../components/UserLogoutButton'
 import { getCatalogItem } from '../data/picbookCatalog'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
-import { useUserProfileStore } from '../state/userProfileStore'
+import { useUserAccountStore } from '../state/userAccountStore'
 
 type Tab = 'shelf' | 'store'
 
 export default function BookshelfPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const profile = useUserProfileStore((s) => s.profile)
+  const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
   const setSession = usePlaySessionStore((s) => s.setSession)
   const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
 
@@ -50,7 +50,7 @@ export default function BookshelfPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400/90">PicBook</p>
             <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
-              {profile?.name ? `${profile.name}님의 책장` : '책장'}
+              {profileName ? `${profileName}님의 책장` : '책장'}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">

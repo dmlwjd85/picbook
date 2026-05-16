@@ -1,44 +1,44 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { isValidSixDigitPassword } from '../lib/password'
+/**
+ * @deprecated useUserAccountStore / useActiveProfile 사용
+ */
+import { useActiveProfile, useUserAccountStore } from './userAccountStore'
 
-export { isValidSixDigitPassword }
-
-const STORAGE_KEY = 'picbook.user.profile.v1'
+export { isValidSixDigitPassword } from '../lib/password'
 
 export type UserProfile = {
   name: string
-  /** 6자리 숫자 비밀번호(로컬 저장) */
   password: string
   createdAt: string
 }
 
-type UserProfileStore = {
-  profile: UserProfile | null
-  setProfile: (name: string, password: string) => void
-  clearProfile: () => void
-  verifyPassword: (password: string) => boolean
+export const useUserProfileStore = <T,>(
+  selector: (s: {
+    profile: UserProfile | null
+    setProfile: (name: string, password: string) => void
+    clearProfile: () => void
+    verifyPassword: (password: string) => boolean
+  }) => T,
+): T => {
+  return useUserAccountStore((s) => {
+    const acc = s.getActiveAccount()
+    const profile = acc
+      ? { name: acc.name, password: acc.password, createdAt: acc.createdAt }
+      : null
+    const stub = {
+      profile,
+      setProfile: (name: string, password: string) => {
+        const key = name.trim().toLowerCase()
+        if (s.accounts[key]) {
+          s.login(name, password)
+        } else {
+          s.register(name, password)
+        }
+      },
+      clearProfile: () => s.logout(),
+      verifyPassword: (password: string) => acc?.password === password,
+    }
+    return selector(stub)
+  })
 }
 
-export const useUserProfileStore = create<UserProfileStore>()(
-  persist(
-    (set, get) => ({
-      profile: null,
-      setProfile: (name, password) =>
-        set({
-          profile: {
-            name: name.trim(),
-            password,
-            createdAt: new Date().toISOString(),
-          },
-        }),
-      clearProfile: () => set({ profile: null }),
-      verifyPassword: (password) => get().profile?.password === password,
-    }),
-    {
-      name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ profile: s.profile }),
-    },
-  ),
-)
+export { useActiveProfile }

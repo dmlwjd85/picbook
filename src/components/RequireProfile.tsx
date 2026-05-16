@@ -1,17 +1,17 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { useUserProfileStore } from '../state/userProfileStore'
+import { useUserAccountStore } from '../state/userAccountStore'
 
 type Props = {
   children: React.ReactNode
 }
 
-/** 프로필이 없으면 설정 화면으로 보냄 */
+/** 로그인 세션이 없으면 로그인 화면으로 */
 export function RequireProfile({ children }: Props) {
-  const profile = useUserProfileStore((s) => s.profile)
+  const sessionKey = useUserAccountStore((s) => s.sessionKey)
   const location = useLocation()
 
-  if (!profile) {
-    return <Navigate to="/setup" replace state={{ from: location.pathname }} />
+  if (!sessionKey) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
   return children

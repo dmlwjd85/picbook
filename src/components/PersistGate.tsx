@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useMasterAuthStore } from '../state/masterAuthStore'
-import { useUserProfileStore } from '../state/userProfileStore'
+import { useUserAccountStore } from '../state/userAccountStore'
 
 type PersistStore = {
   persist: {
@@ -26,20 +25,21 @@ function waitForHydration(store: PersistStore): Promise<void> {
 /** localStorage 복원 전에 로그인 화면으로 튕기지 않도록 대기 */
 export function PersistGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
+  const migrateLegacyStorage = useUserAccountStore((s) => s.migrateLegacyStorage)
 
   useEffect(() => {
     let cancelled = false
     void Promise.all([
-      waitForHydration(useUserProfileStore),
+      waitForHydration(useUserAccountStore),
       waitForHydration(useMasterAuthStore),
-      waitForHydration(useLibraryUnlockStore),
     ]).then(() => {
+      migrateLegacyStorage()
       if (!cancelled) setReady(true)
     })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [migrateLegacyStorage])
 
   if (!ready) {
     return (

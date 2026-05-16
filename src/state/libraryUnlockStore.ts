@@ -1,28 +1,23 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+/**
+ * @deprecated useUserAccountStore 사용 — 계정별 구매 이력
+ * 하위 호환용 래퍼
+ */
+import { useUserAccountStore } from './userAccountStore'
 
-const STORAGE_KEY = 'picbook.library.unlocks.v1'
-
-type LibraryUnlockStore = {
-  unlockedIds: string[]
-  isUnlocked: (bookId: string) => boolean
-  unlock: (bookId: string) => void
+export const useLibraryUnlockStore = <T,>(
+  selector: (s: {
+    unlockedIds: string[]
+    isUnlocked: (bookId: string) => boolean
+    unlock: (bookId: string) => void
+  }) => T,
+): T => {
+  return useUserAccountStore((s) => {
+    const acc = s.getActiveAccount()
+    const stub = {
+      unlockedIds: acc?.unlockedIds ?? [],
+      isUnlocked: s.isUnlocked,
+      unlock: s.unlock,
+    }
+    return selector(stub)
+  })
 }
-
-export const useLibraryUnlockStore = create<LibraryUnlockStore>()(
-  persist(
-    (set, get) => ({
-      unlockedIds: [],
-      isUnlocked: (bookId) => get().unlockedIds.includes(bookId),
-      unlock: (bookId) =>
-        set((s) =>
-          s.unlockedIds.includes(bookId) ? s : { unlockedIds: [...s.unlockedIds, bookId] },
-        ),
-    }),
-    {
-      name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ unlockedIds: s.unlockedIds }),
-    },
-  ),
-)
