@@ -9,6 +9,21 @@
     <title>PicBook — 타자 독서 팩</title>
   </head>
   <body>
+    <script>
+      // GitHub Pages 404.html 리다이렉트 후 원래 경로 복원
+      ;(function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search
+            .slice(1)
+            .split('&')
+            .map(function (s) {
+              return s.replace(/~and~/g, '&')
+            })
+            .join('?')
+          window.history.replaceState(null, '', l.pathname.slice(0, -1) + decoded + l.hash)
+        }
+      })(window.location)
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

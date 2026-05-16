@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { PersistGate } from './components/PersistGate'
 import { RequireMaster } from './components/RequireMaster'
 import { RequireProfile } from './components/RequireProfile'
 import BookshelfPage from './pages/BookshelfPage'
@@ -12,7 +13,8 @@ import SetupPage from './pages/SetupPage'
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Routes>
+      <PersistGate>
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/setup" element={<SetupPage />} />
         <Route
@@ -43,7 +45,8 @@ export default function App() {
         />
         <Route path="/player" element={<Navigate to="/bookshelf" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </PersistGate>
     </BrowserRouter>
   )
 }
