@@ -16,6 +16,8 @@ export type PicbookCatalogItem = {
   magazineTone: string
   /** 정규화된 제품키와 비교 */
   productKey: string
+  /** 마스터·배포용 표시 키 */
+  productKeyDisplay: string
   listPrice: string
   /** 출판 예정 — 키 입력 불가 */
   comingSoon?: boolean
@@ -28,11 +30,12 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     id: 'demo-separation-three-powers',
     title: '삼권분립',
     subtitle: '타자 연동 연출',
-    blurb: '한 글자씩 타이핑할 때마다 사법·입법·행정 화면이 움직이는 역사 PicBook.',
+    blurb: '권력분립·삼권 견제·국민의 자유와 권리까지, 타이핑에 맞춰 이어지는 역사 PicBook(3문장).',
     author: 'PicBook',
     coverImage: `${base}demo/samgwon-dictator.png`,
     magazineTone: 'from-amber-600 via-orange-500 to-rose-600',
     productKey: normalizeProductKey('PICBOOK-3POWERS-2026'),
+    productKeyDisplay: 'PICBOOK-3POWERS-2026',
     listPrice: '₩12,000',
     loadPack: createSeparationThreePowersDemoPack,
   },
@@ -45,6 +48,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     coverImage: `${base}demo/samgwon-1.png`,
     magazineTone: 'from-slate-600 via-slate-500 to-slate-700',
     productKey: normalizeProductKey('PICBOOK-CONSTITUTION-TBA'),
+    productKeyDisplay: '—',
     listPrice: '출판 예정',
     comingSoon: true,
     loadPack: createSeparationThreePowersDemoPack,
@@ -58,6 +62,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     coverImage: `${base}demo/samgwon-5.png`,
     magazineTone: 'from-indigo-700 via-violet-600 to-purple-800',
     productKey: normalizeProductKey('PICBOOK-ELECTION-TBA'),
+    productKeyDisplay: '—',
     listPrice: '출판 예정',
     comingSoon: true,
     loadPack: createSeparationThreePowersDemoPack,

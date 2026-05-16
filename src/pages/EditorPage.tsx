@@ -7,6 +7,7 @@ import { summarizeEffect } from '../lib/cueLabels'
 import { parsePackJson } from '../lib/parsePack'
 import { usePackEditorStore } from '../state/packEditorStore'
 import type { CueEffect, LayerState } from '../types/pack'
+import { MasterProductKeysPanel } from '../components/MasterProductKeysPanel'
 import { VisualStage } from '../components/VisualStage'
 
 /** 편집 화면 상단: 이미지 파일로 쓸 수 있는 형식 안내 */
@@ -203,6 +204,7 @@ export default function EditorPage() {
           </ol>
         </section>
 
+        <MasterProductKeysPanel />
         <ImageFormatGuide />
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
