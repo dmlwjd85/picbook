@@ -4,6 +4,7 @@ import { MagazineShelf } from '../components/bookshelf/MagazineShelf'
 import { PicbookStore } from '../components/bookshelf/PicbookStore'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { getCatalogItem } from '../data/picbookCatalog'
+import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useUserAccountStore } from '../state/userAccountStore'
@@ -37,7 +38,7 @@ export default function BookshelfPage() {
     }
     const book = getCatalogItem(bookId)
     if (!book || book.comingSoon) return
-    setSession(book.id, book.loadPack())
+    setSession(book.id, loadCatalogPack(book))
     navigate(`/play/${book.id}`)
   }
 

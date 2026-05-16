@@ -19,7 +19,8 @@ export function MasterProductKeysPanel() {
     <section className="rounded-xl border border-violet-200 bg-violet-50/90 p-4 text-sm text-violet-950">
       <h2 className="font-bold text-violet-900">픽북 제품키 (마스터)</h2>
       <p className="mt-1 text-xs leading-relaxed text-violet-800/90">
-        구매·배포용 키입니다. 사용자에게는 「픽북 구매하기」에서만 입력합니다.
+        구매·배포용 키입니다. 팩을 수정·배포할 때는 <code className="rounded bg-violet-100 px-1">packContentVersions.ts</code>
+        의 버전을 올리면 구매자에게 자동 반영됩니다.
       </p>
       <ul className="mt-4 space-y-3">
         {PICBOOK_CATALOG.map((item) => (
@@ -29,7 +30,12 @@ export function MasterProductKeysPanel() {
           >
             <div className="min-w-0">
               <p className="font-semibold text-violet-950">{item.title}</p>
-              <p className="text-[11px] text-violet-700/80">{item.subtitle}</p>
+              <p className="text-[11px] text-violet-700/80">
+                {item.subtitle}
+                {!item.comingSoon ? (
+                  <span className="ml-1.5 font-mono text-violet-600">v{item.contentVersion}</span>
+                ) : null}
+              </p>
             </div>
             {item.comingSoon ? (
               <span className="shrink-0 text-xs font-medium text-slate-500">출판 예정</span>

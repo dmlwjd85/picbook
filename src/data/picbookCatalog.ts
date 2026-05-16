@@ -1,5 +1,6 @@
 import { createSeparationThreePowersDemoPack } from './separationThreePowersDemoPack'
 import { normalizeProductKey } from '../lib/productKey'
+import { getPackContentVersion } from './packContentVersions'
 import type { ReadingPack } from '../types/pack'
 
 const base = import.meta.env.BASE_URL
@@ -21,6 +22,8 @@ export type PicbookCatalogItem = {
   listPrice: string
   /** 출판 예정 — 키 입력 불가 */
   comingSoon?: boolean
+  /** 팩 수정 시 올리면 구매자 재생에 자동 반영 */
+  contentVersion: string
   loadPack: () => ReadingPack
 }
 
@@ -37,6 +40,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     productKey: normalizeProductKey('PICBOOK-3POWERS-2026'),
     productKeyDisplay: 'PICBOOK-3POWERS-2026',
     listPrice: '₩12,000',
+    contentVersion: getPackContentVersion('demo-separation-three-powers'),
     loadPack: createSeparationThreePowersDemoPack,
   },
   {
@@ -51,6 +55,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     productKeyDisplay: '—',
     listPrice: '출판 예정',
     comingSoon: true,
+    contentVersion: getPackContentVersion('coming-constitution'),
     loadPack: createSeparationThreePowersDemoPack,
   },
   {
@@ -65,6 +70,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     productKeyDisplay: '—',
     listPrice: '출판 예정',
     comingSoon: true,
+    contentVersion: getPackContentVersion('coming-election'),
     loadPack: createSeparationThreePowersDemoPack,
   },
 ]

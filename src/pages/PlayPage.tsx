@@ -5,6 +5,7 @@ import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { VisualStage } from '../components/VisualStage'
 import { getLibraryBook } from '../data/libraryBooks'
+import { isSamePackContent, loadCatalogPack } from '../lib/loadCatalogPack'
 import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
@@ -81,19 +82,21 @@ export default function PlayPage() {
       navigate('/bookshelf', { replace: true })
       return
     }
-    if (sessionPack && sessionBookId === bookId) {
-      setPack(sessionPack)
-      return
-    }
     if (!isUnlocked(bookId)) {
       navigate('/bookshelf?tab=store', { replace: true })
       return
     }
     const book = getLibraryBook(bookId)
     if (book && !book.comingSoon) {
-      const loaded = book.loadPack()
+      const loaded = loadCatalogPack(book)
+      if (sessionPack && sessionBookId === bookId && isSamePackContent(sessionPack, loaded)) {
+        setPack(sessionPack)
+        return
+      }
       setSession(book.id, loaded)
       setPack(loaded)
+      setSentenceIndex(0)
+      setTyped('')
       return
     }
     navigate('/bookshelf', { replace: true })

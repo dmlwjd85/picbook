@@ -100,4 +100,6 @@ export type ReadingPack = {
   author: string
   sentences: SentenceBlock[]
   updatedAt: string
+  /** 카탈로그 팩 개정 번호 — 올리면 구매자에게 자동 반영 */
+  contentVersion?: string
 }
