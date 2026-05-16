@@ -1,8 +1,50 @@
+import { useEffect, useState, type CSSProperties } from 'react'
 import type { LayerState } from '../types/pack'
 
 const IMG_PROPS = {
   decoding: 'async' as const,
   loading: 'eager' as const,
+}
+
+/** ? ??? ?? ?? ??? ??? ?? ??? ?? ??? ??? ??? */
+function LayerPicture({
+  imageUrl,
+  label,
+  className,
+  style,
+}: {
+  imageUrl: string
+  label: string
+  className?: string
+  style?: CSSProperties
+}) {
+  const [shownUrl, setShownUrl] = useState(imageUrl)
+
+  useEffect(() => {
+    if (imageUrl === shownUrl) return
+    let cancelled = false
+    const img = new Image()
+    const apply = () => {
+      if (!cancelled) setShownUrl(imageUrl)
+    }
+    img.onload = apply
+    img.onerror = apply
+    img.src = imageUrl
+    if (img.complete) apply()
+    return () => {
+      cancelled = true
+    }
+  }, [imageUrl, shownUrl])
+
+  return (
+    <img
+      src={shownUrl}
+      alt={label}
+      className={className}
+      style={style}
+      {...IMG_PROPS}
+    />
+  )
 }
 
 type Props = {
@@ -17,13 +59,14 @@ function RedXStamp() {
       className="pointer-events-none absolute inset-0 z-[2] flex items-center justify-center bg-black/30"
       style={{ animation: 'stamp-in 0.4s ease-out' }}
     >
-      <span
-        className="select-none font-black leading-none text-red-600 drop-shadow-[0_0_24px_rgba(220,38,38,0.85)]"
-        style={{ fontSize: 'clamp(4rem, 22vw, 9rem)' }}
+      <svg
+        viewBox="0 0 100 100"
+        className="h-[clamp(4rem,22vw,9rem)] w-[clamp(4rem,22vw,9rem)] text-red-600 drop-shadow-[0_0_24px_rgba(220,38,38,0.85)]"
         aria-hidden
       >
-        ?
-      </span>
+        <line x1="18" y1="18" x2="82" y2="82" stroke="currentColor" strokeWidth="14" strokeLinecap="round" />
+        <line x1="82" y1="18" x2="18" y2="82" stroke="currentColor" strokeWidth="14" strokeLinecap="round" />
+      </svg>
     </div>
   )
 }
@@ -50,7 +93,7 @@ function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabel
   )
 }
 
-/** ???????? ???. ?? ???????? ??????? pan???? ????? ?? ??. */
+/** ??? ?? ??. ?? ??? ?? ?????, pan??? ??? ?? ??. */
 export function VisualStage({ layers, overlayCaption, embedded = false }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
@@ -101,12 +144,10 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
                 {hasPlate ? (
                   <div className="flex h-full min-h-0 flex-col">
                     <div className="relative min-h-0 flex-1">
-                      <img
-                        key={imageUrl}
-                        src={imageUrl}
-                        alt={l.label}
-                        className="layer-fade-in absolute inset-0 h-full w-full object-cover"
-                        {...IMG_PROPS}
+                      <LayerPicture
+                        imageUrl={imageUrl}
+                        label={l.label}
+                        className="absolute inset-0 h-full w-full object-cover"
                       />
                       {anchors ? <AnchorOverlay labels={anchors} /> : null}
                     </div>
@@ -116,25 +157,21 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
                   </div>
                 ) : fill ? (
                   <div className="relative h-full w-full">
-                    <img
-                      key={imageUrl}
-                      src={imageUrl}
-                      alt={l.label}
-                      className="layer-fade-in h-full w-full object-cover"
+                    <LayerPicture
+                      imageUrl={imageUrl}
+                      label={l.label}
+                      className="h-full w-full object-cover"
                       style={faceZoom ? { objectPosition: 'center 18%' } : undefined}
-                      {...IMG_PROPS}
                     />
                     {anchors ? <AnchorOverlay labels={anchors} /> : null}
                     {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
                   </div>
                 ) : (
                   <div className="relative w-full">
-                    <img
-                      key={imageUrl}
-                      src={imageUrl}
-                      alt={l.label}
-                      className="layer-fade-in block h-auto w-full object-cover"
-                      {...IMG_PROPS}
+                    <LayerPicture
+                      imageUrl={imageUrl}
+                      label={l.label}
+                      className="block h-auto w-full object-cover"
                     />
                     {anchors ? <AnchorOverlay labels={anchors} /> : null}
                   </div>
@@ -146,8 +183,8 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
       })}
       {!hasImage ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-500">
-          <span>??? ???????????????????</span>
-          <span className="text-xs text-slate-600">?????? ??? ???????????????????????</span>
+          <span>?? ??? ??? ??? ???.</span>
+          <span className="text-xs text-slate-600">???? ?? ????? ??? ??? ??? ???.</span>
         </div>
       ) : null}
 

@@ -237,7 +237,7 @@ export default function PlayPage() {
         </div>
       </header>
 
-      <div className="z-20 shrink-0 border-b border-stone-200 bg-stone-50 px-3 py-2 sm:px-5">
+      <div className="z-20 hidden shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 lg:block">
         <div className="mx-auto max-w-6xl">
           <SentenceNavBar
             total={pack.sentences.length}
@@ -248,16 +248,13 @@ export default function PlayPage() {
             canPrev={safeSentenceIndex > 0}
             canNext={safeSentenceIndex < pack.sentences.length - 1}
           />
-          <p className="mt-1.5 text-center text-[10px] text-stone-500 lg:hidden">
-            좌우 스와이프로 문장을 넘길 수 있어요 · 완료 후 Enter로 다음 문장
-          </p>
         </div>
       </div>
 
-      {/* 모바일: 연출 고정 */}
+      {/* 모바일: 연출 영역 고정 */}
       <div
         className="relative z-10 shrink-0 border-b border-stone-300 bg-stone-900 lg:hidden"
-        style={{ height: 'min(36dvh, 240px)' }}
+        style={{ height: 'clamp(140px, 32dvh, 220px)' }}
       >
         <VisualStage layers={layers} embedded />
       </div>
@@ -281,7 +278,7 @@ export default function PlayPage() {
           }}
         >
           {/* 모바일 */}
-          <div className="flex flex-col p-3 lg:hidden">
+          <div className="flex min-h-0 flex-1 flex-col p-3 lg:hidden">
             <OverlayTypingPanel target={target} typed={typed} onTypedChange={setTyped} />
             <PlayActions
               complete={complete}
@@ -311,6 +308,22 @@ export default function PlayPage() {
           </div>
         </section>
       </main>
+
+      {/* 모바일: 문장 넘김 — 하단 고정 */}
+      <footer className="z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+        <SentenceNavBar
+          total={pack.sentences.length}
+          current={safeSentenceIndex}
+          onSelect={goToSentence}
+          onPrev={goPrevSentence}
+          onNext={goNextSentence}
+          canPrev={safeSentenceIndex > 0}
+          canNext={safeSentenceIndex < pack.sentences.length - 1}
+        />
+        <p className="mt-1.5 text-center text-[10px] text-stone-500">
+          좌우 스와이프 · 완료 후 Enter
+        </p>
+      </footer>
     </div>
   )
 }
