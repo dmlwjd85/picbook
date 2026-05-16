@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useMasterAuthStore } from '../state/masterAuthStore'
 import { useUserProfileStore } from '../state/userProfileStore'
 
@@ -31,6 +32,7 @@ export function PersistGate({ children }: { children: ReactNode }) {
     void Promise.all([
       waitForHydration(useUserProfileStore),
       waitForHydration(useMasterAuthStore),
+      waitForHydration(useLibraryUnlockStore),
     ]).then(() => {
       if (!cancelled) setReady(true)
     })

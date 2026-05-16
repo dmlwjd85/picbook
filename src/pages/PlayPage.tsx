@@ -5,6 +5,7 @@ import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { VisualStage } from '../components/VisualStage'
 import { getLibraryBook } from '../data/libraryBooks'
+import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { usePlaySessionStore } from '../state/playSessionStore'
@@ -63,6 +64,7 @@ export default function PlayPage() {
   const sessionPack = usePlaySessionStore((s) => s.pack)
   const sessionBookId = usePlaySessionStore((s) => s.bookId)
   const setSession = usePlaySessionStore((s) => s.setSession)
+  const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
   const keyboardInset = useKeyboardInset()
 
   const [pack, setPack] = useState<ReadingPack | null>(null)
@@ -83,15 +85,19 @@ export default function PlayPage() {
       setPack(sessionPack)
       return
     }
+    if (!isUnlocked(bookId)) {
+      navigate('/bookshelf?tab=store', { replace: true })
+      return
+    }
     const book = getLibraryBook(bookId)
-    if (book) {
+    if (book && !book.comingSoon) {
       const loaded = book.loadPack()
       setSession(book.id, loaded)
       setPack(loaded)
       return
     }
     navigate('/bookshelf', { replace: true })
-  }, [bookId, sessionPack, sessionBookId, setSession, navigate])
+  }, [bookId, sessionPack, sessionBookId, setSession, navigate, isUnlocked])
 
   const sentence = pack?.sentences[sentenceIndex]
 

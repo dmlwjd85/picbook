@@ -1,120 +1,104 @@
-import { useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { MagazineShelf } from '../components/bookshelf/MagazineShelf'
+import { PicbookStore } from '../components/bookshelf/PicbookStore'
 import { UserLogoutButton } from '../components/UserLogoutButton'
-import { LIBRARY_BOOKS } from '../data/libraryBooks'
-import { parsePackJson } from '../lib/parsePack'
+import { getCatalogItem } from '../data/picbookCatalog'
 import { usePlaySessionStore } from '../state/playSessionStore'
+import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
 import { useUserProfileStore } from '../state/userProfileStore'
+
+type Tab = 'shelf' | 'store'
 
 export default function BookshelfPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const profile = useUserProfileStore((s) => s.profile)
   const setSession = usePlaySessionStore((s) => s.setSession)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
+
+  const tabParam = searchParams.get('tab')
+  const [tab, setTab] = useState<Tab>(tabParam === 'store' ? 'store' : 'shelf')
+
+  useEffect(() => {
+    if (tabParam === 'store') setTab('store')
+    else if (tabParam === 'shelf') setTab('shelf')
+  }, [tabParam])
+
+  const switchTab = (next: Tab) => {
+    setTab(next)
+    setSearchParams(next === 'store' ? { tab: 'store' } : {}, { replace: true })
+  }
 
   const openBook = (bookId: string) => {
-    const book = LIBRARY_BOOKS.find((b) => b.id === bookId)
-    if (!book) return
+    if (!isUnlocked(bookId)) {
+      switchTab('store')
+      return
+    }
+    const book = getCatalogItem(bookId)
+    if (!book || book.comingSoon) return
     setSession(book.id, book.loadPack())
     navigate(`/play/${book.id}`)
   }
 
-  const onImportFile = (file: File | null) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const text = typeof reader.result === 'string' ? reader.result : ''
-      const parsed = parsePackJson(text)
-      if (!parsed.ok) {
-        window.alert(parsed.error)
-        return
-      }
-      const id = `import-${parsed.pack.id}`
-      setSession(id, parsed.pack)
-      navigate(`/play/${id}`)
-    }
-    reader.readAsText(file, 'utf-8')
-  }
-
   return (
-    <div className="min-h-full bg-gradient-to-b from-amber-900 via-amber-950 to-stone-950 text-amber-50">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,200,120,0.12),_transparent_55%)]" />
+    <div className="min-h-full bg-gradient-to-b from-amber-950 via-stone-950 to-stone-950 text-amber-50">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,200,120,0.1),_transparent_50%)]" />
 
-      <header className="relative border-b border-amber-800/50 px-4 py-5 sm:px-8">
+      <header className="relative border-b border-amber-900/60 px-4 py-5 sm:px-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400/90">PicBook 책장</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400/90">PicBook</p>
             <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
-              {profile?.name ? `${profile.name}님, 어떤 책을 읽을까요?` : '책을 골라 주세요'}
+              {profile?.name ? `${profile.name}님의 책장` : '책장'}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <UserLogoutButton className="rounded-lg border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/60" />
+            <UserLogoutButton className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/60" />
             <Link
               to="/master/login"
-              className="rounded-lg border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
+              className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
             >
               마스터 로그인
             </Link>
           </div>
         </div>
+
+        {/* 탭 */}
+        <div className="mx-auto mt-5 flex max-w-5xl gap-1 rounded-xl bg-amber-950/60 p-1 ring-1 ring-amber-800/40">
+          <button
+            type="button"
+            onClick={() => switchTab('shelf')}
+            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
+              tab === 'shelf'
+                ? 'bg-amber-800 text-amber-50 shadow'
+                : 'text-amber-300/80 hover:bg-amber-900/40'
+            }`}
+          >
+            내 서재
+          </button>
+          <button
+            type="button"
+            onClick={() => switchTab('store')}
+            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
+              tab === 'store'
+                ? 'bg-indigo-600 text-white shadow'
+                : 'text-amber-300/80 hover:bg-amber-900/40'
+            }`}
+          >
+            픽북 구매하기
+          </button>
+        </div>
       </header>
 
       <main className="relative mx-auto max-w-5xl px-4 py-8 sm:px-8">
-        {/* 책장 선반 */}
-        <div
-          className="rounded-lg border border-amber-800/40 bg-gradient-to-b from-amber-950/80 to-amber-950/30 p-4 shadow-inner sm:p-6"
-          style={{ boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.35)' }}
-        >
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {LIBRARY_BOOKS.map((book) => (
-              <button
-                key={book.id}
-                type="button"
-                onClick={() => openBook(book.id)}
-                className="group flex text-left transition hover:-translate-y-1 hover:drop-shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              >
-                {/* 책등 */}
-                <div
-                  className={`w-3 shrink-0 rounded-l-sm bg-gradient-to-b ${book.spine} shadow-[inset_-2px_0_4px_rgba(0,0,0,0.3)]`}
-                />
-                {/* 표지 */}
-                <div
-                  className={`flex min-h-[7.5rem] flex-1 flex-col justify-between rounded-r-md bg-gradient-to-br ${book.cover} p-4 shadow-lg ring-1 ring-black/20`}
-                >
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/80">PicBook</p>
-                    <h2 className="mt-1 text-lg font-bold leading-tight text-white drop-shadow-sm">{book.title}</h2>
-                  </div>
-                  <p className="text-xs text-white/85">{book.subtitle}</p>
-                </div>
-              </button>
-            ))}
-
-            {/* 가져온 팩 */}
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="group flex min-h-[7.5rem] items-center justify-center rounded-md border-2 border-dashed border-amber-600/50 bg-amber-950/30 p-4 text-center transition hover:border-amber-500 hover:bg-amber-900/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-            >
-              <div>
-                <span className="text-2xl text-amber-500/80">+</span>
-                <p className="mt-1 text-sm font-semibold text-amber-100">팩 파일 가져오기</p>
-                <p className="mt-0.5 text-xs text-amber-400/80">JSON</p>
-              </div>
-            </button>
+        {tab === 'shelf' ? (
+          <MagazineShelf onOpenBook={openBook} onGoStore={() => switchTab('store')} />
+        ) : (
+          <div className="rounded-2xl border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950 p-4 sm:p-6">
+            <PicbookStore onUnlocked={() => switchTab('shelf')} />
           </div>
-
-          <div className="mt-4 h-2 rounded-full bg-gradient-to-b from-amber-800 to-amber-950 shadow-[0_4px_8px_rgba(0,0,0,0.4)]" aria-hidden />
-        </div>
-
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(e) => onImportFile(e.target.files?.[0] ?? null)}
-        />
+        )}
       </main>
     </div>
   )
