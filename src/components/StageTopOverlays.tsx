@@ -14,7 +14,7 @@ type Props = {
   showKaraoke: boolean
 }
 
-/** 연출 내부 오버레이 — 모바일: 위 자막·아래 낱말 / 웹: 큰 화면·아래 자막 */
+/** 연출 내부 오버레이 — 모바일: 아래 자막·낱말 / 웹: 위 낱말·아래 자막 */
 export function StageInlays({ glosses, karaoke, showKaraoke }: Props) {
   const hasGloss = glosses.length > 0
 
@@ -37,7 +37,7 @@ export function StageInlays({ glosses, karaoke, showKaraoke }: Props) {
         </div>
       ) : null}
 
-      <VocabGlossBottom glosses={glosses} />
+      <VocabGlossBottom glosses={glosses} karaokeActive={showKaraoke} />
 
       {showKaraoke && karaoke ? (
         <>

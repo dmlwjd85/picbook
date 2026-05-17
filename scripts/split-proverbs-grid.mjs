@@ -13,6 +13,9 @@ const outDir = path.join(root, 'public', 'demo', 'proverbs')
 
 const COLS = 3
 const ROWS = 2
+/** 삼권분립 samgwon·powers 컷과 동일 3:2 */
+const TARGET_W = 1536
+const TARGET_H = 1024
 
 async function splitGrid(inputPath, prefix) {
   const absIn = path.isAbsolute(inputPath) ? inputPath : path.join(root, inputPath)
@@ -30,9 +33,9 @@ async function splitGrid(inputPath, prefix) {
           width: Math.round(cellW),
           height: Math.round(cellH),
         })
-        .resize(960, 720, {
-          fit: 'inside',
-          background: { r: 15, g: 23, b: 42, alpha: 1 },
+        .resize(TARGET_W, TARGET_H, {
+          fit: 'cover',
+          position: 'centre',
         })
         .png({ compressionLevel: 9 })
         .toFile(out)

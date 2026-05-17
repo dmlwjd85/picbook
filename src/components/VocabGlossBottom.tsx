@@ -2,14 +2,20 @@ import type { VocabGloss } from '../types/pack'
 
 type Props = {
   glosses: VocabGloss[]
+  /** 노래방 자막과 겹치지 않게 위로 올림 */
+  karaokeActive?: boolean
 }
 
-/** 모바일 연출 하단 — 낱말 풀이 */
-export function VocabGlossBottom({ glosses }: Props) {
+/** 모바일 연출 하단 — 낱말 풀이 (자막 위) */
+export function VocabGlossBottom({ glosses, karaokeActive = false }: Props) {
   if (glosses.length === 0) return null
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[35] flex flex-col gap-1 px-2 pb-2 pt-10 max-lg:flex lg:hidden">
+    <div
+      className={`pointer-events-none absolute inset-x-0 z-[35] flex flex-col gap-1 px-2 pt-10 max-lg:flex lg:hidden ${
+        karaokeActive ? 'bottom-[3.1rem] pb-1' : 'bottom-0 pb-2'
+      }`}
+    >
       <div
         className="pointer-events-none absolute inset-0"
         style={{

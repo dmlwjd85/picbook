@@ -2,15 +2,16 @@ import { useEffect, useId, useState, type CSSProperties } from 'react'
 import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
 
-/** 모바일: 위 자막·아래 낱말 / 웹: 위 낱말·아래 자막 — 이미지 여백(rem) */
+/** 모바일: 아래 자막·낱말 / 웹: 위 낱말·아래 자막 — 이미지 여백(rem) */
 function proverbStageInsets(centerImages: boolean, showKaraoke: boolean, glossCount: number) {
   if (!centerImages) {
     return { mobileTop: 0, mobileBottom: 0, desktopTop: 0, desktopBottom: 0 }
   }
   const glossBand = glossCount === 0 ? 0 : glossCount === 1 ? 3.25 : 5.75
+  const karaokeBand = showKaraoke ? 3.25 : 0
   return {
-    mobileTop: showKaraoke ? 3.25 : 0,
-    mobileBottom: glossBand,
+    mobileTop: 0,
+    mobileBottom: karaokeBand + glossBand,
     desktopTop: glossBand,
     desktopBottom: showKaraoke ? 4.75 : 0,
   }
@@ -161,11 +162,11 @@ export function VisualStage({
     : compact
       ? `relative h-full min-h-[inherit] w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner${
           large
-            ? ' lg:mx-auto lg:aspect-[4/3] lg:h-full lg:max-h-full lg:max-w-3xl lg:rounded-2xl'
+            ? ' lg:mx-auto lg:aspect-[3/2] lg:h-full lg:max-h-full lg:max-w-3xl lg:rounded-2xl'
             : ''
         }`
       : large
-        ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+        ? 'relative mx-auto aspect-[3/2] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
         : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
 
   return (

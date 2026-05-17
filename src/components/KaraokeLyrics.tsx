@@ -4,34 +4,89 @@ type Props = {
   committed: string
 }
 
-/** 모바일 — 연출 이미지 최상단: 타이핑 진행 문장 */
+/** 긴 문장은 타이핑 위치 근처만 보이게 잘라 연출 하단이 과하게 길어지지 않게 함 */
+function karaokeVisibleSlice(target: string, caret: number, maxChars = 22) {
+  if (target.length <= maxChars) {
+    return { text: target, baseIndex: 0, leadEllipsis: false, trailEllipsis: false }
+  }
+  const safeCaret = Math.min(Math.max(caret, 0), target.length)
+  let start = Math.max(0, safeCaret - Math.floor(maxChars * 0.45))
+  if (start + maxChars > target.length) start = target.length - maxChars
+  return {
+    text: target.slice(start, start + maxChars),
+    baseIndex: start,
+    leadEllipsis: start > 0,
+    trailEllipsis: start + maxChars < target.length,
+  }
+}
+
+function KaraokeChars({
+  target,
+  display,
+  baseIndex,
+  className,
+}: {
+  target: string
+  display: string
+  baseIndex: number
+  className?: string
+}) {
+  return (
+    <p className={className}>
+      {target.split('').map((ch, i) => {
+        const globalIndex = baseIndex + i
+        const typedCh = display[globalIndex]
+        let cls = 'text-white/30'
+        if (typedCh !== undefined) {
+          cls = typedCh === ch ? 'text-amber-200' : 'text-red-400'
+        } else if (globalIndex === display.length) {
+          cls = 'text-white underline decoration-amber-400 decoration-2 underline-offset-4'
+        }
+        return (
+          <span key={`${globalIndex}-${ch}`} className={cls} style={{ textShadow: '0 1px 3px #000' }}>
+            {ch}
+          </span>
+        )
+      })}
+    </p>
+  )
+}
+
+/** 모바일 — 연출 이미지 하단: 타이핑 진행 문장(노래방 자막) */
 export function KaraokeLyrics({ target, draft, committed }: Props) {
   const display = draft.length >= committed.length ? draft : committed
+  const { text, baseIndex, leadEllipsis, trailEllipsis } = karaokeVisibleSlice(
+    target,
+    display.length,
+    20,
+  )
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-0 z-[32] px-2 pt-1.5 max-lg:block lg:hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-14 max-lg:block lg:hidden"
       style={{
         background:
-          'linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%)',
+          'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)',
       }}
     >
-      <p className="mx-auto max-w-[96%] pb-2 text-center text-[clamp(0.9rem,2.2vw,1.15rem)] font-bold leading-snug tracking-tight">
-        {target.split('').map((ch, i) => {
-          const typedCh = display[i]
-          let cls = 'text-white/30'
-          if (typedCh !== undefined) {
-            cls = typedCh === ch ? 'text-amber-200' : 'text-red-400'
-          } else if (i === display.length) {
-            cls = 'text-white underline decoration-amber-400 decoration-2 underline-offset-4'
-          }
-          return (
-            <span key={`${i}-${ch}`} className={cls} style={{ textShadow: '0 1px 3px #000' }}>
-              {ch}
-            </span>
-          )
-        })}
-      </p>
+      <div className="mx-auto flex max-w-[92%] items-end justify-center gap-0.5">
+        {leadEllipsis ? (
+          <span className="shrink-0 pb-0.5 text-sm font-bold text-white/45" aria-hidden>
+            …
+          </span>
+        ) : null}
+        <KaraokeChars
+          target={text}
+          display={display}
+          baseIndex={baseIndex}
+          className="min-w-0 text-center text-[clamp(0.82rem,3.8vw,1.05rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
+        />
+        {trailEllipsis ? (
+          <span className="shrink-0 pb-0.5 text-sm font-bold text-white/45" aria-hidden>
+            …
+          </span>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -39,6 +94,11 @@ export function KaraokeLyrics({ target, draft, committed }: Props) {
 /** 웹 — 연출 하단: 타이핑 진행 문장 */
 export function KaraokeLyricsBottom({ target, draft, committed }: Props) {
   const display = draft.length >= committed.length ? draft : committed
+  const { text, baseIndex, leadEllipsis, trailEllipsis } = karaokeVisibleSlice(
+    target,
+    display.length,
+    28,
+  )
 
   return (
     <div
@@ -48,22 +108,24 @@ export function KaraokeLyricsBottom({ target, draft, committed }: Props) {
           'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)',
       }}
     >
-      <p className="mx-auto max-w-[96%] text-center text-[clamp(1rem,2.4vw,1.45rem)] font-bold leading-snug tracking-tight">
-        {target.split('').map((ch, i) => {
-          const typedCh = display[i]
-          let cls = 'text-white/30'
-          if (typedCh !== undefined) {
-            cls = typedCh === ch ? 'text-amber-200' : 'text-red-400'
-          } else if (i === display.length) {
-            cls = 'text-white underline decoration-amber-400 decoration-2 underline-offset-4'
-          }
-          return (
-            <span key={`${i}-${ch}`} className={cls} style={{ textShadow: '0 1px 3px #000' }}>
-              {ch}
-            </span>
-          )
-        })}
-      </p>
+      <div className="mx-auto flex max-w-[94%] items-end justify-center gap-1">
+        {leadEllipsis ? (
+          <span className="shrink-0 pb-1 text-base font-bold text-white/45" aria-hidden>
+            …
+          </span>
+        ) : null}
+        <KaraokeChars
+          target={text}
+          display={display}
+          baseIndex={baseIndex}
+          className="min-w-0 text-center text-[clamp(1rem,2.4vw,1.45rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
+        />
+        {trailEllipsis ? (
+          <span className="shrink-0 pb-1 text-base font-bold text-white/45" aria-hidden>
+            …
+          </span>
+        ) : null}
+      </div>
     </div>
   )
 }

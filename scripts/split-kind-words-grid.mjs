@@ -36,7 +36,7 @@ for (let row = 0; row < rows; row++) {
     const out = path.join(outDir, `proverbs-kind-words-${String(n).padStart(2, '0')}.png`)
     await sharp(src)
       .extract({ left, top, width, height })
-      .resize({ width: 1280, withoutEnlargement: true })
+      .resize(1536, 1024, { fit: 'cover', position: 'centre' })
       .png({ quality: 82, compressionLevel: 9 })
       .toFile(out)
     console.log(`→ ${path.basename(out)} (${width}×${height})`)
