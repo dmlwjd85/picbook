@@ -43,7 +43,7 @@ function KaraokeChars({
           cls = 'text-white underline decoration-amber-400 decoration-2 underline-offset-4'
         }
         return (
-          <span key={`${globalIndex}-${ch}`} className={cls} style={{ textShadow: '0 1px 3px #000' }}>
+          <span key={`${globalIndex}-${ch}`} className={cls} style={{ textShadow: '0 1px 4px #000' }}>
             {ch}
           </span>
         )
@@ -52,7 +52,7 @@ function KaraokeChars({
   )
 }
 
-/** 모바일 — 연출 이미지 하단: 타이핑 진행 문장(노래방 자막) */
+/** 모바일 — 연출 이미지 하단 겹침: 타이핑 진행 */
 export function KaraokeLyrics({ target, draft, committed }: Props) {
   const display = draft.length >= committed.length ? draft : committed
   const { text, baseIndex, leadEllipsis, trailEllipsis } = karaokeVisibleSlice(
@@ -62,36 +62,32 @@ export function KaraokeLyrics({ target, draft, committed }: Props) {
   )
 
   return (
-    <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-14 max-lg:block lg:hidden"
-      style={{
-        background:
-          'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)',
-      }}
-    >
-      <div className="mx-auto flex max-w-[92%] items-end justify-center gap-0.5">
-        {leadEllipsis ? (
-          <span className="shrink-0 pb-0.5 text-sm font-bold text-white/45" aria-hidden>
-            …
-          </span>
-        ) : null}
-        <KaraokeChars
-          target={text}
-          display={display}
-          baseIndex={baseIndex}
-          className="min-w-0 text-center text-[clamp(0.82rem,3.8vw,1.05rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
-        />
-        {trailEllipsis ? (
-          <span className="shrink-0 pb-0.5 text-sm font-bold text-white/45" aria-hidden>
-            …
-          </span>
-        ) : null}
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] px-2 pb-1 pt-6 max-lg:block lg:hidden">
+      <div className="mx-auto max-w-[94%] rounded-lg bg-black/55 px-2 py-1 backdrop-blur-[3px]">
+        <div className="flex items-end justify-center gap-0.5">
+          {leadEllipsis ? (
+            <span className="shrink-0 pb-0.5 text-sm font-bold text-white/50" aria-hidden>
+              …
+            </span>
+          ) : null}
+          <KaraokeChars
+            target={text}
+            display={display}
+            baseIndex={baseIndex}
+            className="min-w-0 text-center text-[clamp(0.8rem,3.6vw,1rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
+          />
+          {trailEllipsis ? (
+            <span className="shrink-0 pb-0.5 text-sm font-bold text-white/50" aria-hidden>
+              …
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   )
 }
 
-/** 웹 — 연출 하단: 타이핑 진행 문장 */
+/** 웹 — 연출 하단 겹침: 타이핑 진행 */
 export function KaraokeLyricsBottom({ target, draft, committed }: Props) {
   const display = draft.length >= committed.length ? draft : committed
   const { text, baseIndex, leadEllipsis, trailEllipsis } = karaokeVisibleSlice(
@@ -101,30 +97,26 @@ export function KaraokeLyricsBottom({ target, draft, committed }: Props) {
   )
 
   return (
-    <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] hidden px-4 pb-[5%] pt-20 lg:block"
-      style={{
-        background:
-          'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)',
-      }}
-    >
-      <div className="mx-auto flex max-w-[94%] items-end justify-center gap-1">
-        {leadEllipsis ? (
-          <span className="shrink-0 pb-1 text-base font-bold text-white/45" aria-hidden>
-            …
-          </span>
-        ) : null}
-        <KaraokeChars
-          target={text}
-          display={display}
-          baseIndex={baseIndex}
-          className="min-w-0 text-center text-[clamp(1rem,2.4vw,1.45rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
-        />
-        {trailEllipsis ? (
-          <span className="shrink-0 pb-1 text-base font-bold text-white/45" aria-hidden>
-            …
-          </span>
-        ) : null}
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] hidden px-3 pb-2 pt-8 lg:block">
+      <div className="mx-auto max-w-[94%] rounded-lg bg-black/50 px-3 py-1.5 backdrop-blur-[3px]">
+        <div className="flex items-end justify-center gap-1">
+          {leadEllipsis ? (
+            <span className="shrink-0 pb-1 text-base font-bold text-white/50" aria-hidden>
+              …
+            </span>
+          ) : null}
+          <KaraokeChars
+            target={text}
+            display={display}
+            baseIndex={baseIndex}
+            className="min-w-0 text-center text-[clamp(0.95rem,2.2vw,1.35rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
+          />
+          {trailEllipsis ? (
+            <span className="shrink-0 pb-1 text-base font-bold text-white/50" aria-hidden>
+              …
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   )

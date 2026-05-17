@@ -307,22 +307,24 @@ export default function PlayPage() {
 
       {showMobileEpilogueFullscreen ? (
         <div
-          className="fixed inset-0 z-50 flex min-h-0 flex-col bg-stone-950 lg:hidden"
+          className="fixed inset-0 z-50 flex min-h-0 flex-col bg-black lg:hidden"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)',
           }}
         >
-          <div className="relative min-h-0 flex-1">
-            <VisualStage
-              layers={layers}
-              overlayCaption={closingCaption}
-              centerImages
-              embedded
-              epilogueFullscreen
-              onOverlayTap={lastSentence ? undefined : goNextSentence}
-              overlayTapLabel="다음 속담 →"
-            />
+          <div className="relative flex min-h-0 flex-1 items-center justify-center px-1">
+            <div className="relative aspect-[3/2] w-full max-h-full max-w-[min(100vw,calc((100dvh-10rem)*1.5))]">
+              <VisualStage
+                layers={layers}
+                overlayCaption={closingCaption}
+                centerImages
+                embedded
+                epilogueFullscreen
+                onOverlayTap={lastSentence ? undefined : goNextSentence}
+                overlayTapLabel="다음 속담 →"
+              />
+            </div>
           </div>
           <div className="shrink-0 border-t border-white/10 bg-black/90 px-4 py-3">
             {lastSentence ? (
@@ -362,9 +364,9 @@ export default function PlayPage() {
       {/* 모바일: 연출 영역 고정 (stacked 제외) */}
       {!isStacked ? (
         <div
-          className="relative z-10 shrink-0 border-b border-stone-300 bg-stone-900 lg:hidden"
+          className="relative z-10 shrink-0 overflow-hidden bg-black lg:hidden"
           style={{
-            height: minimalTyping ? 'clamp(180px, 42dvh, 280px)' : 'clamp(140px, 32dvh, 220px)',
+            height: minimalTyping ? 'clamp(200px, 44dvh, 300px)' : 'clamp(160px, 36dvh, 240px)',
           }}
         >
           <VisualStage layers={layers} embedded />
@@ -379,7 +381,7 @@ export default function PlayPage() {
           }}
         >
           <div
-            className="relative h-[min(34dvh,38vh)] min-h-[200px] w-full shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner lg:min-h-[min(52vh,520px)] lg:h-auto lg:flex-1"
+            className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-black lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
             style={
               keyboardInset > 0
                 ? {
@@ -431,7 +433,7 @@ export default function PlayPage() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">연출</h2>
             </div>
           ) : null}
-          <div className="flex min-h-[min(50vh,420px)] flex-1 items-center rounded-2xl border border-stone-200 bg-stone-900/95 p-3 shadow-inner">
+          <div className="flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-black">
             <VisualStage layers={layers} />
           </div>
         </section>

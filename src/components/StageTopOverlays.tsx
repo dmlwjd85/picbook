@@ -25,7 +25,7 @@ export function StageInlays({ glosses, karaoke, showKaraoke }: Props) {
           {glosses.map((g) => (
             <div
               key={`${g.charIndex}-${g.term}`}
-              className="mx-auto w-full max-w-[96%] rounded-lg border border-amber-300/50 bg-black/82 px-3 py-1.5 shadow-lg backdrop-blur-sm"
+              className="mx-auto w-full max-w-[96%] rounded-md bg-black/55 px-3 py-1 backdrop-blur-[3px]"
             >
               <p className="text-center text-[clamp(0.75rem,1.8vw,0.95rem)] font-bold leading-snug text-amber-50">
                 <span className="text-amber-300">{g.term}</span>
