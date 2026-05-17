@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { KaraokeLyrics } from './KaraokeLyrics'
-import type { LayerState } from '../types/pack'
+import { VocabGlossOverlay } from './VocabGlossOverlay'
+import type { LayerState, VocabGloss } from '../types/pack'
 
 const IMG_PROPS = {
   decoding: 'async' as const,
@@ -62,8 +63,11 @@ type Props = {
   centerImages?: boolean
   /** 연출 영역을 화면에 최대한 크게 */
   large?: boolean
+  /** 한 화면에 맞춘 작은 연출 */
+  compact?: boolean
   /** 노래방 자막 — 따라 쓸 문장을 그림 하단에만 표시 */
   karaoke?: KaraokeProps | null
+  vocabGlosses?: VocabGloss[]
 }
 
 function RedXStamp() {
@@ -113,7 +117,9 @@ export function VisualStage({
   embedded = false,
   centerImages = false,
   large = false,
+  compact = false,
   karaoke = null,
+  vocabGlosses = [],
 }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
@@ -123,9 +129,11 @@ export function VisualStage({
       className={
         embedded
           ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
-          : large
-            ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
-            : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+          : compact
+            ? 'relative mx-auto aspect-[16/10] h-full w-full max-h-full max-w-2xl overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
+            : large
+              ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+              : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
       }
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
@@ -216,6 +224,8 @@ export function VisualStage({
           <span className="text-xs text-slate-600">따라 쓰면 장면이 바뀝니다.</span>
         </div>
       ) : null}
+
+      <VocabGlossOverlay glosses={vocabGlosses} />
 
       {karaoke && !overlayCaption ? (
         <KaraokeLyrics target={karaoke.target} draft={karaoke.draft} committed={karaoke.committed} />

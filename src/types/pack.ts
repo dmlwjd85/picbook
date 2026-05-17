@@ -78,6 +78,14 @@ export type Cue = {
   effects: CueEffect[]
 }
 
+/** 속담·어려운 낱말 풀이 (네이버 어학사전 참고) */
+export type VocabGloss = {
+  /** 이 글자 수 이상이 되면 표시 시작 */
+  charIndex: number
+  term: string
+  definition: string
+}
+
 export type SentenceBlock = {
   id: string
   /** 사용자에게 보이는 타이핑 목표 문자열(연출 메모 미포함). */
@@ -92,6 +100,8 @@ export type SentenceBlock = {
   captions?: { charIndex: number; text: string }[]
   /** 마지막 컷에서 스테이지 하단에 보일 짧은 교훈 대사 */
   closingLine?: string
+  /** 타이핑 중 해당 낱말 구간에 장면 위에 표시할 풀이 */
+  vocabGlosses?: VocabGloss[]
 }
 
 export type ReadingPack = {

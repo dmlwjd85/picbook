@@ -1,5 +1,5 @@
 import { createId } from './ids'
-import type { Cue, SentenceBlock } from '../types/pack'
+import type { Cue, SentenceBlock, VocabGloss } from '../types/pack'
 import { idxAfter } from '../data/proverbsPackShared'
 
 /** 6컷 속담 문장 공통 생성 */
@@ -9,6 +9,7 @@ export function createSixPanelProverbSentence(
   cueNeedles: readonly [string, string, string, string, string],
   cueNeedlesFrom?: readonly [number, number, number, number, number],
   closingLine?: string,
+  vocabGlosses?: VocabGloss[],
 ): SentenceBlock {
   const layer = createId()
 
@@ -58,5 +59,6 @@ export function createSixPanelProverbSentence(
     ],
     cues,
     ...(closingLine ? { closingLine } : {}),
+    ...(vocabGlosses?.length ? { vocabGlosses } : {}),
   }
 }

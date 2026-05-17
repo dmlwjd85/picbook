@@ -1,6 +1,7 @@
 import { createId } from '../lib/ids'
 import type { Cue, SentenceBlock } from '../types/pack'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
+import { GLOSS_GARANGBI } from './proverbVocab'
 import { idxAfter } from './proverbsPackShared'
 
 /** 가랑비에 옷 젖는 줄 모른다 — 6컷 연출 */
@@ -75,5 +76,6 @@ export function createDrizzleRainProverbSentence(): SentenceBlock {
     ],
     cues,
     closingLine: '조금씩 쌓이면 어느새 크게 다가와요.',
+    vocabGlosses: [GLOSS_GARANGBI],
   }
 }

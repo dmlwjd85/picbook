@@ -11,6 +11,7 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
+import { getActiveVocabGlosses } from '../lib/getActiveVocabGlosses'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -34,7 +35,7 @@ function PlayActions({
 }) {
   return (
     <>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-100">
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-100">
         <div
           className="h-full rounded-full bg-amber-700 transition-[width] duration-300 ease-out"
           style={{ width: `${progressPct}%` }}
@@ -100,6 +101,7 @@ export default function PlayPage() {
   const [typed, setTyped] = useState('')
   const [typingDraft, setTypingDraft] = useState('')
   const [epilogueShown, setEpilogueShown] = useState(false)
+  const [focusToken, setFocusToken] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -166,6 +168,7 @@ export default function PlayPage() {
     setTyped('')
     setTypingDraft('')
     setEpilogueShown(false)
+    setFocusToken((t) => t + 1)
   }, [safeSentenceIndex, sentence?.id])
 
   const layers = useMemo(() => {
@@ -183,6 +186,7 @@ export default function PlayPage() {
     (index: number) => {
       if (sentenceCount === 0) return
       setSentenceIndex(Math.min(Math.max(0, index), sentenceCount - 1))
+      setFocusToken((t) => t + 1)
     },
     [sentenceCount],
   )
@@ -193,6 +197,7 @@ export default function PlayPage() {
 
   const goNextSentence = useCallback(() => {
     setSentenceIndex((i) => Math.min(i + 1, Math.max(0, sentenceCount - 1)))
+    setFocusToken((t) => t + 1)
   }, [sentenceCount])
 
   const swipeHandlers = useSwipeSentences({
@@ -257,6 +262,11 @@ export default function PlayPage() {
       ? { target, draft: typingDraft, committed: typed }
       : null
 
+  const activeVocab =
+    isStacked && sentence && !epilogueShown
+      ? getActiveVocabGlosses(sentence, typed.length)
+      : []
+
   return (
     <div
       className="play-shell flex h-[100dvh] flex-col overflow-hidden bg-stone-100 lg:min-h-full lg:h-auto lg:overflow-visible"
@@ -290,7 +300,7 @@ export default function PlayPage() {
         </div>
       </header>
 
-      <div className="z-20 hidden shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 lg:block">
+      <div className={`z-20 shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 ${isStacked ? 'hidden' : 'hidden lg:block'}`}>
         <div className="mx-auto max-w-6xl">
           <SentenceNavBar
             total={pack.sentences.length}
@@ -317,22 +327,18 @@ export default function PlayPage() {
       ) : null}
 
       {isStacked ? (
-        <main
-          className="mx-auto grid w-full min-h-0 max-w-6xl flex-1 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden px-3 py-2 lg:gap-3 lg:px-6 lg:py-3"
-          style={{
-            paddingBottom: keyboardInset > 0 ? `${keyboardInset + 8}px` : undefined,
-          }}
-        >
-          <div className="flex min-h-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-stone-900/95 p-1.5 shadow-inner sm:p-2">
+        <main className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1.5 sm:px-4 sm:py-2">
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-stone-900/95 p-1 shadow-inner">
             <VisualStage
               layers={layers}
               overlayCaption={closingCaption}
               karaoke={karaokeProps}
+              vocabGlosses={activeVocab}
               centerImages
-              large
+              compact
             />
-            </div>
-          <div className="z-10 shrink-0 rounded-2xl border border-stone-200 bg-white px-3 py-2 shadow-md">
+          </div>
+          <div className="shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3">
             <TypingInline
               target={target}
               typed={typed}
@@ -340,8 +346,9 @@ export default function PlayPage() {
               onDraftChange={setTypingDraft}
               disabled={epilogueShown}
               karaokeOnly
+              focusToken={focusToken}
             />
-            <div className="mt-2">
+            <div className="mt-1">
               <PlayActions
                 complete={complete}
                 lastSentence={lastSentence}
@@ -351,11 +358,6 @@ export default function PlayPage() {
                 epilogueShown={epilogueShown}
                 minimal
               />
-              {complete && !epilogueShown ? (
-                <p className="mt-1 text-center text-[11px] text-amber-800">Enter → 교훈 장면</p>
-              ) : epilogueShown && !lastSentence ? (
-                <p className="mt-1 text-center text-[11px] text-stone-500">Enter → 다음 속담</p>
-              ) : null}
             </div>
           </div>
         </main>
@@ -430,7 +432,9 @@ export default function PlayPage() {
       )}
 
       {/* 모바일: 문장 넘김 — 하단 고정 */}
-      <footer className="z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+      <footer
+        className={`z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? '' : 'lg:hidden'}`}
+      >
         <SentenceNavBar
           total={pack.sentences.length}
           current={safeSentenceIndex}
@@ -445,8 +449,8 @@ export default function PlayPage() {
             좌우 스와이프 · 완료 후 Enter
           </p>
         ) : isStacked ? (
-          <p className="mt-1.5 text-center text-[10px] text-stone-500">
-            완료 Enter → 교훈 · Enter → 다음
+          <p className="mt-1 text-center text-[10px] text-stone-500">
+            Enter 완료→교훈 · Enter→다음
           </p>
         ) : null}
       </footer>
