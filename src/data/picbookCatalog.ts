@@ -1,3 +1,4 @@
+import { createElementaryProverbsPack } from './elementaryProverbsPack'
 import { createSeparationThreePowersDemoPack } from './separationThreePowersDemoPack'
 import { normalizeProductKey } from '../lib/productKey'
 import { getPackContentVersion } from './packContentVersions'
@@ -57,6 +58,22 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     comingSoon: true,
     contentVersion: getPackContentVersion('coming-constitution'),
     loadPack: createSeparationThreePowersDemoPack,
+  },
+  {
+    id: 'coming-elementary-proverbs',
+    title: '초등 필수 속담',
+    subtitle: '출판 예정',
+    blurb:
+      '토끼와 거북이, 까마귀와 까치처럼 익숙한 속담을 그림과 타이핑으로 익혀요. 이미지 준비 후 곧 서점에 올라옵니다.',
+    author: 'PicBook',
+    coverImage: `${base}demo/proverbs/proverbs-cover.png`,
+    magazineTone: 'from-emerald-600 via-teal-500 to-sky-600',
+    productKey: normalizeProductKey('PICBOOK-PROVERBS-TBA'),
+    productKeyDisplay: '—',
+    listPrice: '출판 예정',
+    comingSoon: true,
+    contentVersion: getPackContentVersion('coming-elementary-proverbs'),
+    loadPack: createElementaryProverbsPack,
   },
   {
     id: 'coming-election',
