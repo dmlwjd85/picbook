@@ -378,7 +378,7 @@ export default function PlayPage() {
       {/* 모바일: 연출 영역 고정 (stacked 제외) */}
       {!isStacked ? (
         <div
-          className="relative z-10 shrink-0 overflow-hidden bg-black lg:hidden"
+          className="relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
           style={{
             height: minimalTyping ? 'clamp(200px, 44dvh, 300px)' : 'clamp(160px, 36dvh, 240px)',
           }}
@@ -411,7 +411,7 @@ export default function PlayPage() {
             className="play-sentence-in flex min-h-0 min-w-0 flex-1 flex-col gap-1"
           >
           <div
-            className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-black lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
+            className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
             style={
               keyboardInset > 0
                 ? {
@@ -476,7 +476,7 @@ export default function PlayPage() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">연출</h2>
             </div>
           ) : null}
-          <div className="relative flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-black">
+          <div className="relative flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-stone-900">
             <VisualStage layers={layers} />
             <SentenceNavPrevOverlay
               canPrev={safeSentenceIndex > 0}

@@ -142,7 +142,7 @@ function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabel
   )
 }
 
-/** 연출 스테이지 — 이미지 꽉 채우고 자막·낱말은 겹쳐 표시 */
+/** 연출 스테이지 — 3:2 속담은 contain(전체 보기), 자막·낱말은 겹쳐 표시 */
 export function VisualStage({
   layers,
   overlayCaption,
@@ -161,16 +161,16 @@ export function VisualStage({
   const showKaraoke = Boolean(karaoke && !overlayCaption)
 
   const shellClass = embedded
-    ? 'relative h-full w-full overflow-hidden bg-black'
+    ? 'relative h-full w-full overflow-hidden bg-stone-900'
     : compact
-      ? `relative h-full min-h-[inherit] w-full overflow-hidden bg-black${
+      ? `relative h-full min-h-[inherit] w-full overflow-hidden bg-stone-900${
           large
             ? ' lg:mx-auto lg:aspect-[3/2] lg:h-full lg:max-h-full lg:max-w-none lg:w-full'
             : ''
         }`
       : large
-        ? 'relative mx-auto aspect-[3/2] h-full w-full max-h-full max-w-none overflow-hidden bg-black'
-        : 'relative mx-auto aspect-[16/9] w-full max-w-none overflow-hidden bg-black'
+        ? 'relative mx-auto aspect-[3/2] h-full w-full max-h-full max-w-none overflow-hidden bg-stone-900'
+        : 'relative mx-auto aspect-[16/9] w-full max-w-none overflow-hidden bg-stone-900'
 
   return (
     <div className={shellClass}>
@@ -190,6 +190,8 @@ export function VisualStage({
               : 'center center'
         const faceZoom = !centerImages && fill && !hasPlate && (l.scale ?? 1) > 1.02
         const proverbFill = centerImages && fill && !hasPlate
+        /** 3:2 속담 — 잘리지 않고 전체 프레임 */
+        const imgFit = proverbFill ? 'object-contain' : 'object-cover'
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
         const layerChrome =
           proverbFill || (fill && !hasPlate)
@@ -228,16 +230,24 @@ export function VisualStage({
                     </div>
                   </div>
                 ) : fill ? (
-                  <div className="relative h-full w-full">
-                    <div className="absolute inset-0">
+                  <div className="relative h-full w-full bg-stone-900">
+                    <div
+                      className={
+                        proverbFill
+                          ? 'absolute inset-0 flex items-center justify-center'
+                          : 'absolute inset-0'
+                      }
+                    >
                       <LayerPicture
                         imageUrl={imageUrl}
                         label={l.label}
-                        className="h-full w-full object-cover"
+                        className={`h-full w-full ${imgFit}`}
                         style={
-                          faceZoom
-                            ? { objectPosition: 'center 18%' }
-                            : { objectPosition: 'center center' }
+                          proverbFill
+                            ? { objectPosition: 'center center' }
+                            : faceZoom
+                              ? { objectPosition: 'center 18%' }
+                              : undefined
                         }
                       />
                     </div>

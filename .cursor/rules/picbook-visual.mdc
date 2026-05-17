@@ -1,0 +1,20 @@
+---
+description: PicBook 연출 이미지·속담 팩 작업 규칙
+globs:
+  - picbook/**/*
+---
+
+# PicBook 연출 규칙
+
+## 연출 이미지 비율 (고정)
+- **패널 1장: 3:2, 1536×1024px** (삼권분립 samgwon·powers와 동일)
+- 그리드 원본: **3열×2행** 6컷, **패널 안에 글자·말풍선 없음**
+- `scripts/split-proverbs-grid.mjs` 분할 시 **`fit: inside`** (cover 사용 금지 — 잘림)
+
+## 화면 표시
+- `VisualStage`: 속담·centerImages 연출은 **`object-contain`** — 그림 전체가 보이게 (확대 잘림 금지)
+- 스테이지 배경: `bg-stone-900` (레터박스)
+
+## 속담 추가
+- 복붙 템플릿: `scripts/proverb-sentence.TEMPLATE.ts`
+- 추가 후 `packContentVersions.ts`의 `elementary-proverbs` 버전 올리기

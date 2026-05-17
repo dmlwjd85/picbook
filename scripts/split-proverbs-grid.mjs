@@ -34,8 +34,8 @@ async function splitGrid(inputPath, prefix) {
           height: Math.round(cellH),
         })
         .resize(TARGET_W, TARGET_H, {
-          fit: 'cover',
-          position: 'centre',
+          fit: 'inside',
+          background: { r: 28, g: 25, b: 23 },
         })
         .png({ compressionLevel: 9 })
         .toFile(out)
