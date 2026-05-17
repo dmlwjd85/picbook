@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { KaraokeLyrics } from './KaraokeLyrics'
+import { KaraokeLyrics, KaraokeLyricsBottom } from './KaraokeLyrics'
 import { VocabGlossOverlay } from './VocabGlossOverlay'
 import type { LayerState, VocabGloss } from '../types/pack'
 
@@ -190,7 +190,7 @@ export function VisualStage({
                   <div
                     className={
                       proverbFill
-                        ? 'flex h-full w-full items-center justify-center'
+                        ? 'flex h-full w-full items-center justify-center max-lg:pt-12 lg:pt-0'
                         : 'relative h-full w-full'
                     }
                   >
@@ -242,7 +242,10 @@ export function VisualStage({
       <VocabGlossOverlay glosses={vocabGlosses} />
 
       {karaoke && !overlayCaption ? (
-        <KaraokeLyrics target={karaoke.target} draft={karaoke.draft} committed={karaoke.committed} />
+        <>
+          <KaraokeLyrics target={karaoke.target} draft={karaoke.draft} committed={karaoke.committed} />
+          <KaraokeLyricsBottom target={karaoke.target} draft={karaoke.draft} committed={karaoke.committed} />
+        </>
       ) : null}
 
       {overlayCaption ? (

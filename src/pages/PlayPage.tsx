@@ -327,8 +327,20 @@ export default function PlayPage() {
       ) : null}
 
       {isStacked ? (
-        <main className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1.5 sm:px-4 sm:py-2">
-          <div className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner">
+        <main
+          className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2"
+          style={{
+            paddingBottom: keyboardInset > 0 ? `${keyboardInset + 4}px` : undefined,
+          }}
+        >
+          <div
+            className="flex min-h-0 shrink-0 items-stretch justify-center overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner max-lg:max-h-[min(34dvh,38vh)] max-lg:flex-none lg:min-h-0 lg:flex-1"
+            style={
+              keyboardInset > 0
+                ? { maxHeight: `min(32dvh, calc(58dvh - ${keyboardInset}px))` }
+                : undefined
+            }
+          >
             <VisualStage
               layers={layers}
               overlayCaption={closingCaption}
@@ -338,7 +350,7 @@ export default function PlayPage() {
               compact
             />
           </div>
-          <div className="shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3">
+          <div className="z-10 shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3">
             <TypingInline
               target={target}
               typed={typed}

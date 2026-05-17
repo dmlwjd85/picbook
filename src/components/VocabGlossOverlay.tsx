@@ -9,7 +9,7 @@ export function VocabGlossOverlay({ glosses }: Props) {
   if (glosses.length === 0) return null
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-25 flex flex-col gap-1.5 px-2 pt-2 sm:px-3 sm:pt-3">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-25 flex flex-col gap-1.5 px-2 pt-[3.25rem] sm:px-3 max-lg:pt-[3.25rem] lg:pt-3">
       {glosses.map((g) => (
         <div
           key={`${g.charIndex}-${g.term}`}
