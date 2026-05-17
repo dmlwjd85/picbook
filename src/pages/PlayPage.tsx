@@ -337,10 +337,13 @@ export default function PlayPage() {
           }}
         >
           <div
-            className="flex min-h-0 shrink-0 items-stretch justify-center overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner max-lg:max-h-[min(34dvh,38vh)] max-lg:flex-none lg:min-h-0 lg:flex-1"
+            className="relative h-[min(34dvh,38vh)] min-h-[200px] w-full shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner lg:min-h-[min(40vh,420px)] lg:flex-1"
             style={
               keyboardInset > 0
-                ? { maxHeight: `min(32dvh, calc(58dvh - ${keyboardInset}px))` }
+                ? {
+                    height: `min(28dvh, calc(38dvh - ${Math.round(keyboardInset * 0.35)}px))`,
+                    minHeight: '180px',
+                  }
                 : undefined
             }
           >

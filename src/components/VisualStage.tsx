@@ -43,7 +43,14 @@ function LayerPicture({
       alt={label}
       className={className}
       style={style}
+      draggable={false}
       {...IMG_PROPS}
+      onError={(e) => {
+        const el = e.currentTarget
+        if (el.dataset.fallback === '1') return
+        el.dataset.fallback = '1'
+        el.style.opacity = '0.35'
+      }}
     />
   )
 }
@@ -122,6 +129,9 @@ export function VisualStage({
 }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
+  const showKaraoke = Boolean(karaoke && !overlayCaption)
+  const stageTopInsetRem =
+    centerImages && showKaraoke ? (vocabGlosses.length > 0 ? 5.75 : 3.5) : 0
 
   return (
     <div
@@ -129,7 +139,7 @@ export function VisualStage({
         embedded
           ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
           : compact
-            ? 'relative h-full w-full min-h-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
+            ? 'relative h-full min-h-[inherit] w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
             : large
               ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
               : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
@@ -186,39 +196,32 @@ export function VisualStage({
                     </div>
                   </div>
                 ) : fill ? (
-                  <div
-                    className={
-                      proverbFill
-                        ? `flex h-full w-full items-center justify-center lg:pt-0 ${
-                            vocabGlosses.length > 0 && karaoke
-                              ? 'max-lg:pt-[5.25rem]'
-                              : karaoke
-                                ? 'max-lg:pt-12'
-                                : 'max-lg:pt-0'
-                          }`
-                        : 'relative h-full w-full'
-                    }
-                  >
-                    <LayerPicture
-                      imageUrl={imageUrl}
-                      label={l.label}
+                  <div className="relative h-full w-full">
+                    <div
                       className={
                         proverbFill
-                          ? 'max-h-full max-w-full object-contain'
-                          : 'h-full w-full object-cover'
+                          ? 'absolute inset-x-0 bottom-0 flex items-center justify-center'
+                          : 'absolute inset-0'
                       }
-                      style={
-                        proverbFill
-                          ? {
-                              objectPosition: 'center center',
-                              width: '100%',
-                              height: '100%',
-                            }
-                          : faceZoom
-                            ? { objectPosition: 'center 18%' }
-                            : undefined
-                      }
-                    />
+                      style={proverbFill ? { top: `${stageTopInsetRem}rem` } : undefined}
+                    >
+                      <LayerPicture
+                        imageUrl={imageUrl}
+                        label={l.label}
+                        className={
+                          proverbFill
+                            ? 'h-full w-full object-contain'
+                            : 'h-full w-full object-cover'
+                        }
+                        style={
+                          proverbFill
+                            ? { objectPosition: 'center center' }
+                            : faceZoom
+                              ? { objectPosition: 'center 18%' }
+                              : undefined
+                        }
+                      />
+                    </div>
                     {anchors ? <AnchorOverlay labels={anchors} /> : null}
                     {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
                   </div>
@@ -247,7 +250,7 @@ export function VisualStage({
       <StageTopOverlays
         glosses={vocabGlosses}
         karaoke={karaoke}
-        showKaraoke={Boolean(karaoke && !overlayCaption)}
+        showKaraoke={showKaraoke}
       />
 
       {overlayCaption ? (
