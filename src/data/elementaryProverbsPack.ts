@@ -1,6 +1,7 @@
 import { getCachedPack } from '../lib/packCache'
 import type { ReadingPack } from '../types/pack'
 import { getPackContentVersion } from './packContentVersions'
+import { createDrizzleRainProverbSentence } from './drizzleRainProverbSentence'
 import { createKindWordsProverbSentence } from './kindWordsProverbSentence'
 
 const BOOK_ID = 'elementary-proverbs'
@@ -11,10 +12,10 @@ function buildElementaryProverbsPack(): ReadingPack {
     id: BOOK_ID,
     title: '초등 필수 속담',
     description:
-      '「가는 말이 고와야 오는 말이 곱다」를 따라 쓰며 6컷 그림 연출로 익히는 PicBook.',
+      '속담 문장을 따라 쓰며 6컷 만화 연출로 익히는 PicBook. 가는 말·가랑비 속담 수록.',
     author: 'PicBook',
-    updatedAt: '2026-05-17T20:00:00.000Z',
-    sentences: [createKindWordsProverbSentence()],
+    updatedAt: '2026-05-17T22:00:00.000Z',
+    sentences: [createKindWordsProverbSentence(), createDrizzleRainProverbSentence()],
   }
 }
 

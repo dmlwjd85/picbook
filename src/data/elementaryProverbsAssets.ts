@@ -10,4 +10,10 @@ export const PROVERBS_IMAGES = {
   kindWords04: p('proverbs-kind-words-04.png'),
   kindWords05: p('proverbs-kind-words-05.png'),
   kindWords06: p('proverbs-kind-words-06.png'),
+  drizzle01: p('proverbs-drizzle-01.png'),
+  drizzle02: p('proverbs-drizzle-02.png'),
+  drizzle03: p('proverbs-drizzle-03.png'),
+  drizzle04: p('proverbs-drizzle-04.png'),
+  drizzle05: p('proverbs-drizzle-05.png'),
+  drizzle06: p('proverbs-drizzle-06.png'),
 } as const
