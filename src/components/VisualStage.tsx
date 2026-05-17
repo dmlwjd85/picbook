@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
 
@@ -7,6 +7,11 @@ const IMG_PROPS = {
   loading: 'eager' as const,
 }
 
+const CROSSFADE_MS = 300
+const crossfadeCls =
+  'transition-[opacity,filter] duration-[300ms] ease-in-out motion-reduce:transition-none'
+
+/** 장면 전환 — 다음 이미지 로드 후 겹쳐 페이드(빈 프레임 없음) */
 function LayerPicture({
   imageUrl,
   label,
@@ -18,56 +23,68 @@ function LayerPicture({
   className?: string
   style?: CSSProperties
 }) {
-  const [displayUrl, setDisplayUrl] = useState(imageUrl)
-  const [outgoingUrl, setOutgoingUrl] = useState<string | null>(null)
-  const [incomingReady, setIncomingReady] = useState(true)
-  const fadeCls = 'transition-opacity duration-[380ms] ease-in-out'
+  const [activeUrl, setActiveUrl] = useState(imageUrl)
+  const [fadeOutUrl, setFadeOutUrl] = useState<string | null>(null)
+  const [crossfading, setCrossfading] = useState(false)
   const isAbsolute = className?.includes('absolute')
 
   useEffect(() => {
-    if (imageUrl === displayUrl) return
+    if (imageUrl === activeUrl) return
     let cancelled = false
-    setOutgoingUrl(displayUrl)
-    setIncomingReady(false)
     const img = new Image()
-    const apply = () => {
-      if (cancelled) return
-      setDisplayUrl(imageUrl)
+    const beginCrossfade = () => {
+      if (cancelled || imageUrl === activeUrl) return
+      setFadeOutUrl(activeUrl)
+      setActiveUrl(imageUrl)
+      setCrossfading(false)
       requestAnimationFrame(() => {
         if (cancelled) return
-        setIncomingReady(true)
-        window.setTimeout(() => {
-          if (!cancelled) setOutgoingUrl(null)
-        }, 400)
+        requestAnimationFrame(() => {
+          if (cancelled) return
+          setCrossfading(true)
+          window.setTimeout(() => {
+            if (!cancelled) {
+              setFadeOutUrl(null)
+              setCrossfading(false)
+            }
+          }, CROSSFADE_MS + 40)
+        })
       })
     }
-    img.onload = apply
-    img.onerror = apply
+    img.onload = beginCrossfade
+    img.onerror = beginCrossfade
     img.src = imageUrl
-    if (img.complete) apply()
+    if (img.complete) beginCrossfade()
     return () => {
       cancelled = true
     }
-  }, [imageUrl, displayUrl])
+  }, [imageUrl, activeUrl])
+
+  useEffect(() => {
+    if (imageUrl !== activeUrl && !fadeOutUrl) setActiveUrl(imageUrl)
+  }, [imageUrl, activeUrl, fadeOutUrl])
 
   const wrapCls = isAbsolute ? 'absolute inset-0' : 'relative w-full'
+  const incomingHidden = Boolean(fadeOutUrl) && !crossfading
 
   return (
     <div className={wrapCls}>
-      {outgoingUrl ? (
+      {fadeOutUrl ? (
         <img
-          src={outgoingUrl}
+          src={fadeOutUrl}
           alt=""
           aria-hidden
-          className={`${className ?? ''} ${fadeCls} ${incomingReady ? 'opacity-0' : 'opacity-100'}`}
+          className={`${className ?? ''} ${crossfadeCls} ${
+            crossfading ? 'opacity-0 blur-[3px]' : 'opacity-100 blur-0'
+          }`}
           style={style}
           draggable={false}
         />
       ) : null}
       <img
-        src={displayUrl}
+        src={activeUrl}
         alt={label}
-        className={`${className ?? ''} ${fadeCls} ${incomingReady ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className ?? ''} ${crossfadeCls} ${incomingHidden ? 'opacity-0' : 'opacity-100'}`}
         style={style}
         draggable={false}
         {...IMG_PROPS}
@@ -79,6 +96,29 @@ function LayerPicture({
         }}
       />
     </div>
+  )
+}
+
+/** visible 레이어가 잠깐 비어도 직전 장면을 깔아 검은 화면 방지 */
+function StageHoldBackdrop({
+  url,
+  centerImages,
+}: {
+  url: string
+  centerImages: boolean
+}) {
+  return (
+    <img
+      src={url}
+      alt=""
+      aria-hidden
+      className={`pointer-events-none absolute inset-0 z-0 h-full w-full ${
+        centerImages ? 'object-contain' : 'object-cover'
+      }`}
+      style={centerImages ? { objectPosition: 'center center' } : undefined}
+      draggable={false}
+      {...IMG_PROPS}
+    />
   )
 }
 
@@ -159,6 +199,10 @@ export function VisualStage({
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
   const showKaraoke = Boolean(karaoke && !overlayCaption)
+  const holdUrlRef = useRef<string | null>(null)
+  const topVisibleUrl = visibleLayers[visibleLayers.length - 1]?.imageUrl ?? null
+  if (topVisibleUrl) holdUrlRef.current = topVisibleUrl
+  const holdUrl = topVisibleUrl ?? holdUrlRef.current
 
   const shellClass = embedded
     ? 'relative h-full w-full overflow-hidden bg-stone-900'
@@ -174,6 +218,7 @@ export function VisualStage({
 
   return (
     <div className={shellClass}>
+      {holdUrl ? <StageHoldBackdrop url={holdUrl} centerImages={centerImages} /> : null}
       {visibleLayers.map((l) => {
         const fill = l.fillHeight === true
         const plate = l.plateCaption?.trim()
@@ -269,8 +314,8 @@ export function VisualStage({
           </div>
         )
       })}
-      {!hasImage ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-400">
+      {!hasImage && !holdUrl ? (
+        <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-400">
           <span>아직 연출 이미지가 없습니다.</span>
           <span className="text-xs text-slate-500">따라 쓰면 장면이 바뀝니다.</span>
         </div>

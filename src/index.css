@@ -54,7 +54,7 @@ html.play-active #root {
 
 @keyframes play-sentence-in {
   from {
-    opacity: 0.72;
+    opacity: 0.92;
   }
   to {
     opacity: 1;
@@ -62,5 +62,5 @@ html.play-active #root {
 }
 
 .play-sentence-in {
-  animation: play-sentence-in 0.38s ease-out;
+  animation: play-sentence-in 0.22s ease-out;
 }

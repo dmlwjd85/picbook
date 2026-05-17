@@ -58,7 +58,7 @@ export function SentenceNavBar({
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="min-w-[10rem] rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-900 shadow-sm hover:bg-amber-100 sm:text-sm"
+            className="relative z-10 min-h-[2.5rem] min-w-[11rem] shrink-0 rounded-lg border-2 border-amber-500 bg-amber-100 px-4 py-2.5 text-xs font-bold text-amber-950 shadow-md hover:bg-amber-200 sm:min-w-[12rem] sm:text-sm"
             aria-haspopup="dialog"
           >
             {current + 1} / {total} · 문장 고르기

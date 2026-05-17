@@ -360,7 +360,7 @@ export default function PlayPage() {
         </div>
       ) : null}
 
-      <div className={`z-20 shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 ${isStacked ? 'hidden' : 'hidden lg:block'}`}>
+      <div className="z-20 hidden shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 lg:block">
         <div className="mx-auto max-w-6xl">
           <SentenceNavBar
             total={pack.sentences.length}
@@ -370,6 +370,7 @@ export default function PlayPage() {
             onNext={goNextSentence}
             canPrev={safeSentenceIndex > 0}
             canNext={safeSentenceIndex < pack.sentences.length - 1}
+            dotsOnly={isStacked}
             sentenceLabels={sentenceLabels}
           />
         </div>
@@ -406,10 +407,7 @@ export default function PlayPage() {
             canPrev={safeSentenceIndex > 0}
             onPrev={goPrevSentence}
           />
-          <div
-            key={sentence.id}
-            className="play-sentence-in flex min-h-0 min-w-0 flex-1 flex-col gap-1"
-          >
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
           <div
             className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
             style={
@@ -439,7 +437,10 @@ export default function PlayPage() {
               onNext={goNextSentence}
             />
           </div>
-          <div className="z-10 shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3">
+          <div
+            key={sentence.id}
+            className="play-sentence-in z-10 shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3"
+          >
             <TypingInline
               target={target}
               typed={typed}
@@ -547,7 +548,7 @@ export default function PlayPage() {
 
       {/* 모바일: 문장 넘김 — 하단 고정 */}
       <footer
-        className={`z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? (showMobileEpilogueFullscreen ? 'max-lg:hidden' : 'lg:hidden') : 'lg:hidden'}`}
+        className={`z-30 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? (showMobileEpilogueFullscreen ? 'max-lg:hidden' : 'lg:hidden') : 'lg:hidden'}`}
       >
         <SentenceNavBar
           total={pack.sentences.length}

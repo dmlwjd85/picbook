@@ -18,7 +18,8 @@ function buildSeparationThreePowersDemoPack(): ReadingPack {
     description:
       '권력분립의 헌법적 의미부터 삼권 견제·균형, 국민의 자유와 권리 보장까지 타이핑에 맞춰 이어지는 PicBook.',
     author: 'PicBook',
-    updatedAt: '2026-05-17T00:00:00.000Z',
+    typingStyle: 'stacked',
+    updatedAt: '2026-05-18T14:00:00.000Z',
     sentences: [
       createSeparationIntroSentence(),
       createSeparationMainSentence(),
