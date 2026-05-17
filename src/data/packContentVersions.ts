@@ -4,7 +4,7 @@
  */
 export const PACK_CONTENT_VERSIONS: Record<string, string> = {
   'demo-separation-three-powers': '9',
-  'coming-elementary-proverbs': '1',
+  'elementary-proverbs': '1',
 }
 
 export function getPackContentVersion(bookId: string): string {

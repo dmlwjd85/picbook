@@ -10,6 +10,7 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
+import { getActiveCaption } from '../lib/getActiveCaption'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -256,7 +257,11 @@ export default function PlayPage() {
         className="relative z-10 shrink-0 border-b border-stone-300 bg-stone-900 lg:hidden"
         style={{ height: 'clamp(140px, 32dvh, 220px)' }}
       >
-        <VisualStage layers={layers} embedded />
+        <VisualStage
+          layers={layers}
+          embedded
+          overlayCaption={getActiveCaption(sentence.captions, typed.length)}
+        />
       </div>
 
       <main className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col overflow-hidden lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-visible lg:p-4">
@@ -266,7 +271,10 @@ export default function PlayPage() {
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">연출</h2>
           </div>
           <div className="flex min-h-[min(50vh,420px)] flex-1 items-center rounded-2xl border border-stone-200 bg-stone-900/95 p-3 shadow-inner">
-            <VisualStage layers={layers} />
+            <VisualStage
+              layers={layers}
+              overlayCaption={getActiveCaption(sentence.captions, typed.length)}
+            />
           </div>
         </section>
 
