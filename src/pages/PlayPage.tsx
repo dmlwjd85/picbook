@@ -187,23 +187,30 @@ export default function PlayPage() {
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0
   const sentenceCount = pack?.sentences.length ?? 0
+  const sentenceLabels = useMemo(() => pack?.sentences.map((s) => s.text) ?? [], [pack?.sentences])
 
   const goToSentence = useCallback(
     (index: number) => {
       if (sentenceCount === 0) return
-      setSentenceIndex(Math.min(Math.max(0, index), sentenceCount - 1))
-      setFocusToken((t) => t + 1)
+      startTransition(() => {
+        setSentenceIndex(Math.min(Math.max(0, index), sentenceCount - 1))
+        setFocusToken((t) => t + 1)
+      })
     },
     [sentenceCount],
   )
 
   const goPrevSentence = useCallback(() => {
-    setSentenceIndex((i) => Math.max(0, i - 1))
+    startTransition(() => {
+      setSentenceIndex((i) => Math.max(0, i - 1))
+    })
   }, [])
 
   const goNextSentence = useCallback(() => {
-    setSentenceIndex((i) => Math.min(i + 1, Math.max(0, sentenceCount - 1)))
-    setFocusToken((t) => t + 1)
+    startTransition(() => {
+      setSentenceIndex((i) => Math.min(i + 1, Math.max(0, sentenceCount - 1)))
+      setFocusToken((t) => t + 1)
+    })
   }, [sentenceCount])
 
   const swipeHandlers = useSwipeSentences({
@@ -363,6 +370,7 @@ export default function PlayPage() {
             onNext={goNextSentence}
             canPrev={safeSentenceIndex > 0}
             canNext={safeSentenceIndex < pack.sentences.length - 1}
+            sentenceLabels={sentenceLabels}
           />
         </div>
       </div>
@@ -547,6 +555,7 @@ export default function PlayPage() {
           canPrev={safeSentenceIndex > 0}
           canNext={safeSentenceIndex < pack.sentences.length - 1}
           dotsOnly={isStacked}
+          sentenceLabels={sentenceLabels}
         />
         {!minimalTyping && !isStacked ? (
           <p className="mt-1.5 text-center text-[10px] text-stone-500">

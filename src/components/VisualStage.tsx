@@ -18,14 +18,28 @@ function LayerPicture({
   className?: string
   style?: CSSProperties
 }) {
-  const [shownUrl, setShownUrl] = useState(imageUrl)
+  const [displayUrl, setDisplayUrl] = useState(imageUrl)
+  const [outgoingUrl, setOutgoingUrl] = useState<string | null>(null)
+  const [incomingReady, setIncomingReady] = useState(true)
+  const fadeCls = 'transition-opacity duration-[380ms] ease-in-out'
+  const isAbsolute = className?.includes('absolute')
 
   useEffect(() => {
-    if (imageUrl === shownUrl) return
+    if (imageUrl === displayUrl) return
     let cancelled = false
+    setOutgoingUrl(displayUrl)
+    setIncomingReady(false)
     const img = new Image()
     const apply = () => {
-      if (!cancelled) setShownUrl(imageUrl)
+      if (cancelled) return
+      setDisplayUrl(imageUrl)
+      requestAnimationFrame(() => {
+        if (cancelled) return
+        setIncomingReady(true)
+        window.setTimeout(() => {
+          if (!cancelled) setOutgoingUrl(null)
+        }, 400)
+      })
     }
     img.onload = apply
     img.onerror = apply
@@ -34,23 +48,37 @@ function LayerPicture({
     return () => {
       cancelled = true
     }
-  }, [imageUrl, shownUrl])
+  }, [imageUrl, displayUrl])
+
+  const wrapCls = isAbsolute ? 'absolute inset-0' : 'relative w-full'
 
   return (
-    <img
-      src={shownUrl}
-      alt={label}
-      className={className}
-      style={style}
-      draggable={false}
-      {...IMG_PROPS}
-      onError={(e) => {
-        const el = e.currentTarget
-        if (el.dataset.fallback === '1') return
-        el.dataset.fallback = '1'
-        el.style.opacity = '0.35'
-      }}
-    />
+    <div className={wrapCls}>
+      {outgoingUrl ? (
+        <img
+          src={outgoingUrl}
+          alt=""
+          aria-hidden
+          className={`${className ?? ''} ${fadeCls} ${incomingReady ? 'opacity-0' : 'opacity-100'}`}
+          style={style}
+          draggable={false}
+        />
+      ) : null}
+      <img
+        src={displayUrl}
+        alt={label}
+        className={`${className ?? ''} ${fadeCls} ${incomingReady ? 'opacity-100' : 'opacity-0'}`}
+        style={style}
+        draggable={false}
+        {...IMG_PROPS}
+        onError={(e) => {
+          const el = e.currentTarget
+          if (el.dataset.fallback === '1') return
+          el.dataset.fallback = '1'
+          el.style.opacity = '0.35'
+        }}
+      />
+    </div>
   )
 }
 
@@ -165,8 +193,8 @@ export function VisualStage({
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
         const layerChrome =
           proverbFill || (fill && !hasPlate)
-            ? 'absolute overflow-hidden will-change-transform'
-            : `absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 will-change-transform ${layoutMotion}`
+            ? 'absolute overflow-hidden will-change-transform transition-opacity duration-300 ease-in-out'
+            : `absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 will-change-transform transition-opacity duration-300 ease-in-out ${layoutMotion}`
 
         return (
           <div
