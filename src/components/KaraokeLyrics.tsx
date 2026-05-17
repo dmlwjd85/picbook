@@ -52,19 +52,19 @@ function KaraokeChars({
   )
 }
 
-/** 모바일 — 연출 이미지 하단 겹침: 타이핑 진행 */
+/** 연출 이미지 하단 — 타이핑 칸 바로 위 (모바일·웹 공통) */
 export function KaraokeLyrics({ target, draft, committed }: Props) {
   const display = draft.length >= committed.length ? draft : committed
   const { text, baseIndex, leadEllipsis, trailEllipsis } = karaokeVisibleSlice(
     target,
     display.length,
-    20,
+    24,
   )
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] px-2 pb-1 pt-6 max-lg:block lg:hidden">
-      <div className="mx-auto max-w-[94%] rounded-lg bg-black/55 px-2 py-1 backdrop-blur-[3px]">
-        <div className="flex items-end justify-center gap-0.5">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] px-2 pb-1.5 pt-6 sm:px-3 lg:pb-2">
+      <div className="mx-auto max-w-[94%] rounded-lg bg-black/55 px-2 py-1 backdrop-blur-[3px] sm:px-3 sm:py-1.5">
+        <div className="flex items-end justify-center gap-0.5 sm:gap-1">
           {leadEllipsis ? (
             <span className="shrink-0 pb-0.5 text-sm font-bold text-white/50" aria-hidden>
               …
@@ -74,7 +74,7 @@ export function KaraokeLyrics({ target, draft, committed }: Props) {
             target={text}
             display={display}
             baseIndex={baseIndex}
-            className="min-w-0 text-center text-[clamp(0.8rem,3.6vw,1rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
+            className="min-w-0 text-center text-[clamp(0.8rem,3.2vw,1.2rem)] font-bold leading-snug tracking-tight whitespace-nowrap lg:text-[clamp(0.95rem,1.6vw,1.25rem)]"
           />
           {trailEllipsis ? (
             <span className="shrink-0 pb-0.5 text-sm font-bold text-white/50" aria-hidden>
@@ -87,37 +87,7 @@ export function KaraokeLyrics({ target, draft, committed }: Props) {
   )
 }
 
-/** 웹 — 연출 하단 겹침: 타이핑 진행 */
-export function KaraokeLyricsBottom({ target, draft, committed }: Props) {
-  const display = draft.length >= committed.length ? draft : committed
-  const { text, baseIndex, leadEllipsis, trailEllipsis } = karaokeVisibleSlice(
-    target,
-    display.length,
-    28,
-  )
-
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[32] hidden px-3 pb-2 pt-8 lg:block">
-      <div className="mx-auto max-w-[94%] rounded-lg bg-black/50 px-3 py-1.5 backdrop-blur-[3px]">
-        <div className="flex items-end justify-center gap-1">
-          {leadEllipsis ? (
-            <span className="shrink-0 pb-1 text-base font-bold text-white/50" aria-hidden>
-              …
-            </span>
-          ) : null}
-          <KaraokeChars
-            target={text}
-            display={display}
-            baseIndex={baseIndex}
-            className="min-w-0 text-center text-[clamp(0.95rem,2.2vw,1.35rem)] font-bold leading-snug tracking-tight whitespace-nowrap"
-          />
-          {trailEllipsis ? (
-            <span className="shrink-0 pb-1 text-base font-bold text-white/50" aria-hidden>
-              …
-            </span>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  )
+/** @deprecated KaraokeLyrics 와 동일 — 하위 호환 */
+export function KaraokeLyricsBottom(props: Props) {
+  return <KaraokeLyrics {...props} />
 }

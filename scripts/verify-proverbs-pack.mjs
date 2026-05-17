@@ -7,8 +7,9 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
-const TARGET_W = 1536
-const TARGET_H = 1024
+/** 3:2 비율 허용 오차 (픽셀 단위는 그리드 원본에 따라 달라짐) */
+const RATIO = 3 / 2
+const RATIO_EPS = 0.02
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, '..', 'public', 'demo', 'proverbs')
@@ -39,9 +40,10 @@ async function verify() {
         continue
       }
       const meta = await sharp(filePath).metadata()
-      if (meta.width !== TARGET_W || meta.height !== TARGET_H) {
+      const ratio = meta.width / meta.height
+      if (Math.abs(ratio - RATIO) > RATIO_EPS) {
         console.error(
-          `FAIL: ${name} expected ${TARGET_W}x${TARGET_H}, got ${meta.width}x${meta.height}`,
+          `FAIL: ${name} expected 3:2 ratio, got ${meta.width}x${meta.height} (${ratio.toFixed(3)})`,
         )
         failed = true
       }
@@ -54,7 +56,7 @@ async function verify() {
   }
 
   if (failed) process.exit(1)
-  console.log(`OK: all proverb panel images present (${TARGET_W}x${TARGET_H}, 3:2)`)
+  console.log('OK: all proverb panel images present (3:2 ratio)')
 }
 
 await verify()

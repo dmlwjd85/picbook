@@ -1,5 +1,5 @@
 import type { VocabGloss } from '../types/pack'
-import { KaraokeLyrics, KaraokeLyricsBottom } from './KaraokeLyrics'
+import { KaraokeLyrics } from './KaraokeLyrics'
 import { VocabGlossBottom } from './VocabGlossBottom'
 
 type KaraokeProps = {
@@ -40,18 +40,11 @@ export function StageInlays({ glosses, karaoke, showKaraoke }: Props) {
       <VocabGlossBottom glosses={glosses} karaokeActive={showKaraoke} />
 
       {showKaraoke && karaoke ? (
-        <>
-          <KaraokeLyrics
-            target={karaoke.target}
-            draft={karaoke.draft}
-            committed={karaoke.committed}
-          />
-          <KaraokeLyricsBottom
-            target={karaoke.target}
-            draft={karaoke.draft}
-            committed={karaoke.committed}
-          />
-        </>
+        <KaraokeLyrics
+          target={karaoke.target}
+          draft={karaoke.draft}
+          committed={karaoke.committed}
+        />
       ) : null}
     </>
   )

@@ -13,30 +13,40 @@ const outDir = path.join(root, 'public', 'demo', 'proverbs')
 
 const COLS = 3
 const ROWS = 2
-/** 삼권분립 samgwon·powers 컷과 동일 3:2 */
-const TARGET_W = 1536
-const TARGET_H = 1024
 
 async function splitGrid(inputPath, prefix) {
   const absIn = path.isAbsolute(inputPath) ? inputPath : path.join(root, inputPath)
   const meta = await sharp(absIn).metadata()
-  const cellW = meta.width / COLS
-  const cellH = meta.height / ROWS
+  const cellW = Math.round(meta.width / COLS)
+  const cellH = Math.round(meta.height / ROWS)
+  /** 컷당 3:2 캔버스 — 원본보다 키우지 않음(업스케일 흐림 방지) */
+  const targetW = cellW
+  const targetH = Math.round((cellW * 2) / 3)
   let n = 1
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const out = path.join(outDir, `${prefix}-${String(n).padStart(2, '0')}.png`)
-      await sharp(absIn)
+      const cellBuf = await sharp(absIn)
         .extract({
           left: Math.round(col * cellW),
           top: Math.round(row * cellH),
-          width: Math.round(cellW),
-          height: Math.round(cellH),
+          width: cellW,
+          height: cellH,
         })
-        .resize(TARGET_W, TARGET_H, {
+        .resize(targetW, targetH, {
           fit: 'inside',
-          background: { r: 28, g: 25, b: 23 },
+          withoutEnlargement: true,
         })
+        .toBuffer()
+      await sharp({
+        create: {
+          width: targetW,
+          height: targetH,
+          channels: 3,
+          background: { r: 28, g: 25, b: 23 },
+        },
+      })
+        .composite([{ input: cellBuf, gravity: 'center' }])
         .png({ compressionLevel: 9 })
         .toFile(out)
       console.log('wrote', out)
