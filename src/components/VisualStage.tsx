@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { ClosingSpeechBubble } from './ClosingSpeechBubble'
 import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
 
@@ -243,13 +242,36 @@ export function VisualStage({
 
       {overlayCaption ? (
         <>
-          <ClosingSpeechBubble text={overlayCaption} large={epilogueFullscreen} />
-          {epilogueFullscreen ? (
+          <div
+            className={`pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col items-center justify-end px-3 ${
+              epilogueFullscreen ? 'pb-2 pt-16' : 'pb-2 pt-12'
+            }`}
+            style={{
+              background:
+                'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 55%, transparent 100%)',
+            }}
+          >
+            <p
+              className={`max-w-[94%] text-center font-bold leading-snug text-amber-50 ${
+                epilogueFullscreen
+                  ? 'text-[clamp(1rem,4.2vw,1.3rem)]'
+                  : 'text-[clamp(0.95rem,2.8vw,1.2rem)]'
+              }`}
+              style={{ textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}
+            >
+              {overlayCaption}
+            </p>
+            {!epilogueFullscreen ? (
+              <p className="mt-1.5 text-[11px] font-medium text-white/50">Enter → 다음 속담</p>
+            ) : null}
+          </div>
+          {epilogueFullscreen && onOverlayTap ? (
             <div
-              className="absolute inset-0 z-30 flex cursor-pointer flex-col items-center justify-end px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-              role={onOverlayTap ? 'button' : undefined}
-              tabIndex={onOverlayTap ? 0 : undefined}
-              onClick={onOverlayTap ?? undefined}
+              className="absolute inset-x-0 z-30 flex cursor-pointer justify-center px-4"
+              style={{ bottom: 'max(5.25rem, calc(env(safe-area-inset-bottom) + 4.25rem))' }}
+              role="button"
+              tabIndex={0}
+              onClick={onOverlayTap}
               onKeyDown={
                 onOverlayTap
                   ? (e) => {
@@ -261,17 +283,11 @@ export function VisualStage({
                   : undefined
               }
             >
-              {onOverlayTap ? (
-                <span className="rounded-full bg-amber-700/95 px-6 py-3 text-base font-bold text-white shadow-lg ring-2 ring-amber-400/40">
-                  {overlayTapLabel}
-                </span>
-              ) : null}
+              <span className="rounded-full bg-amber-700/95 px-6 py-3 text-base font-bold text-white shadow-lg ring-2 ring-amber-400/40">
+                {overlayTapLabel}
+              </span>
             </div>
-          ) : (
-            <p className="pointer-events-none absolute inset-x-0 bottom-2 z-30 text-center text-[11px] font-medium text-white/50">
-              Enter → 다음 속담
-            </p>
-          )}
+          ) : null}
         </>
       ) : null}
     </div>

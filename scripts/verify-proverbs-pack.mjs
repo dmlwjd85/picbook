@@ -19,6 +19,11 @@ const PREFIXES = [
   'proverbs-oak-pine',
   'proverbs-branches',
   'proverbs-liver',
+  'proverbs-taesan',
+  'proverbs-persimmon',
+  'proverbs-river-fire',
+  'proverbs-frog',
+  'proverbs-dung',
 ]
 
 let failed = false
