@@ -21,8 +21,7 @@ export function TypingPanel({ target, typed, onTypedChange, disabled, minimal = 
     if (!composingRef.current) setDraft(typed)
   }, [typed])
 
-  const pushRaw = (raw: string) => {
-    setDraft(raw)
+  const commitRaw = (raw: string) => {
     syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
@@ -46,11 +45,15 @@ export function TypingPanel({ target, typed, onTypedChange, disabled, minimal = 
         }}
         onCompositionEnd={(e) => {
           composingRef.current = false
-          pushRaw(e.currentTarget.value)
+          const raw = e.currentTarget.value
+          setDraft(raw)
+          commitRaw(raw)
         }}
         onChange={(e) => {
           if (disabled) return
-          pushRaw(e.target.value)
+          const raw = e.target.value
+          setDraft(raw)
+          if (!composingRef.current) commitRaw(raw)
         }}
       />
       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-500">

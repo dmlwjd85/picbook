@@ -90,6 +90,8 @@ export type SentenceBlock = {
    * charIndex는 보통 그림 큐와 맞춥니다.
    */
   captions?: { charIndex: number; text: string }[]
+  /** 마지막 컷에서 스테이지 하단에 보일 짧은 교훈 대사 */
+  closingLine?: string
 }
 
 export type ReadingPack = {
@@ -102,6 +104,6 @@ export type ReadingPack = {
   updatedAt: string
   /** 카탈로그 팩 개정 번호 — 올리면 구매자에게 자동 반영 */
   contentVersion?: string
-  /** minimal: 짧은 한글만, 안내·자막 최소화 */
-  typingStyle?: 'default' | 'minimal'
+  /** minimal: 짧은 한글만, 안내·자막 최소화 / stacked: 연출 중앙·따라쓰기 하단 */
+  typingStyle?: 'default' | 'minimal' | 'stacked'
 }

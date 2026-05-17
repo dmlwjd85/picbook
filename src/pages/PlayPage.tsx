@@ -1,6 +1,7 @@
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
+import { TypingInline } from '../components/TypingInline'
 import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { SentenceNavBar } from '../components/SentenceNavBar'
@@ -10,6 +11,7 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
+import { getClosingCaption } from '../lib/getClosingCaption'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -195,6 +197,7 @@ export default function PlayPage() {
   }
 
   const minimalTyping = pack?.typingStyle === 'minimal'
+  const isStacked = pack?.typingStyle === 'stacked'
 
   if (loading || !pack || !sentence) {
     return (
@@ -207,6 +210,8 @@ export default function PlayPage() {
       </div>
     )
   }
+
+  const closingCaption = isStacked ? getClosingCaption(sentence, typed.length) : null
 
   return (
     <div
@@ -255,16 +260,49 @@ export default function PlayPage() {
         </div>
       </div>
 
-      {/* 모바일: 연출 영역 고정 */}
-      <div
-        className="relative z-10 shrink-0 border-b border-stone-300 bg-stone-900 lg:hidden"
-        style={{
-          height: minimalTyping ? 'clamp(180px, 42dvh, 280px)' : 'clamp(140px, 32dvh, 220px)',
-        }}
-      >
-        <VisualStage layers={layers} embedded />
-      </div>
+      {/* 모바일: 연출 영역 고정 (stacked 제외) */}
+      {!isStacked ? (
+        <div
+          className="relative z-10 shrink-0 border-b border-stone-300 bg-stone-900 lg:hidden"
+          style={{
+            height: minimalTyping ? 'clamp(180px, 42dvh, 280px)' : 'clamp(140px, 32dvh, 220px)',
+          }}
+        >
+          <VisualStage layers={layers} embedded />
+        </div>
+      ) : null}
 
+      {isStacked ? (
+        <main
+          className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 lg:px-6 lg:py-5"
+          style={{
+            paddingBottom: keyboardInset > 0 ? `${keyboardInset + 8}px` : undefined,
+          }}
+        >
+          <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-stone-200 bg-stone-900/95 p-2 shadow-inner sm:p-3">
+              <VisualStage
+                layers={layers}
+                overlayCaption={closingCaption}
+                centerImages
+                large
+              />
+            </div>
+            <div className="mt-3 shrink-0 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+              <TypingInline target={target} typed={typed} onTypedChange={setTyped} />
+              <div className="px-4 pb-4">
+                <PlayActions
+                  complete={complete}
+                  lastSentence={lastSentence}
+                  progressPct={progressPct}
+                  onNext={goNextSentence}
+                  minimal
+                />
+              </div>
+            </div>
+          </div>
+        </main>
+      ) : (
       <main className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col overflow-hidden lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-visible lg:p-4">
         {/* 데스크톱 연출 */}
         <section className="hidden min-h-0 flex-1 flex-col lg:flex lg:min-w-0 lg:flex-[1.15]">
@@ -332,6 +370,7 @@ export default function PlayPage() {
           </div>
         </section>
       </main>
+      )}
 
       {/* 모바일: 문장 넘김 — 하단 고정 */}
       <footer className="z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
@@ -344,10 +383,12 @@ export default function PlayPage() {
           canPrev={safeSentenceIndex > 0}
           canNext={safeSentenceIndex < pack.sentences.length - 1}
         />
-        {!minimalTyping ? (
+        {!minimalTyping && !isStacked ? (
           <p className="mt-1.5 text-center text-[10px] text-stone-500">
             좌우 스와이프 · 완료 후 Enter
           </p>
+        ) : isStacked ? (
+          <p className="mt-1.5 text-center text-[10px] text-stone-500">스와이프 · 완료 후 Enter</p>
         ) : null}
       </footer>
     </div>

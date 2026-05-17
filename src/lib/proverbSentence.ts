@@ -8,6 +8,7 @@ export function createSixPanelProverbSentence(
   images: readonly [string, string, string, string, string, string],
   cueNeedles: readonly [string, string, string, string, string],
   cueNeedlesFrom?: readonly [number, number, number, number, number],
+  closingLine?: string,
 ): SentenceBlock {
   const layer = createId()
 
@@ -56,5 +57,6 @@ export function createSixPanelProverbSentence(
       },
     ],
     cues,
+    ...(closingLine ? { closingLine } : {}),
   }
 }

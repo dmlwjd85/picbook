@@ -74,5 +74,6 @@ export function createKindWordsProverbSentence(): SentenceBlock {
       },
     ],
     cues,
+    closingLine: '말을 고지면 돌아오는 말도 고와요.',
   }
 }

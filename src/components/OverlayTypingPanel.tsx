@@ -23,9 +23,8 @@ export function OverlayTypingPanel({ target, typed, onTypedChange, disabled, min
     if (!composingRef.current) setDraft(typed)
   }, [typed])
 
-  const pushRaw = (raw: string) => {
+  const commitRaw = (raw: string) => {
     if (disabled) return
-    setDraft(raw)
     syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
@@ -65,9 +64,15 @@ export function OverlayTypingPanel({ target, typed, onTypedChange, disabled, min
           }}
           onCompositionEnd={(e) => {
             composingRef.current = false
-            pushRaw(e.currentTarget.value)
+            const raw = e.currentTarget.value
+            setDraft(raw)
+            commitRaw(raw)
           }}
-          onChange={(e) => pushRaw(e.target.value)}
+          onChange={(e) => {
+            const raw = e.target.value
+            setDraft(raw)
+            if (!composingRef.current) commitRaw(raw)
+          }}
         />
       </div>
 

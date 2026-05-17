@@ -51,6 +51,10 @@ type Props = {
   layers: LayerState[]
   overlayCaption?: string | null
   embedded?: boolean
+  /** 속담 컷 등 — 이미지를 스테이지 중앙에 맞춤 */
+  centerImages?: boolean
+  /** 연출 영역을 화면에 최대한 크게 */
+  large?: boolean
 }
 
 function RedXStamp() {
@@ -94,7 +98,13 @@ function AnchorOverlay({ labels }: { labels: NonNullable<LayerState['anchorLabel
 }
 
 /** ??? ?? ??. ?? ??? ?? ?????, pan??? ??? ?? ??. */
-export function VisualStage({ layers, overlayCaption, embedded = false }: Props) {
+export function VisualStage({
+  layers,
+  overlayCaption,
+  embedded = false,
+  centerImages = false,
+  large = false,
+}: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
 
@@ -103,7 +113,9 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
       className={
         embedded
           ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
-          : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+          : large
+            ? 'relative mx-auto aspect-[4/3] w-full max-w-5xl min-h-[min(58dvh,560px)] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+            : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
       }
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
@@ -121,7 +133,8 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
             : fill && hasPlate
               ? 'left center'
               : 'center center'
-        const faceZoom = fill && !hasPlate && (l.scale ?? 1) > 1.02
+        const faceZoom = !centerImages && fill && !hasPlate && (l.scale ?? 1) > 1.02
+        const centerCrop = centerImages && fill && !hasPlate
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
 
         return (
@@ -161,7 +174,13 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
                       imageUrl={imageUrl}
                       label={l.label}
                       className="h-full w-full object-cover"
-                      style={faceZoom ? { objectPosition: 'center 18%' } : undefined}
+                      style={
+                        centerCrop
+                          ? { objectPosition: 'center center' }
+                          : faceZoom
+                            ? { objectPosition: 'center 18%' }
+                            : undefined
+                      }
                     />
                     {anchors ? <AnchorOverlay labels={anchors} /> : null}
                     {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
@@ -183,8 +202,8 @@ export function VisualStage({ layers, overlayCaption, embedded = false }: Props)
       })}
       {!hasImage ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-500">
-          <span>?? ??? ??? ??? ???.</span>
-          <span className="text-xs text-slate-600">???? ?? ????? ??? ??? ??? ???.</span>
+          <span>아직 연출 이미지가 없습니다.</span>
+          <span className="text-xs text-slate-600">따라 쓰면 장면이 바뀝니다.</span>
         </div>
       ) : null}
 

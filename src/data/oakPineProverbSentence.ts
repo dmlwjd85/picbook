@@ -15,5 +15,7 @@ export function createOakPineProverbSentence() {
       PROVERBS_IMAGES.oakPine06,
     ],
     ['가랑잎', '솔잎', '바스락', '거린다', '한다'],
+    undefined,
+    '남 탓만 하지 마세요.',
   )
 }

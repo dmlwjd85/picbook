@@ -16,5 +16,6 @@ export function createLiverGallProverbSentence() {
     ],
     ['간에', '붙었다', '쓸개', '붙었다', '한다'],
     [0, 0, 0, 6, 0],
+    '한곳만 정해서 해요.',
   )
 }

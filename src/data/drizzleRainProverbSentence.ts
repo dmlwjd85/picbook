@@ -74,5 +74,6 @@ export function createDrizzleRainProverbSentence(): SentenceBlock {
       },
     ],
     cues,
+    closingLine: '조금씩 변하는 줄 알아야 해요.',
   }
 }

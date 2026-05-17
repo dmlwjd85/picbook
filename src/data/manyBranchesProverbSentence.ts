@@ -15,5 +15,7 @@ export function createManyBranchesProverbSentence() {
       PROVERBS_IMAGES.branches06,
     ],
     ['나무', '바람', '잘', '날', '없다'],
+    undefined,
+    '한꺼번에 많으면 힘들어요.',
   )
 }

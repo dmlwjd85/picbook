@@ -6,10 +6,7 @@ export function longestMatchingPrefix(input: string, target: string): string {
   return target.slice(0, i)
 }
 
-/**
- * IME 조합 중에도 선두 일치 길이가 늘면 부모 typed를 갱신한다.
- * (모바일에서 조합이 끝날 때만 연출이 바뀌는 문제 방지)
- */
+/** 조합이 끝난 뒤(또는 영문 직접 입력) 선두 일치 길이만 부모 typed에 반영 */
 export function syncTypingFromRaw(
   raw: string,
   target: string,
