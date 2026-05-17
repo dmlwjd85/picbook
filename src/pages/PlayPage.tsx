@@ -406,7 +406,10 @@ export default function PlayPage() {
             canPrev={safeSentenceIndex > 0}
             onPrev={goPrevSentence}
           />
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
+          <div
+            key={sentence.id}
+            className="play-sentence-in flex min-h-0 min-w-0 flex-1 flex-col gap-1"
+          >
           <div
             className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-black lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
             style={
