@@ -114,7 +114,7 @@ export function VisualStage({
         embedded
           ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
           : large
-            ? 'relative mx-auto aspect-[4/3] w-full max-w-5xl min-h-[min(58dvh,560px)] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+            ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
             : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
       }
     >

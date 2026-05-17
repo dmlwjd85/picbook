@@ -51,7 +51,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     blurb:
       '속담 문장을 따라 쓰면 6컷 만화가 순서대로 바뀝니다. 가는 말·가랑비·가랑잎·가지 많은 나무·간과 쓸개 등 5편.',
     author: 'PicBook',
-    coverImage: `${base}demo/proverbs/proverbs-kind-words-06.png`,
+    coverImage: `${base}demo/proverbs/proverbs-cover.png`,
     magazineTone: 'from-emerald-600 via-teal-500 to-sky-600',
     productKey: normalizeProductKey('PICBOOK-PROVERBS-2026'),
     productKeyDisplay: 'PICBOOK-PROVERBS-2026',

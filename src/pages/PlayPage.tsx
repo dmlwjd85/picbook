@@ -274,13 +274,12 @@ export default function PlayPage() {
 
       {isStacked ? (
         <main
-          className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col overflow-y-auto overscroll-contain px-3 py-3 lg:px-6 lg:py-5"
+          className="mx-auto grid w-full min-h-0 max-w-6xl flex-1 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden px-3 py-2 lg:gap-3 lg:px-6 lg:py-3"
           style={{
             paddingBottom: keyboardInset > 0 ? `${keyboardInset + 8}px` : undefined,
           }}
         >
-          <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-stone-200 bg-stone-900/95 p-2 shadow-inner sm:p-3">
+          <div className="flex min-h-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-stone-900/95 p-1.5 shadow-inner sm:p-2">
               <VisualStage
                 layers={layers}
                 overlayCaption={closingCaption}
@@ -288,9 +287,9 @@ export default function PlayPage() {
                 large
               />
             </div>
-            <div className="mt-3 shrink-0 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-              <TypingInline target={target} typed={typed} onTypedChange={setTyped} />
-              <div className="px-4 pb-4">
+          <div className="z-10 max-h-[min(42dvh,320px)] shrink-0 overflow-y-auto rounded-2xl border border-stone-200 bg-white shadow-md">
+            <TypingInline target={target} typed={typed} onTypedChange={setTyped} />
+            <div className="px-4 pb-3 pt-1">
                 <PlayActions
                   complete={complete}
                   lastSentence={lastSentence}
@@ -298,7 +297,6 @@ export default function PlayPage() {
                   onNext={goNextSentence}
                   minimal
                 />
-              </div>
             </div>
           </div>
         </main>
