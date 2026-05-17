@@ -49,7 +49,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     title: '초등 필수 속담',
     subtitle: '가는 말이 고와야 오는 말이 곱다',
     blurb:
-      '속담 문장을 따라 쓰면 6컷 만화가 순서대로 바뀝니다. 가는 말이 고와야…, 가랑비에 옷 젖는 줄 모른다 등 2편 수록.',
+      '속담 문장을 따라 쓰면 6컷 만화가 순서대로 바뀝니다. 가는 말·가랑비·가랑잎·가지 많은 나무·간과 쓸개 등 5편.',
     author: 'PicBook',
     coverImage: `${base}demo/proverbs/proverbs-kind-words-06.png`,
     magazineTone: 'from-emerald-600 via-teal-500 to-sky-600',
