@@ -11,7 +11,7 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
-import { getActiveVocabGlosses } from '../lib/getActiveVocabGlosses'
+import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -262,9 +262,12 @@ export default function PlayPage() {
       ? { target, draft: typingDraft, committed: typed }
       : null
 
+  const vocabLen =
+    sentence && target ? vocabTypedLength(target, typed, typingDraft) : 0
+
   const activeVocab =
     isStacked && sentence && !epilogueShown
-      ? getActiveVocabGlosses(sentence, typed.length)
+      ? getActiveVocabGlosses(sentence, vocabLen)
       : []
 
   return (
