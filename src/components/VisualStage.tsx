@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import { KaraokeLyrics } from './KaraokeLyrics'
 import type { LayerState } from '../types/pack'
 
 const IMG_PROPS = {
@@ -47,6 +48,12 @@ function LayerPicture({
   )
 }
 
+type KaraokeProps = {
+  target: string
+  draft: string
+  committed: string
+}
+
 type Props = {
   layers: LayerState[]
   overlayCaption?: string | null
@@ -55,6 +62,8 @@ type Props = {
   centerImages?: boolean
   /** 연출 영역을 화면에 최대한 크게 */
   large?: boolean
+  /** 노래방 자막 — 따라 쓸 문장을 그림 하단에만 표시 */
+  karaoke?: KaraokeProps | null
 }
 
 function RedXStamp() {
@@ -104,6 +113,7 @@ export function VisualStage({
   embedded = false,
   centerImages = false,
   large = false,
+  karaoke = null,
 }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
@@ -207,20 +217,25 @@ export function VisualStage({
         </div>
       ) : null}
 
+      {karaoke && !overlayCaption ? (
+        <KaraokeLyrics target={karaoke.target} draft={karaoke.draft} committed={karaoke.committed} />
+      ) : null}
+
       {overlayCaption ? (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[5%] pt-16"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center justify-end px-3 pb-[5%] pt-20"
           style={{
             background:
-              'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, transparent 100%)',
+              'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)',
           }}
         >
           <p
-            className="max-w-[92%] text-center text-[clamp(0.95rem,2.1vw,1.35rem)] font-bold leading-snug tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
-            style={{ textShadow: '0 0 1px #000, 0 1px 2px #000' }}
+            className="max-w-[92%] text-center text-[clamp(1.05rem,2.5vw,1.5rem)] font-bold leading-snug tracking-tight text-amber-100"
+            style={{ textShadow: '0 0 1px #000, 0 2px 8px rgba(0,0,0,0.9)' }}
           >
             {overlayCaption}
           </p>
+          <p className="mt-2 text-[11px] font-medium text-white/55">Enter → 다음 속담</p>
         </div>
       ) : null}
     </div>

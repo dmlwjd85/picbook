@@ -16,6 +16,6 @@ export function createLiverGallProverbSentence() {
     ],
     ['간에', '붙었다', '쓸개', '붙었다', '한다'],
     [0, 0, 0, 6, 0],
-    '한곳만 정해서 해요.',
+    '이익만 보고 이쪽저쪽 붙으면 믿음을 잃어.',
   )
 }

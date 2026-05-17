@@ -74,6 +74,6 @@ export function createDrizzleRainProverbSentence(): SentenceBlock {
       },
     ],
     cues,
-    closingLine: '조금씩 변하는 줄 알아야 해요.',
+    closingLine: '조금씩 쌓이면 어느새 크게 다가와요.',
   }
 }

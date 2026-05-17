@@ -11,7 +11,6 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
-import { getClosingCaption } from '../lib/getClosingCaption'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -22,12 +21,16 @@ function PlayActions({
   progressPct,
   onNext,
   minimal = false,
+  epilogueShown = false,
+  onShowEpilogue,
 }: {
   complete: boolean
   lastSentence: boolean
   progressPct: number
   onNext: () => void
   minimal?: boolean
+  epilogueShown?: boolean
+  onShowEpilogue?: () => void
 }) {
   return (
     <>
@@ -39,14 +42,33 @@ function PlayActions({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-4">
         {complete ? (
-          <button
-            type="button"
-            className="rounded-xl bg-amber-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-900 disabled:opacity-40"
-            disabled={lastSentence}
-            onClick={onNext}
-          >
-            {lastSentence ? (minimal ? '끝' : '마지막 문장입니다') : minimal ? '다음 →' : '다음 문장 →'}
-          </button>
+          epilogueShown ? (
+            <button
+              type="button"
+              className="rounded-xl bg-amber-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-900 disabled:opacity-40"
+              disabled={lastSentence}
+              onClick={onNext}
+            >
+              {lastSentence ? (minimal ? '끝' : '마지막 속담') : minimal ? '다음 속담 →' : '다음 속담 →'}
+            </button>
+          ) : onShowEpilogue ? (
+            <button
+              type="button"
+              className="rounded-xl bg-amber-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-900"
+              onClick={onShowEpilogue}
+            >
+              교훈 보기 →
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="rounded-xl bg-amber-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-900 disabled:opacity-40"
+              disabled={lastSentence}
+              onClick={onNext}
+            >
+              {lastSentence ? (minimal ? '끝' : '마지막 문장입니다') : minimal ? '다음 →' : '다음 문장 →'}
+            </button>
+          )
         ) : minimal ? null : (
           <p className="text-xs text-stone-500">문장을 끝까지 맞게 입력하면 다음으로 갈 수 있어요.</p>
         )}
@@ -76,6 +98,8 @@ export default function PlayPage() {
   const [pack, setPack] = useState<ReadingPack | null>(null)
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [typed, setTyped] = useState('')
+  const [typingDraft, setTypingDraft] = useState('')
+  const [epilogueShown, setEpilogueShown] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -140,6 +164,8 @@ export default function PlayPage() {
 
   useEffect(() => {
     setTyped('')
+    setTypingDraft('')
+    setEpilogueShown(false)
   }, [safeSentenceIndex, sentence?.id])
 
   const layers = useMemo(() => {
@@ -177,13 +203,26 @@ export default function PlayPage() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' || e.repeat) return
-      if (!complete || lastSentence) return
+      if (!complete) return
+
+      const stacked = pack?.typingStyle === 'stacked'
+      if (stacked) {
+        e.preventDefault()
+        if (!epilogueShown) {
+          setEpilogueShown(true)
+          return
+        }
+        if (!lastSentence) goNextSentence()
+        return
+      }
+
+      if (lastSentence) return
       e.preventDefault()
       goNextSentence()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [complete, lastSentence, goNextSentence])
+  }, [complete, lastSentence, goNextSentence, epilogueShown, pack?.typingStyle])
 
   if (loadError) {
     return (
@@ -211,7 +250,12 @@ export default function PlayPage() {
     )
   }
 
-  const closingCaption = isStacked ? getClosingCaption(sentence, typed.length) : null
+  const closingCaption =
+    isStacked && epilogueShown ? sentence.closingLine?.trim() || null : null
+  const karaokeProps =
+    isStacked && !epilogueShown
+      ? { target, draft: typingDraft, committed: typed }
+      : null
 
   return (
     <div
@@ -280,23 +324,38 @@ export default function PlayPage() {
           }}
         >
           <div className="flex min-h-0 items-center justify-center overflow-hidden rounded-2xl border border-stone-200 bg-stone-900/95 p-1.5 shadow-inner sm:p-2">
-              <VisualStage
-                layers={layers}
-                overlayCaption={closingCaption}
-                centerImages
-                large
-              />
+            <VisualStage
+              layers={layers}
+              overlayCaption={closingCaption}
+              karaoke={karaokeProps}
+              centerImages
+              large
+            />
             </div>
-          <div className="z-10 max-h-[min(42dvh,320px)] shrink-0 overflow-y-auto rounded-2xl border border-stone-200 bg-white shadow-md">
-            <TypingInline target={target} typed={typed} onTypedChange={setTyped} />
-            <div className="px-4 pb-3 pt-1">
-                <PlayActions
-                  complete={complete}
-                  lastSentence={lastSentence}
-                  progressPct={progressPct}
-                  onNext={goNextSentence}
-                  minimal
-                />
+          <div className="z-10 shrink-0 rounded-2xl border border-stone-200 bg-white px-3 py-2 shadow-md">
+            <TypingInline
+              target={target}
+              typed={typed}
+              onTypedChange={setTyped}
+              onDraftChange={setTypingDraft}
+              disabled={epilogueShown}
+              karaokeOnly
+            />
+            <div className="mt-2">
+              <PlayActions
+                complete={complete}
+                lastSentence={lastSentence}
+                progressPct={progressPct}
+                onNext={goNextSentence}
+                onShowEpilogue={() => setEpilogueShown(true)}
+                epilogueShown={epilogueShown}
+                minimal
+              />
+              {complete && !epilogueShown ? (
+                <p className="mt-1 text-center text-[11px] text-amber-800">Enter → 교훈 장면</p>
+              ) : epilogueShown && !lastSentence ? (
+                <p className="mt-1 text-center text-[11px] text-stone-500">Enter → 다음 속담</p>
+              ) : null}
             </div>
           </div>
         </main>
@@ -386,7 +445,9 @@ export default function PlayPage() {
             좌우 스와이프 · 완료 후 Enter
           </p>
         ) : isStacked ? (
-          <p className="mt-1.5 text-center text-[10px] text-stone-500">스와이프 · 완료 후 Enter</p>
+          <p className="mt-1.5 text-center text-[10px] text-stone-500">
+            완료 Enter → 교훈 · Enter → 다음
+          </p>
         ) : null}
       </footer>
     </div>

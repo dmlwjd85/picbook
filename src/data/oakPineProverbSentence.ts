@@ -16,6 +16,6 @@ export function createOakPineProverbSentence() {
     ],
     ['가랑잎', '솔잎', '바스락', '거린다', '한다'],
     undefined,
-    '남 탓만 하지 마세요.',
+    '남 탓 말고, 내 잘못부터 보렴.',
   )
 }
