@@ -102,4 +102,6 @@ export type ReadingPack = {
   updatedAt: string
   /** 카탈로그 팩 개정 번호 — 올리면 구매자에게 자동 반영 */
   contentVersion?: string
+  /** minimal: 짧은 한글만, 안내·자막 최소화 */
+  typingStyle?: 'default' | 'minimal'
 }

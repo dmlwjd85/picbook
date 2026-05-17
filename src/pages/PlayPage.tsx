@@ -10,7 +10,6 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useKeyboardInset } from '../hooks/useKeyboardInset'
 import { computeLayerSnapshot } from '../lib/cueEngine'
-import { getActiveCaption } from '../lib/getActiveCaption'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -20,11 +19,13 @@ function PlayActions({
   lastSentence,
   progressPct,
   onNext,
+  minimal = false,
 }: {
   complete: boolean
   lastSentence: boolean
   progressPct: number
   onNext: () => void
+  minimal?: boolean
 }) {
   return (
     <>
@@ -42,9 +43,9 @@ function PlayActions({
             disabled={lastSentence}
             onClick={onNext}
           >
-            {lastSentence ? '마지막 문장입니다' : '다음 문장 →'}
+            {lastSentence ? (minimal ? '끝' : '마지막 문장입니다') : minimal ? '다음 →' : '다음 문장 →'}
           </button>
-        ) : (
+        ) : minimal ? null : (
           <p className="text-xs text-stone-500">문장을 끝까지 맞게 입력하면 다음으로 갈 수 있어요.</p>
         )}
         {lastSentence && complete ? (
@@ -193,6 +194,8 @@ export default function PlayPage() {
     )
   }
 
+  const minimalTyping = pack?.typingStyle === 'minimal'
+
   if (loading || !pack || !sentence) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-stone-100 text-stone-600">
@@ -255,26 +258,23 @@ export default function PlayPage() {
       {/* 모바일: 연출 영역 고정 */}
       <div
         className="relative z-10 shrink-0 border-b border-stone-300 bg-stone-900 lg:hidden"
-        style={{ height: 'clamp(140px, 32dvh, 220px)' }}
+        style={{
+          height: minimalTyping ? 'clamp(180px, 42dvh, 280px)' : 'clamp(140px, 32dvh, 220px)',
+        }}
       >
-        <VisualStage
-          layers={layers}
-          embedded
-          overlayCaption={getActiveCaption(sentence.captions, typed.length)}
-        />
+        <VisualStage layers={layers} embedded />
       </div>
 
       <main className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col overflow-hidden lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-visible lg:p-4">
         {/* 데스크톱 연출 */}
         <section className="hidden min-h-0 flex-1 flex-col lg:flex lg:min-w-0 lg:flex-[1.15]">
-          <div className="mb-1.5 px-0.5">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">연출</h2>
-          </div>
+          {!minimalTyping ? (
+            <div className="mb-1.5 px-0.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">연출</h2>
+            </div>
+          ) : null}
           <div className="flex min-h-[min(50vh,420px)] flex-1 items-center rounded-2xl border border-stone-200 bg-stone-900/95 p-3 shadow-inner">
-            <VisualStage
-              layers={layers}
-              overlayCaption={getActiveCaption(sentence.captions, typed.length)}
-            />
+            <VisualStage layers={layers} />
           </div>
         </section>
 
@@ -287,30 +287,46 @@ export default function PlayPage() {
         >
           {/* 모바일 */}
           <div className="flex min-h-0 flex-1 flex-col p-3 lg:hidden">
-            <OverlayTypingPanel target={target} typed={typed} onTypedChange={setTyped} />
+            <OverlayTypingPanel
+              target={target}
+              typed={typed}
+              onTypedChange={setTyped}
+              minimal={minimalTyping}
+            />
             <PlayActions
               complete={complete}
               lastSentence={lastSentence}
               progressPct={progressPct}
               onNext={goNextSentence}
+              minimal={minimalTyping}
             />
           </div>
 
           {/* 데스크톱 */}
           <div className="hidden flex-col lg:flex">
-            <div className="mb-1.5 px-0.5">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">따라 쓰기</h2>
-            </div>
+            {!minimalTyping ? (
+              <div className="mb-1.5 px-0.5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">따라 쓰기</h2>
+              </div>
+            ) : null}
             <div className="flex flex-1 flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-              <p className="mb-3 rounded-xl bg-stone-50 px-3 py-2.5 text-lg leading-relaxed text-stone-800">
-                {target}
-              </p>
-              <TypingPanel target={target} typed={typed} onTypedChange={setTyped} />
+              {!minimalTyping ? (
+                <p className="mb-3 rounded-xl bg-stone-50 px-3 py-2.5 text-lg leading-relaxed text-stone-800">
+                  {target}
+                </p>
+              ) : null}
+              <TypingPanel
+                target={target}
+                typed={typed}
+                onTypedChange={setTyped}
+                minimal={minimalTyping}
+              />
               <PlayActions
                 complete={complete}
                 lastSentence={lastSentence}
                 progressPct={progressPct}
                 onNext={goNextSentence}
+                minimal={minimalTyping}
               />
             </div>
           </div>
@@ -328,9 +344,11 @@ export default function PlayPage() {
           canPrev={safeSentenceIndex > 0}
           canNext={safeSentenceIndex < pack.sentences.length - 1}
         />
-        <p className="mt-1.5 text-center text-[10px] text-stone-500">
-          좌우 스와이프 · 완료 후 Enter
-        </p>
+        {!minimalTyping ? (
+          <p className="mt-1.5 text-center text-[10px] text-stone-500">
+            좌우 스와이프 · 완료 후 Enter
+          </p>
+        ) : null}
       </footer>
     </div>
   )
