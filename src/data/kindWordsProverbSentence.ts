@@ -1,28 +1,69 @@
 import { createId } from '../lib/ids'
-import type { SentenceBlock } from '../types/pack'
+import type { Cue, SentenceBlock } from '../types/pack'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
+import { idxAfter } from './proverbsPackShared'
 
-/** 장면마다 짧은 한글만 — 이미지가 주연 */
-const SCENES: { text: string; image: string }[] = [
-  { text: '나쁨', image: PROVERBS_IMAGES.kindWords01 },
-  { text: '고움', image: PROVERBS_IMAGES.kindWords02 },
-  { text: '거울', image: PROVERBS_IMAGES.kindWords03 },
-  { text: '기다', image: PROVERBS_IMAGES.kindWords04 },
-  { text: '돌아', image: PROVERBS_IMAGES.kindWords05 },
-  { text: '곱다', image: PROVERBS_IMAGES.kindWords06 },
-]
+/** 가는 말이 고와야 오는 말이 곱다 — 6컷 연출 (연출 이미지 위 텍스트 없음) */
+export const KIND_WORDS_TEXT = '가는 말이 고와야 오는 말이 곱다.'
 
-function sceneSentence(text: string, imageUrl: string): SentenceBlock {
-  const layerId = createId()
+export function createKindWordsProverbSentence(): SentenceBlock {
+  const layer = createId()
+
+  const show = (imageUrl: string): Cue['effects'] => [
+    { kind: 'layerShow', layerId: layer },
+    { kind: 'layerImage', layerId: layer, imageUrl },
+    {
+      kind: 'layerTransform',
+      layerId: layer,
+      x: 0,
+      y: 0,
+      width: 100,
+      scale: 1,
+      fillHeight: true,
+      panX: 0,
+      panY: 0,
+    },
+    { kind: 'layerOpacity', layerId: layer, opacity: 1 },
+  ]
+
+  const cues: Cue[] = [
+    { id: createId(), charIndex: 0, effects: show(PROVERBS_IMAGES.kindWords01) },
+    {
+      id: createId(),
+      charIndex: idxAfter(KIND_WORDS_TEXT, '말이'),
+      effects: show(PROVERBS_IMAGES.kindWords02),
+    },
+    {
+      id: createId(),
+      charIndex: idxAfter(KIND_WORDS_TEXT, '고와야'),
+      effects: show(PROVERBS_IMAGES.kindWords03),
+    },
+    {
+      id: createId(),
+      charIndex: idxAfter(KIND_WORDS_TEXT, '오는'),
+      effects: show(PROVERBS_IMAGES.kindWords04),
+    },
+    {
+      id: createId(),
+      charIndex: idxAfter(KIND_WORDS_TEXT, '말이', 9),
+      effects: show(PROVERBS_IMAGES.kindWords05),
+    },
+    {
+      id: createId(),
+      charIndex: idxAfter(KIND_WORDS_TEXT, '곱다'),
+      effects: show(PROVERBS_IMAGES.kindWords06),
+    },
+  ]
+
   return {
     id: createId(),
-    text,
+    text: KIND_WORDS_TEXT,
     layers: [
       {
-        id: layerId,
-        label: text,
+        id: layer,
+        label: '속담 장면',
         zIndex: 1,
-        imageUrl,
+        imageUrl: PROVERBS_IMAGES.kindWords01,
         visible: true,
         opacity: 1,
         x: 0,
@@ -32,10 +73,6 @@ function sceneSentence(text: string, imageUrl: string): SentenceBlock {
         fillHeight: true,
       },
     ],
-    cues: [],
+    cues,
   }
-}
-
-export function createKindWordsProverbScenes(): SentenceBlock[] {
-  return SCENES.map((s) => sceneSentence(s.text, s.image))
 }

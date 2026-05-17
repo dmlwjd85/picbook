@@ -47,8 +47,9 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
   {
     id: 'elementary-proverbs',
     title: '초등 필수 속담',
-    subtitle: '그림 6컷 · 짧은 한글',
-    blurb: '말 없이 그림으로 읽고, 장면마다 두세 글자만 따라 써요. 첫 속담 「가는 말이 고와야 오는 말이 곱다」.',
+    subtitle: '가는 말이 고와야 오는 말이 곱다',
+    blurb:
+      '속담 문장을 따라 쓰면 6컷 만화가 순서대로 바뀝니다. 삼권분립 PicBook과 같은 방식으로 익혀요.',
     author: 'PicBook',
     coverImage: `${base}demo/proverbs/proverbs-kind-words-06.png`,
     magazineTone: 'from-emerald-600 via-teal-500 to-sky-600',
