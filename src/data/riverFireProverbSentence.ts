@@ -16,6 +16,6 @@ export function createRiverFireProverbSentence() {
     ],
     ['건너', '불', '구경', '하듯', '한다'],
     undefined,
-    '내 일도 아닌데 그냥 구경만 하면 안 돼요.',
+    '내 일이 아니라고 구경만 하면 언젠가 그 일은 내게도 일어날 수 있어요.',
   )
 }

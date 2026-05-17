@@ -5,6 +5,12 @@ import { TypingInline } from '../components/TypingInline'
 import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { SentenceNavBar } from '../components/SentenceNavBar'
+import {
+  SentenceNavNextDesktop,
+  SentenceNavNextOverlay,
+  SentenceNavPrevDesktop,
+  SentenceNavPrevOverlay,
+} from '../components/SentenceSideNav'
 import { VisualStage } from '../components/VisualStage'
 import { useSwipeSentences } from '../hooks/useSwipeSentences'
 import { getLibraryBook } from '../data/libraryBooks'
@@ -370,16 +376,29 @@ export default function PlayPage() {
           }}
         >
           <VisualStage layers={layers} embedded />
+          <SentenceNavPrevOverlay
+            canPrev={safeSentenceIndex > 0}
+            onPrev={goPrevSentence}
+          />
+          <SentenceNavNextOverlay
+            canNext={safeSentenceIndex < pack.sentences.length - 1}
+            onNext={goNextSentence}
+          />
         </div>
       ) : null}
 
       {isStacked ? (
         <main
-          className={`mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2${showMobileEpilogueFullscreen ? ' max-lg:hidden' : ''}`}
+          className={`mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2 lg:flex-row lg:items-stretch lg:gap-3${showMobileEpilogueFullscreen ? ' max-lg:hidden' : ''}`}
           style={{
             paddingBottom: keyboardInset > 0 ? `${keyboardInset + 4}px` : undefined,
           }}
         >
+          <SentenceNavPrevDesktop
+            canPrev={safeSentenceIndex > 0}
+            onPrev={goPrevSentence}
+          />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
           <div
             className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-black lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
             style={
@@ -399,6 +418,14 @@ export default function PlayPage() {
               centerImages
               compact
               large
+            />
+            <SentenceNavPrevOverlay
+              canPrev={safeSentenceIndex > 0}
+              onPrev={goPrevSentence}
+            />
+            <SentenceNavNextOverlay
+              canNext={safeSentenceIndex < pack.sentences.length - 1}
+              onNext={goNextSentence}
             />
           </div>
           <div className="z-10 shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3">
@@ -423,6 +450,11 @@ export default function PlayPage() {
               />
             </div>
           </div>
+          </div>
+          <SentenceNavNextDesktop
+            canNext={safeSentenceIndex < pack.sentences.length - 1}
+            onNext={goNextSentence}
+          />
         </main>
       ) : (
       <main className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col overflow-hidden lg:flex-1 lg:flex-row lg:gap-4 lg:overflow-visible lg:p-4">
@@ -433,8 +465,16 @@ export default function PlayPage() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500">연출</h2>
             </div>
           ) : null}
-          <div className="flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-black">
+          <div className="relative flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-black">
             <VisualStage layers={layers} />
+            <SentenceNavPrevOverlay
+              canPrev={safeSentenceIndex > 0}
+              onPrev={goPrevSentence}
+            />
+            <SentenceNavNextOverlay
+              canNext={safeSentenceIndex < pack.sentences.length - 1}
+              onNext={goNextSentence}
+            />
           </div>
         </section>
 
@@ -496,7 +536,7 @@ export default function PlayPage() {
 
       {/* 모바일: 문장 넘김 — 하단 고정 */}
       <footer
-        className={`z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? (showMobileEpilogueFullscreen ? 'max-lg:hidden' : '') : 'lg:hidden'}`}
+        className={`z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? (showMobileEpilogueFullscreen ? 'max-lg:hidden' : 'lg:hidden') : 'lg:hidden'}`}
       >
         <SentenceNavBar
           total={pack.sentences.length}
@@ -506,6 +546,7 @@ export default function PlayPage() {
           onNext={goNextSentence}
           canPrev={safeSentenceIndex > 0}
           canNext={safeSentenceIndex < pack.sentences.length - 1}
+          dotsOnly={isStacked}
         />
         {!minimalTyping && !isStacked ? (
           <p className="mt-1.5 text-center text-[10px] text-stone-500">
@@ -513,7 +554,7 @@ export default function PlayPage() {
           </p>
         ) : isStacked ? (
           <p className="mt-1 text-center text-[10px] text-stone-500">
-            Enter 완료→교훈 · Enter→다음
+            양옆 버튼·스와이프 · Enter 완료→교훈
           </p>
         ) : null}
       </footer>
