@@ -7,9 +7,11 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
-/** 3:2 비율 허용 오차 (픽셀 단위는 그리드 원본에 따라 달라짐) */
+/** 3:2 비율·해상도 (삼권 samgwon과 동일) */
 const RATIO = 3 / 2
 const RATIO_EPS = 0.02
+const MIN_W = 1200
+const MIN_H = 800
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, '..', 'public', 'demo', 'proverbs')
@@ -44,6 +46,12 @@ async function verify() {
       if (Math.abs(ratio - RATIO) > RATIO_EPS) {
         console.error(
           `FAIL: ${name} expected 3:2 ratio, got ${meta.width}x${meta.height} (${ratio.toFixed(3)})`,
+        )
+        failed = true
+      }
+      if (meta.width < MIN_W || meta.height < MIN_H) {
+        console.error(
+          `FAIL: ${name} too small ${meta.width}x${meta.height}, want ≥${MIN_W}x${MIN_H} (run batch-outpaint-proverbs)`,
         )
         failed = true
       }

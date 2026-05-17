@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "verify:proverbs": "node scripts/verify-proverbs-pack.mjs",
+    "outpaint:proverbs": "node scripts/batch-outpaint-proverbs.mjs",
     "prebuild": "node scripts/verify-proverbs-pack.mjs"
   },
   "dependencies": {
