@@ -257,6 +257,8 @@ export default function PlayPage() {
 
   const closingCaption =
     isStacked && epilogueShown ? sentence.closingLine?.trim() || null : null
+  const showMobileEpilogueFullscreen =
+    isStacked && epilogueShown && Boolean(closingCaption)
   const karaokeProps =
     isStacked && !epilogueShown
       ? { target, draft: typingDraft, committed: typed }
@@ -303,6 +305,46 @@ export default function PlayPage() {
         </div>
       </header>
 
+      {showMobileEpilogueFullscreen ? (
+        <div
+          className="fixed inset-0 z-50 flex min-h-0 flex-col bg-stone-950 lg:hidden"
+          style={{
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
+        >
+          <div className="relative min-h-0 flex-1">
+            <VisualStage
+              layers={layers}
+              overlayCaption={closingCaption}
+              centerImages
+              embedded
+              epilogueFullscreen
+              onOverlayTap={lastSentence ? undefined : goNextSentence}
+              overlayTapLabel="다음 속담 →"
+            />
+          </div>
+          <div className="shrink-0 border-t border-white/10 bg-black/90 px-4 py-3">
+            {lastSentence ? (
+              <Link
+                to="/bookshelf"
+                className="flex w-full items-center justify-center rounded-2xl bg-stone-700 py-3.5 text-base font-bold text-white shadow-lg active:scale-[0.98]"
+              >
+                책장으로 돌아가기
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="w-full rounded-2xl bg-amber-700 py-3.5 text-base font-bold text-white shadow-lg active:scale-[0.98] hover:bg-amber-800"
+                onClick={goNextSentence}
+              >
+                다음 속담 →
+              </button>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       <div className={`z-20 shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 ${isStacked ? 'hidden' : 'hidden lg:block'}`}>
         <div className="mx-auto max-w-6xl">
           <SentenceNavBar
@@ -331,13 +373,13 @@ export default function PlayPage() {
 
       {isStacked ? (
         <main
-          className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2"
+          className={`mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2${showMobileEpilogueFullscreen ? ' max-lg:hidden' : ''}`}
           style={{
             paddingBottom: keyboardInset > 0 ? `${keyboardInset + 4}px` : undefined,
           }}
         >
           <div
-            className="relative h-[min(34dvh,38vh)] min-h-[200px] w-full shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner lg:min-h-[min(40vh,420px)] lg:flex-1"
+            className="relative h-[min(34dvh,38vh)] min-h-[200px] w-full shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-stone-950 shadow-inner lg:min-h-[min(52vh,520px)] lg:h-auto lg:flex-1"
             style={
               keyboardInset > 0
                 ? {
@@ -354,6 +396,7 @@ export default function PlayPage() {
               vocabGlosses={activeVocab}
               centerImages
               compact
+              large
             />
           </div>
           <div className="z-10 shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3">
@@ -451,7 +494,7 @@ export default function PlayPage() {
 
       {/* 모바일: 문장 넘김 — 하단 고정 */}
       <footer
-        className={`z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? '' : 'lg:hidden'}`}
+        className={`z-20 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? (showMobileEpilogueFullscreen ? 'max-lg:hidden' : '') : 'lg:hidden'}`}
       >
         <SentenceNavBar
           total={pack.sentences.length}

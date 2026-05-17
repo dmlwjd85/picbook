@@ -1,6 +1,20 @@
-import { useEffect, useState, type CSSProperties } from 'react'
-import { StageTopOverlays } from './StageTopOverlays'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
+import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
+
+/** 모바일: 위 자막·아래 낱말 / 웹: 위 낱말·아래 자막 — 이미지 여백(rem) */
+function proverbStageInsets(centerImages: boolean, showKaraoke: boolean, glossCount: number) {
+  if (!centerImages) {
+    return { mobileTop: 0, mobileBottom: 0, desktopTop: 0, desktopBottom: 0 }
+  }
+  const glossBand = glossCount === 0 ? 0 : glossCount === 1 ? 3.25 : 5.75
+  return {
+    mobileTop: showKaraoke ? 3.25 : 0,
+    mobileBottom: glossBand,
+    desktopTop: glossBand,
+    desktopBottom: showKaraoke ? 4.75 : 0,
+  }
+}
 
 const IMG_PROPS = {
   decoding: 'async' as const,
@@ -74,6 +88,11 @@ type Props = {
   /** 노래방 자막 — 따라 쓸 문장을 그림 하단에만 표시 */
   karaoke?: KaraokeProps | null
   vocabGlosses?: VocabGloss[]
+  /** 교훈 장면 — 큰 글씨·전체 화면용 */
+  epilogueFullscreen?: boolean
+  /** 교훈 화면 탭/클릭 시 (모바일) */
+  onOverlayTap?: () => void
+  overlayTapLabel?: string
 }
 
 function RedXStamp() {
@@ -126,25 +145,49 @@ export function VisualStage({
   compact = false,
   karaoke = null,
   vocabGlosses = [],
+  epilogueFullscreen = false,
+  onOverlayTap,
+  overlayTapLabel = '다음 속담 →',
 }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
   const showKaraoke = Boolean(karaoke && !overlayCaption)
-  const stageTopInsetRem =
-    centerImages && showKaraoke ? (vocabGlosses.length > 0 ? 5.75 : 3.5) : 0
+  const stageId = useId()
+  const insets = proverbStageInsets(centerImages, showKaraoke, vocabGlosses.length)
+  const insetScope = stageId.replace(/:/g, '')
+
+  const shellClass = embedded
+    ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
+    : compact
+      ? `relative h-full min-h-[inherit] w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner${
+          large
+            ? ' lg:mx-auto lg:aspect-[4/3] lg:h-full lg:max-h-full lg:max-w-3xl lg:rounded-2xl'
+            : ''
+        }`
+      : large
+        ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
+        : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
 
   return (
-    <div
-      className={
-        embedded
-          ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
-          : compact
-            ? 'relative h-full min-h-[inherit] w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
-            : large
-              ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
-              : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
-      }
-    >
+    <div className={shellClass} data-stage={insetScope}>
+      {centerImages &&
+      (insets.mobileTop > 0 ||
+        insets.mobileBottom > 0 ||
+        insets.desktopTop > 0 ||
+        insets.desktopBottom > 0) ? (
+        <style>{`
+          [data-stage="${insetScope}"] .proverb-fill-inner {
+            top: ${insets.mobileTop}rem;
+            bottom: ${insets.mobileBottom}rem;
+          }
+          @media (min-width: 1024px) {
+            [data-stage="${insetScope}"] .proverb-fill-inner {
+              top: ${insets.desktopTop}rem;
+              bottom: ${insets.desktopBottom}rem;
+            }
+          }
+        `}</style>
+      ) : null}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
       {visibleLayers.map((l) => {
         const fill = l.fillHeight === true
@@ -200,10 +243,9 @@ export function VisualStage({
                     <div
                       className={
                         proverbFill
-                          ? 'absolute inset-x-0 bottom-0 flex items-center justify-center'
+                          ? 'proverb-fill-inner absolute inset-x-0 flex items-center justify-center'
                           : 'absolute inset-0'
                       }
-                      style={proverbFill ? { top: `${stageTopInsetRem}rem` } : undefined}
                     >
                       <LayerPicture
                         imageUrl={imageUrl}
@@ -247,7 +289,7 @@ export function VisualStage({
         </div>
       ) : null}
 
-      <StageTopOverlays
+      <StageInlays
         glosses={vocabGlosses}
         karaoke={karaoke}
         showKaraoke={showKaraoke}
@@ -255,19 +297,53 @@ export function VisualStage({
 
       {overlayCaption ? (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center justify-end px-3 pb-[5%] pt-20"
-          style={{
-            background:
-              'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)',
-          }}
+          className={
+            epilogueFullscreen
+              ? 'absolute inset-0 z-30 flex cursor-pointer flex-col items-center justify-end bg-black/25 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-16'
+              : 'pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col items-center justify-end px-3 pb-[5%] pt-20'
+          }
+          style={
+            epilogueFullscreen
+              ? {
+                  background:
+                    'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.35) 42%, transparent 72%)',
+                }
+              : {
+                  background:
+                    'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)',
+                }
+          }
+          role={epilogueFullscreen && onOverlayTap ? 'button' : undefined}
+          tabIndex={epilogueFullscreen && onOverlayTap ? 0 : undefined}
+          onClick={epilogueFullscreen && onOverlayTap ? onOverlayTap : undefined}
+          onKeyDown={
+            epilogueFullscreen && onOverlayTap
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onOverlayTap()
+                  }
+                }
+              : undefined
+          }
         >
           <p
-            className="max-w-[92%] text-center text-[clamp(1.05rem,2.5vw,1.5rem)] font-bold leading-snug tracking-tight text-amber-100"
+            className={
+              epilogueFullscreen
+                ? 'max-w-[94%] text-center text-[clamp(1.35rem,5.5vw,2.1rem)] font-bold leading-snug tracking-tight text-amber-50'
+                : 'max-w-[92%] text-center text-[clamp(1.05rem,2.5vw,1.5rem)] font-bold leading-snug tracking-tight text-amber-100'
+            }
             style={{ textShadow: '0 0 1px #000, 0 2px 8px rgba(0,0,0,0.9)' }}
           >
             {overlayCaption}
           </p>
-          <p className="mt-2 text-[11px] font-medium text-white/55">Enter → 다음 속담</p>
+          {epilogueFullscreen && onOverlayTap ? (
+            <span className="mt-4 rounded-full bg-amber-700/95 px-6 py-3 text-base font-bold text-white shadow-lg ring-2 ring-amber-400/40">
+              {overlayTapLabel}
+            </span>
+          ) : (
+            <p className="mt-2 text-[11px] font-medium text-white/55">Enter → 다음 속담</p>
+          )}
         </div>
       ) : null}
     </div>
