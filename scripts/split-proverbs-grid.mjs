@@ -30,7 +30,10 @@ async function splitGrid(inputPath, prefix) {
           width: Math.round(cellW),
           height: Math.round(cellH),
         })
-        .resize(960, 720, { fit: 'cover', position: 'centre' })
+        .resize(960, 720, {
+          fit: 'inside',
+          background: { r: 15, g: 23, b: 42, alpha: 1 },
+        })
         .png({ compressionLevel: 9 })
         .toFile(out)
       console.log('wrote', out)

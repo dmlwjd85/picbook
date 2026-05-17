@@ -130,7 +130,7 @@ export function VisualStage({
         embedded
           ? 'relative h-full w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
           : compact
-            ? 'relative mx-auto aspect-[16/10] h-full w-full max-h-full max-w-2xl overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
+            ? 'relative h-full w-full min-h-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-inner'
             : large
               ? 'relative mx-auto aspect-[4/3] h-full w-full max-h-full max-w-3xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
               : 'relative mx-auto aspect-[16/9] w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-inner'
@@ -152,7 +152,7 @@ export function VisualStage({
               ? 'left center'
               : 'center center'
         const faceZoom = !centerImages && fill && !hasPlate && (l.scale ?? 1) > 1.02
-        const centerCrop = centerImages && fill && !hasPlate
+        const proverbFill = centerImages && fill && !hasPlate
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
 
         return (
@@ -187,14 +187,28 @@ export function VisualStage({
                     </div>
                   </div>
                 ) : fill ? (
-                  <div className="relative h-full w-full">
+                  <div
+                    className={
+                      proverbFill
+                        ? 'flex h-full w-full items-center justify-center'
+                        : 'relative h-full w-full'
+                    }
+                  >
                     <LayerPicture
                       imageUrl={imageUrl}
                       label={l.label}
-                      className="h-full w-full object-cover"
+                      className={
+                        proverbFill
+                          ? 'max-h-full max-w-full object-contain'
+                          : 'h-full w-full object-cover'
+                      }
                       style={
-                        centerCrop
-                          ? { objectPosition: 'center center' }
+                        proverbFill
+                          ? {
+                              objectPosition: 'center center',
+                              width: '100%',
+                              height: '100%',
+                            }
                           : faceZoom
                             ? { objectPosition: 'center 18%' }
                             : undefined

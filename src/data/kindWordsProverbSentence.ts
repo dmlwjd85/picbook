@@ -74,6 +74,6 @@ export function createKindWordsProverbSentence(): SentenceBlock {
       },
     ],
     cues,
-    closingLine: '먼저 말을 고우면, 돌아오는 말도 곱단다.',
+    closingLine: '먼저 말을 곱게 하면, 돌아오는 말도 곱다.',
   }
 }
