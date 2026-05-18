@@ -14,7 +14,7 @@ const assetsDir = path.join(
 )
 const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'demo', 'proverbs')
 
-const VERSION = { '01': 'v3', '02': 'v3', '03': 'v3', '04': 'v2', '05': 'v2', '06': 'v2' }
+const VERSION = { '01': 'v4', '02': 'v4', '03': 'v4', '04': 'v4', '05': 'v2', '06': 'v2' }
 
 for (let i = 1; i <= 6; i += 1) {
   const num = String(i).padStart(2, '0')
