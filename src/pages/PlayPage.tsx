@@ -402,12 +402,7 @@ export default function PlayPage() {
       {/* 모바일: 연출 영역 고정 (stacked 제외) */}
       {!isStacked ? (
         <div
-          className="play-stage-mobile relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
-          style={{
-            height:
-              mobileOverlayStagePx ??
-              (minimalTyping ? 'clamp(200px, 44dvh, 300px)' : 'clamp(160px, 36dvh, 240px)'),
-          }}
+          className="play-stage-mobile play-stage-overlay relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
         >
           <VisualStage layers={layers} embedded />
           <SentenceNavPrevOverlay
