@@ -32,6 +32,21 @@ const PREFIXES = [
   'proverbs-steady-tower',
   'proverbs-beads-pearl',
   'proverbs-rolling-stone',
+  'proverbs-ear-nose',
+  'proverbs-picture-cake',
+  'proverbs-food-first',
+  'proverbs-crawl-run',
+  'proverbs-long-tail',
+  'proverbs-crow-ship',
+  'proverbs-pheasant-chicken',
+  'proverbs-pheasant-egg',
+  'proverbs-others-cake',
+  'proverbs-sickle-letter',
+  'proverbs-bird-mouse',
+  'proverbs-nose-three',
+  'proverbs-lie-cake',
+  'proverbs-lie-spit',
+  'proverbs-sweet-bitter',
 ]
 
 let failed = false
