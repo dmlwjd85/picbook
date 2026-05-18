@@ -27,6 +27,11 @@ const PREFIXES = [
   'proverbs-river-fire',
   'proverbs-frog',
   'proverbs-dung',
+  'proverbs-whale-shrimp',
+  'proverbs-cat-bell',
+  'proverbs-steady-tower',
+  'proverbs-beads-pearl',
+  'proverbs-rolling-stone',
 ]
 
 let failed = false

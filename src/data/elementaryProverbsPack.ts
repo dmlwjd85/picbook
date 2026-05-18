@@ -11,6 +11,11 @@ import { createOakPineProverbSentence } from './oakPineProverbSentence'
 import { createPersimmonProverbSentence } from './persimmonProverbSentence'
 import { createRiverFireProverbSentence } from './riverFireProverbSentence'
 import { createTaesanProverbSentence } from './taesanProverbSentence'
+import { createWhaleShrimpProverbSentence } from './whaleShrimpProverbSentence'
+import { createCatBellProverbSentence } from './catBellProverbSentence'
+import { createSteadyTowerProverbSentence } from './steadyTowerProverbSentence'
+import { createBeadsPearlProverbSentence } from './beadsPearlProverbSentence'
+import { createRollingStoneProverbSentence } from './rollingStoneProverbSentence'
 
 const BOOK_ID = 'elementary-proverbs'
 
@@ -20,7 +25,7 @@ function buildElementaryProverbsPack(): ReadingPack {
     id: BOOK_ID,
     title: '초등 필수 속담',
     description:
-      '속담 문장을 따라 쓰며 6컷 만화 연출로 익히는 PicBook. 10개 속담 수록.',
+      '속담 문장을 따라 쓰며 6컷 만화 연출로 익히는 PicBook. 15개 속담 수록.',
     author: 'PicBook',
     typingStyle: 'stacked',
     updatedAt: '2026-05-18T12:00:00.000Z',
@@ -35,6 +40,11 @@ function buildElementaryProverbsPack(): ReadingPack {
       createRiverFireProverbSentence(),
       createFrogTadpoleProverbSentence(),
       createDungMedicineProverbSentence(),
+      createWhaleShrimpProverbSentence(),
+      createCatBellProverbSentence(),
+      createSteadyTowerProverbSentence(),
+      createBeadsPearlProverbSentence(),
+      createRollingStoneProverbSentence(),
     ],
   }
 }
