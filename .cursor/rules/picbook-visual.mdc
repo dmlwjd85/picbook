@@ -9,7 +9,8 @@ globs:
 ## 연출 이미지 비율 (고정)
 - **패널 1장: 3:2, 1536×1024px** (삼권분립 samgwon·powers와 동일) — **1:1 정사각 생성 금지**
 - 그리드 원본: **3열×2행**, **4608×2048px** (셀당 1536×1024). 패널에 글자·말풍선 없음
-- 레거시 1:1 셀 그리드(1536×1024 전체) → `node scripts/batch-outpaint-proverbs.mjs` (좌·우 장면 확장)
+- **1:1 셀 → 3:2 변환:** 거울·반사 아웃페인트 금지. `scripts/extract-proverb-cells.mjs` 후 AI로 컷별 1536×1024 생성 → `scripts/publish-all-generated-panels.mjs`
+- ~~`batch-outpaint-proverbs.mjs`~~ (거울 반사 — 사용 금지)
 - 3:2 그리드 분할: `node scripts/split-proverbs-grid.mjs` — 셀이 3:2면 **그대로 추출** (letterbox 없음)
 
 ## 화면 표시

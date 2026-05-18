@@ -1,5 +1,6 @@
 /**
- * 속담 그리드(_src) 또는 기존 패널에서 1:1 컷을 추출해 3:2(1536×1024) 패널로 일괄 변환
+ * @deprecated 거울·반사 확장 — 사용 금지. AI 컷 생성 후 publish-all-generated-panels.mjs 사용
+ * 속담 그리드(_src)에서 1:1 컷을 추출해 3:2 패널로 변환 (레거시)
  * 실행: node scripts/batch-outpaint-proverbs.mjs
  */
 import { existsSync } from 'fs'
