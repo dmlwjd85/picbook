@@ -28,6 +28,13 @@ html.play-active #root {
   overflow: hidden;
 }
 
+/* 속담 stacked: 키보드 올라와도 연출 상단 고정 */
+@media (max-width: 1023px) {
+  .play-shell main {
+    min-height: 0;
+  }
+}
+
 @keyframes stamp-in {
   from {
     opacity: 0;

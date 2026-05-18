@@ -100,19 +100,25 @@ function LayerPicture({
 function StageHoldBackdrop({
   url,
   centerImages,
+  mobileProverbCover,
 }: {
   url: string
   centerImages: boolean
+  mobileProverbCover: boolean
 }) {
+  const fitCls =
+    centerImages && mobileProverbCover
+      ? 'object-cover lg:object-contain'
+      : centerImages
+        ? 'object-contain'
+        : 'object-cover'
   return (
     <img
       src={url}
       alt=""
       aria-hidden
-      className={`pointer-events-none absolute inset-0 z-0 h-full w-full ${
-        centerImages ? 'object-contain' : 'object-cover'
-      }`}
-      style={centerImages ? { objectPosition: 'center center' } : undefined}
+      className={`pointer-events-none absolute inset-0 z-0 h-full w-full ${fitCls}`}
+      style={{ objectPosition: 'center center' }}
       draggable={false}
       {...IMG_PROPS}
     />
@@ -130,6 +136,8 @@ type Props = {
   overlayCaption?: string | null
   embedded?: boolean
   centerImages?: boolean
+  /** 모바일 속담 3:2 — contain 대신 cover로 검은 레터박스 제거 */
+  mobileProverbCover?: boolean
   large?: boolean
   compact?: boolean
   karaoke?: KaraokeProps | null
@@ -185,6 +193,7 @@ export function VisualStage({
   overlayCaption,
   embedded = false,
   centerImages = false,
+  mobileProverbCover = false,
   large = false,
   compact = false,
   karaoke = null,
@@ -204,7 +213,9 @@ export function VisualStage({
   const shellClass = embedded
     ? 'relative h-full w-full overflow-hidden bg-stone-900'
     : compact
-      ? `relative h-full min-h-[inherit] w-full overflow-hidden bg-stone-900${
+      ? `relative h-full min-h-[inherit] w-full overflow-hidden ${
+          mobileProverbCover ? 'bg-stone-100 max-lg:bg-stone-100 lg:bg-stone-900' : 'bg-stone-900'
+        }${
           large
             ? ' lg:mx-auto lg:aspect-[3/2] lg:h-full lg:max-h-full lg:max-w-none lg:w-full'
             : ''
@@ -215,7 +226,13 @@ export function VisualStage({
 
   return (
     <div className={shellClass}>
-      {holdUrl ? <StageHoldBackdrop url={holdUrl} centerImages={centerImages} /> : null}
+      {holdUrl ? (
+        <StageHoldBackdrop
+          url={holdUrl}
+          centerImages={centerImages}
+          mobileProverbCover={mobileProverbCover}
+        />
+      ) : null}
       {visibleLayers.map((l) => {
         const fill = l.fillHeight === true
         const plate = l.plateCaption?.trim()
@@ -232,8 +249,12 @@ export function VisualStage({
               : 'center center'
         const faceZoom = !centerImages && fill && !hasPlate && (l.scale ?? 1) > 1.02
         const proverbFill = centerImages && fill && !hasPlate
-        /** 3:2 속담 — 잘리지 않고 전체 프레임 */
-        const imgFit = proverbFill ? 'object-contain' : 'object-cover'
+        /** 3:2 속담 — 데스크톱 contain, 모바일 cover로 레터박스 제거 */
+        const imgFit = proverbFill
+          ? mobileProverbCover
+            ? 'object-cover lg:object-contain'
+            : 'object-contain'
+          : 'object-cover'
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
         const layerChrome =
           proverbFill || (fill && !hasPlate)
@@ -272,10 +293,16 @@ export function VisualStage({
                     </div>
                   </div>
                 ) : fill ? (
-                  <div className="relative h-full w-full bg-stone-900">
+                  <div
+                    className={`relative h-full w-full ${
+                      proverbFill && mobileProverbCover
+                        ? 'bg-stone-100 max-lg:bg-stone-100 lg:bg-stone-900'
+                        : 'bg-stone-900'
+                    }`}
+                  >
                     <div
                       className={
-                        proverbFill
+                        proverbFill && !mobileProverbCover
                           ? 'absolute inset-0 flex items-center justify-center'
                           : 'absolute inset-0'
                       }

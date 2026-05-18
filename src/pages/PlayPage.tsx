@@ -294,9 +294,13 @@ export default function PlayPage() {
       ? getActiveVocabGlosses(sentence, vocabLen)
       : []
 
+  const shellKeyboardPad =
+    isStacked && keyboardInset > 0 ? `${keyboardInset}px` : undefined
+
   return (
     <div
       className="play-shell flex h-[100dvh] flex-col overflow-hidden bg-stone-100 lg:min-h-full lg:h-auto lg:overflow-visible"
+      style={{ paddingBottom: shellKeyboardPad }}
       {...swipeHandlers}
     >
       <header className="z-20 shrink-0 border-b border-stone-200 bg-white px-3 py-2 shadow-sm sm:px-5 sm:py-2.5">
@@ -342,6 +346,7 @@ export default function PlayPage() {
                 overlayCaption={closingCaption}
                 centerImages
                 embedded
+                mobileProverbCover
                 epilogueFullscreen
                 onOverlayTap={lastSentence ? undefined : goNextSentence}
                 overlayTapLabel="다음 속담 →"
@@ -408,16 +413,13 @@ export default function PlayPage() {
       {isStacked ? (
         <main
           className={`mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2 lg:flex-row lg:items-stretch lg:gap-3${showMobileEpilogueFullscreen ? ' max-lg:hidden' : ''}`}
-          style={{
-            paddingBottom: keyboardInset > 0 ? `${keyboardInset + 4}px` : undefined,
-          }}
         >
           <SentenceNavPrevDesktop
             canPrev={safeSentenceIndex > 0}
             onPrev={goPrevSentence}
           />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
-          <div className="relative flex-1 min-h-[220px] w-full overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:rounded-lg">
+          <div className="relative z-10 w-full shrink-0 overflow-hidden max-lg:aspect-[3/2] max-lg:max-h-[min(42dvh,calc(100vw*2/3))] max-lg:bg-stone-100 lg:min-h-[min(56vh,560px)] lg:flex-1 lg:rounded-lg lg:bg-stone-900">
             <VisualStage
               layers={layers}
               overlayCaption={closingCaption}
@@ -426,6 +428,7 @@ export default function PlayPage() {
               centerImages
               compact
               large
+              mobileProverbCover
             />
             <SentenceNavPrevOverlay
               canPrev={safeSentenceIndex > 0}
@@ -438,7 +441,7 @@ export default function PlayPage() {
           </div>
           <div
             key={sentence.id}
-            className="play-sentence-in z-10 shrink-0 rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3"
+            className="play-sentence-in z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3"
           >
             <TypingInline
               target={target}
