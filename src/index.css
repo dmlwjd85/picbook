@@ -28,10 +28,35 @@ html.play-active #root {
   overflow: hidden;
 }
 
-/* 속담 stacked: 키보드 올라와도 연출 상단 고정 */
+/* 모바일 실행: visualViewport에 맞춰 셸 고정 — 키보드에 밀리지 않음 */
 @media (max-width: 1023px) {
-  .play-shell main {
+  html.play-active .play-shell {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--vv-offset-top, 0px);
+    height: var(--vv-height, 100dvh);
+    max-height: var(--vv-height, 100dvh);
+  }
+
+  html.play-active .play-shell main {
     min-height: 0;
+  }
+
+  /* 연출 패널: flex 축소 금지, 항상 상단 고정 */
+  .play-stage-mobile {
+    flex-shrink: 0 !important;
+  }
+
+  .play-stage-stacked {
+    height: var(--play-stacked-stage-h, min(42dvh, calc(100vw * 2 / 3)));
+    max-height: var(--play-stacked-stage-h, min(42dvh, calc(100vw * 2 / 3)));
+    aspect-ratio: 3 / 2;
+  }
+
+  .play-stage-overlay {
+    height: var(--play-overlay-stage-h, 36dvh);
+    max-height: var(--play-overlay-stage-h, 44dvh);
   }
 }
 

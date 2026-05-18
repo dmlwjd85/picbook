@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingInline } from '../components/TypingInline'
@@ -15,7 +15,8 @@ import { VisualStage } from '../components/VisualStage'
 import { useSwipeSentences } from '../hooks/useSwipeSentences'
 import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
-import { useKeyboardInset } from '../hooks/useKeyboardInset'
+import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
+import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
 import { usePlaySessionStore } from '../state/playSessionStore'
@@ -100,7 +101,7 @@ export default function PlayPage() {
     Boolean(bookId && s.getActiveAccount()?.unlockedIds.includes(bookId)),
   )
   const setSession = usePlaySessionStore((s) => s.setSession)
-  const keyboardInset = useKeyboardInset()
+  const { inset: keyboardInset, height: vvHeight } = useVisualViewportLayout()
 
   const [pack, setPack] = useState<ReadingPack | null>(null)
   const [sentenceIndex, setSentenceIndex] = useState(0)
@@ -111,10 +112,33 @@ export default function PlayPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const overlayStageRatio = pack?.typingStyle === 'minimal' ? 0.4 : 0.34
+  const mobileStackedStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, 0.42)
+  const mobileOverlayStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, overlayStageRatio)
+
   useEffect(() => {
     document.documentElement.classList.add('play-active')
     return () => document.documentElement.classList.remove('play-active')
   }, [])
+
+  /** 모바일 연출 높이 — CSS 변수로만 적용(lg 이상 레이아웃 유지) */
+  useEffect(() => {
+    const root = document.documentElement
+    if (mobileStackedStagePx != null) {
+      root.style.setProperty('--play-stacked-stage-h', `${mobileStackedStagePx}px`)
+    } else {
+      root.style.removeProperty('--play-stacked-stage-h')
+    }
+    if (mobileOverlayStagePx != null) {
+      root.style.setProperty('--play-overlay-stage-h', `${mobileOverlayStagePx}px`)
+    } else {
+      root.style.removeProperty('--play-overlay-stage-h')
+    }
+    return () => {
+      root.style.removeProperty('--play-stacked-stage-h')
+      root.style.removeProperty('--play-overlay-stage-h')
+    }
+  }, [mobileStackedStagePx, mobileOverlayStagePx])
 
   useEffect(() => {
     let cancelled = false
@@ -170,26 +194,18 @@ export default function PlayPage() {
 
   const sentence = pack?.sentences[safeSentenceIndex]
 
-  const maxSceneTypedRef = useRef(0)
-
   useEffect(() => {
     setTyped('')
     setTypingDraft('')
     setEpilogueShown(false)
     setFocusToken((t) => t + 1)
-    maxSceneTypedRef.current = 0
   }, [safeSentenceIndex, sentence?.id])
 
-  /** 지울 때 큐 되감기·크로스페이드 깜빡임 방지 — 연출은 문장당 최대 진행만 반영 */
-  const sceneTypedLength = useMemo(() => {
-    maxSceneTypedRef.current = Math.max(maxSceneTypedRef.current, typed.length)
-    return maxSceneTypedRef.current
-  }, [typed.length])
-
+  /** 입력 길이에 맞춰 큐 적용 — 지운 글자만큼만 장면 되감기 */
   const layers = useMemo(() => {
     if (!sentence) return []
-    return computeLayerSnapshot(sentence, sceneTypedLength)
-  }, [sentence, sceneTypedLength])
+    return computeLayerSnapshot(sentence, typed.length)
+  }, [sentence, typed.length])
 
   const target = sentence?.text ?? ''
   const complete = target.length > 0 && typed === target
@@ -294,13 +310,9 @@ export default function PlayPage() {
       ? getActiveVocabGlosses(sentence, vocabLen)
       : []
 
-  const shellKeyboardPad =
-    isStacked && keyboardInset > 0 ? `${keyboardInset}px` : undefined
-
   return (
     <div
       className="play-shell flex h-[100dvh] flex-col overflow-hidden bg-stone-100 lg:min-h-full lg:h-auto lg:overflow-visible"
-      style={{ paddingBottom: shellKeyboardPad }}
       {...swipeHandlers}
     >
       <header className="z-20 shrink-0 border-b border-stone-200 bg-white px-3 py-2 shadow-sm sm:px-5 sm:py-2.5">
@@ -346,10 +358,7 @@ export default function PlayPage() {
                 overlayCaption={closingCaption}
                 centerImages
                 embedded
-                mobileProverbCover
                 epilogueFullscreen
-                onOverlayTap={lastSentence ? undefined : goNextSentence}
-                overlayTapLabel="다음 속담 →"
               />
             </div>
           </div>
@@ -393,9 +402,11 @@ export default function PlayPage() {
       {/* 모바일: 연출 영역 고정 (stacked 제외) */}
       {!isStacked ? (
         <div
-          className="relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
+          className="play-stage-mobile relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
           style={{
-            height: minimalTyping ? 'clamp(200px, 44dvh, 300px)' : 'clamp(160px, 36dvh, 240px)',
+            height:
+              mobileOverlayStagePx ??
+              (minimalTyping ? 'clamp(200px, 44dvh, 300px)' : 'clamp(160px, 36dvh, 240px)'),
           }}
         >
           <VisualStage layers={layers} embedded />
@@ -419,7 +430,7 @@ export default function PlayPage() {
             onPrev={goPrevSentence}
           />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
-          <div className="relative z-10 w-full shrink-0 overflow-hidden max-lg:aspect-[3/2] max-lg:max-h-[min(42dvh,calc(100vw*2/3))] max-lg:bg-stone-100 lg:min-h-[min(56vh,560px)] lg:flex-1 lg:rounded-lg lg:bg-stone-900">
+          <div className="play-stage-mobile play-stage-stacked relative z-10 w-full shrink-0 overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:flex-1 lg:rounded-lg">
             <VisualStage
               layers={layers}
               overlayCaption={closingCaption}
@@ -428,7 +439,6 @@ export default function PlayPage() {
               centerImages
               compact
               large
-              mobileProverbCover
             />
             <SentenceNavPrevOverlay
               canPrev={safeSentenceIndex > 0}
@@ -442,6 +452,9 @@ export default function PlayPage() {
           <div
             key={sentence.id}
             className="play-sentence-in z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3"
+            style={{
+              paddingBottom: keyboardInset > 0 ? `${keyboardInset + 8}px` : undefined,
+            }}
           >
             <TypingInline
               target={target}
