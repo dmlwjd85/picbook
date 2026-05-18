@@ -14,26 +14,26 @@ const assetsDir = path.join(
 )
 const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'demo', 'proverbs')
 
-const SLUGS = [
-  'ear-nose',
-  'picture-cake',
-  'food-first',
-  'crawl-run',
-  'long-tail',
-  'crow-ship',
-  'pheasant-chicken',
-  'pheasant-egg',
-  'others-cake',
-  'sickle-letter',
-  'bird-mouse',
-  'nose-three',
-  'lie-cake',
-  'lie-spit',
-  'sweet-bitter',
-]
+/** assets 슬러그 → public/demo/proverbs 접두사 */
+const SLUG_MAP = {
+  'ear-nose': 'proverbs-earring-nose',
+  'picture-cake': 'proverbs-rice-cake-picture',
+  'food-first': 'proverbs-diamond-food',
+  'crawl-run': 'proverbs-run-before-crawl',
+  'long-tail': 'proverbs-long-tail',
+  'crow-ship': 'proverbs-crow-fly-belly',
+  'pheasant-chicken': 'proverbs-pheasant-chicken',
+  'pheasant-egg': 'proverbs-pheasant-egg',
+  'others-cake': 'proverbs-others-cake',
+  'sickle-letter': 'proverbs-sickle-giyeok',
+  'bird-mouse': 'proverbs-day-bird-night-mouse',
+  'nose-three': 'proverbs-nose-three-feet',
+  'lie-cake': 'proverbs-lie-rice-cake',
+  'lie-spit': 'proverbs-lie-spit',
+  'sweet-bitter': 'proverbs-sweet-bitter',
+}
 
-for (const slug of SLUGS) {
-  const prefix = `proverbs-${slug}`
+for (const [slug, prefix] of Object.entries(SLUG_MAP)) {
   for (let i = 1; i <= 6; i += 1) {
     const num = String(i).padStart(2, '0')
     const src = path.join(assetsDir, `${slug}-${num}.png`)
