@@ -34,21 +34,19 @@ function LayerPicture({
     const img = new Image()
     const beginCrossfade = () => {
       if (cancelled || imageUrl === activeUrl) return
-      setFadeOutUrl(activeUrl)
+      const prev = activeUrl
       setActiveUrl(imageUrl)
+      setFadeOutUrl(prev)
       setCrossfading(false)
       requestAnimationFrame(() => {
         if (cancelled) return
-        requestAnimationFrame(() => {
-          if (cancelled) return
-          setCrossfading(true)
-          window.setTimeout(() => {
-            if (!cancelled) {
-              setFadeOutUrl(null)
-              setCrossfading(false)
-            }
-          }, CROSSFADE_MS + 40)
-        })
+        setCrossfading(true)
+        window.setTimeout(() => {
+          if (!cancelled) {
+            setFadeOutUrl(null)
+            setCrossfading(false)
+          }
+        }, CROSSFADE_MS + 40)
       })
     }
     img.onload = beginCrossfade
@@ -65,26 +63,13 @@ function LayerPicture({
   }, [imageUrl, activeUrl, fadeOutUrl])
 
   const wrapCls = isAbsolute ? 'absolute inset-0' : 'relative w-full'
-  const incomingHidden = Boolean(fadeOutUrl) && !crossfading
 
   return (
     <div className={wrapCls}>
-      {fadeOutUrl ? (
-        <img
-          src={fadeOutUrl}
-          alt=""
-          aria-hidden
-          className={`${className ?? ''} ${crossfadeCls} ${
-            crossfading ? 'opacity-0 blur-[3px]' : 'opacity-100 blur-0'
-          }`}
-          style={style}
-          draggable={false}
-        />
-      ) : null}
       <img
         src={activeUrl}
         alt={label}
-        className={`${className ?? ''} ${crossfadeCls} ${incomingHidden ? 'opacity-0' : 'opacity-100'}`}
+        className={`${className ?? ''} ${crossfadeCls} opacity-100`}
         style={style}
         draggable={false}
         {...IMG_PROPS}
@@ -95,6 +80,18 @@ function LayerPicture({
           el.style.opacity = '0.35'
         }}
       />
+      {fadeOutUrl ? (
+        <img
+          src={fadeOutUrl}
+          alt=""
+          aria-hidden
+          className={`${className ?? ''} ${crossfadeCls} absolute inset-0 ${
+            crossfading ? 'opacity-0 blur-[3px]' : 'opacity-100 blur-0'
+          }`}
+          style={style}
+          draggable={false}
+        />
+      ) : null}
     </div>
   )
 }

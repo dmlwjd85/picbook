@@ -16,6 +16,6 @@ export function createCatBellProverbSentence() {
     ],
     ['목에', '방울', '을', '달', '기'],
     undefined,
-    '좋은 생각도 직접 하기 어려우면 실행이 안 돼요.',
+    '무서운 고양이 앞에 아무도 나서지 못하면, 좋은 계획도 실행이 안 돼요.',
   )
 }

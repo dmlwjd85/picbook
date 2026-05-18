@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingInline } from '../components/TypingInline'
@@ -170,17 +170,26 @@ export default function PlayPage() {
 
   const sentence = pack?.sentences[safeSentenceIndex]
 
+  const maxSceneTypedRef = useRef(0)
+
   useEffect(() => {
     setTyped('')
     setTypingDraft('')
     setEpilogueShown(false)
     setFocusToken((t) => t + 1)
+    maxSceneTypedRef.current = 0
   }, [safeSentenceIndex, sentence?.id])
+
+  /** 지울 때 큐 되감기·크로스페이드 깜빡임 방지 — 연출은 문장당 최대 진행만 반영 */
+  const sceneTypedLength = useMemo(() => {
+    maxSceneTypedRef.current = Math.max(maxSceneTypedRef.current, typed.length)
+    return maxSceneTypedRef.current
+  }, [typed.length])
 
   const layers = useMemo(() => {
     if (!sentence) return []
-    return computeLayerSnapshot(sentence, typed.length)
-  }, [sentence, typed])
+    return computeLayerSnapshot(sentence, sceneTypedLength)
+  }, [sentence, sceneTypedLength])
 
   const target = sentence?.text ?? ''
   const complete = target.length > 0 && typed === target
@@ -408,17 +417,7 @@ export default function PlayPage() {
             onPrev={goPrevSentence}
           />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
-          <div
-            className="relative h-[min(40dvh,44vh)] min-h-[220px] w-full shrink-0 overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:h-auto lg:flex-1 lg:rounded-lg"
-            style={
-              keyboardInset > 0
-                ? {
-                    height: `min(28dvh, calc(38dvh - ${Math.round(keyboardInset * 0.35)}px))`,
-                    minHeight: '180px',
-                  }
-                : undefined
-            }
-          >
+          <div className="relative flex-1 min-h-[220px] w-full overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:rounded-lg">
             <VisualStage
               layers={layers}
               overlayCaption={closingCaption}

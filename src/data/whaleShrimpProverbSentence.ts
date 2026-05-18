@@ -16,6 +16,6 @@ export function createWhaleShrimpProverbSentence() {
     ],
     ['싸움에', '새우', '등', '터진', '다'],
     undefined,
-    '힘센 사람들이 싸울 때 옆에 있던 약한 사람이 먼저 다치기 쉬워요.',
+    '다른 사람 싸움에 휘말리면, 상관없던 약한 사람이 먼저 다치기 쉬워요.',
   )
 }
