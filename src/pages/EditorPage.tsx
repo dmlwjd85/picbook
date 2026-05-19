@@ -137,7 +137,7 @@ export default function EditorPage() {
             </Link>
             <h1 className="text-2xl font-bold text-slate-900">마스터 편집</h1>
             <p className="mt-1 max-w-xl text-sm text-slate-600">
-              PicBook 사진 연출(전환·자막·무대) 또는 연습 팩 JSON 제작을 선택하세요.
+              PicBook 타임라인 연출(글자별 프레임·그림·소리) 또는 연습 팩 JSON 제작을 선택하세요.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -195,7 +195,7 @@ export default function EditorPage() {
                 : 'text-slate-600 hover:text-slate-900',
             ].join(' ')}
           >
-            PicBook 사진 연출
+            PicBook 타임라인 연출
           </button>
           <button
             type="button"

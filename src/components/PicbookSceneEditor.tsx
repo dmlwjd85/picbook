@@ -1,19 +1,25 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PICBOOK_CATALOG } from '../data/picbookCatalog'
 import { extractPanelUrlsFromSentence } from '../lib/extractPanelUrls'
 import { panelKeyFromImageUrl } from '../lib/panelKey'
+import { computeLayerSnapshot } from '../lib/cueEngine'
+import { makeTimelineMediaKey, putTimelineAudio, putTimelineImage } from '../lib/timelineMediaDb'
+import { activeInsert as pickActiveInsert, mergeFrameEditsUpTo } from '../lib/mergeFrameEdits'
 import { usePicbookSceneEditStore } from '../state/picbookSceneEditStore'
+import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
+import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import {
   SCENE_STAGING_OPTIONS,
   SCENE_TRANSITION_OPTIONS,
   TEXT_OVERLAY_POSITION_OPTIONS,
-  type PanelSceneEdit,
   type SceneStaging,
   type SceneTransition,
   type TextOverlayPosition,
 } from '../types/sceneEdit'
 import type { ReadingPack } from '../types/pack'
 import { VisualStage } from './VisualStage'
+import { PicbookTimelineStrip } from './PicbookTimelineStrip'
+import { createId } from '../lib/ids'
 
 const AVAILABLE_BOOKS = PICBOOK_CATALOG.filter((b) => !b.comingSoon)
 
@@ -23,88 +29,154 @@ function panelLabel(url: string, index: number): string {
   return `${index + 1}컷 · ${file}`
 }
 
-function previewLayer(imageUrl: string) {
-  return [
-    {
-      id: 'preview',
-      label: '미리보기',
-      zIndex: 1,
-      imageUrl,
-      visible: true,
-      opacity: 1,
-      x: 0,
-      y: 0,
-      width: 100,
-      scale: 1,
-      fillHeight: true,
-    },
-  ]
-}
-
 export function PicbookSceneEditor() {
   const [bookId, setBookId] = useState(AVAILABLE_BOOKS[0]?.id ?? '')
   const [sentenceIndex, setSentenceIndex] = useState(0)
-  const [panelIndex, setPanelIndex] = useState(0)
+  const [frameIndex, setFrameIndex] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const playRef = useRef<number | null>(null)
 
-  const getPanelEdit = usePicbookSceneEditStore((s) => s.getPanelEdit)
+  const timelineRaw = usePicbookTimelineStore((s) =>
+    bookId && pack?.sentences[sentenceIndex]
+      ? s.byBook[bookId]?.[pack.sentences[sentenceIndex]!.id]
+      : undefined,
+  )
+  const setFrameEdit = usePicbookTimelineStore((s) => s.setFrameEdit)
+  const clearFrameAt = usePicbookTimelineStore((s) => s.clearFrameAt)
+  const addInsert = usePicbookTimelineStore((s) => s.addInsert)
+  const updateInsert = usePicbookTimelineStore((s) => s.updateInsert)
+  const removeInsert = usePicbookTimelineStore((s) => s.removeInsert)
+  const setBgm = usePicbookTimelineStore((s) => s.setBgm)
+  const clearSentence = usePicbookTimelineStore((s) => s.clearSentence)
+  const clearBook = usePicbookTimelineStore((s) => s.clearBook)
   const setPanelEdit = usePicbookSceneEditStore((s) => s.setPanelEdit)
-  const clearBookEdits = usePicbookSceneEditStore((s) => s.clearBookEdits)
 
   const book = AVAILABLE_BOOKS.find((b) => b.id === bookId)
   const pack: ReadingPack | null = useMemo(() => (book ? book.loadPack() : null), [book])
-
   const sentence = pack?.sentences[sentenceIndex]
+  const timeline = timelineRaw ?? null
+
   const panelUrls = useMemo(
     () => (sentence ? extractPanelUrlsFromSentence(sentence) : []),
     [sentence],
   )
 
-  const safePanelIndex = Math.min(panelIndex, Math.max(0, panelUrls.length - 1))
-  const activeUrl = panelUrls[safePanelIndex] ?? null
-  const edit: PanelSceneEdit =
-    activeUrl && bookId ? getPanelEdit(bookId, activeUrl) : { transition: 'crossfade', staging: 'none' }
+  const maxFrame = sentence?.text.length ?? 0
+  const safeFrame = Math.min(Math.max(0, frameIndex), maxFrame)
 
-  const updateTransition = (transition: SceneTransition) => {
-    if (!activeUrl || !bookId) return
-    setPanelEdit(bookId, activeUrl, { transition })
+  const { layers, stageFx } = useTimelinePlayback(bookId, sentence, safeFrame)
+
+  const mergedFrame = useMemo(
+    () => (timeline ? mergeFrameEditsUpTo(timeline, safeFrame) : {}),
+    [timeline, safeFrame],
+  )
+
+  const editedIndices = useMemo(() => {
+    if (!timeline) return new Set<number>()
+    return new Set(Object.keys(timeline.frameEdits).map(Number))
+  }, [timeline])
+
+  const insertAfterIndices = useMemo(() => {
+    if (!timeline) return new Set<number>()
+    return new Set(timeline.inserts.map((i) => i.afterCharIndex))
+  }, [timeline])
+
+  const activeInsertCut = timeline ? pickActiveInsert(timeline, safeFrame) : null
+
+  const baseLayersAtFrame = useMemo(() => {
+    if (!sentence) return []
+    return computeLayerSnapshot(sentence, safeFrame)
+  }, [sentence, safeFrame])
+
+  const defaultPanelUrl = useMemo(() => {
+    const vis = baseLayersAtFrame.filter((l) => l.visible && l.imageUrl && l.fillHeight)
+    return vis[vis.length - 1]?.imageUrl ?? panelUrls[0] ?? null
+  }, [baseLayersAtFrame, panelUrls])
+
+  const stopPlay = useCallback(() => {
+    if (playRef.current != null) {
+      window.clearInterval(playRef.current)
+      playRef.current = null
+    }
+    setPlaying(false)
+  }, [])
+
+  const startPlay = useCallback(() => {
+    stopPlay()
+    setPlaying(true)
+    setFrameIndex(0)
+    playRef.current = window.setInterval(() => {
+      setFrameIndex((f) => {
+        if (f >= maxFrame) {
+          stopPlay()
+          return f
+        }
+        return f + 1
+      })
+    }, 420)
+  }, [maxFrame, stopPlay])
+
+  useEffect(() => () => stopPlay(), [stopPlay])
+
+  const onPickFrameImage = async (file: File | null) => {
+    if (!file || !bookId || !sentence) return
+    if (!file.type.startsWith('image/')) {
+      window.alert('이미지 파일만 넣을 수 있습니다.')
+      return
+    }
+    const key = makeTimelineMediaKey(bookId, sentence.id, `frame-${safeFrame}-${createId()}`)
+    await putTimelineImage(key, file)
+    setFrameEdit(bookId, sentence.id, safeFrame, { customImageId: key, imageUrl: undefined })
   }
 
-  const updateStaging = (staging: SceneStaging) => {
-    if (!activeUrl || !bookId) return
-    setPanelEdit(bookId, activeUrl, { staging })
+  const onPickInsertImage = async (insertId: string, file: File | null) => {
+    if (!file || !bookId || !sentence) return
+    const key = makeTimelineMediaKey(bookId, sentence.id, `ins-${insertId}`)
+    await putTimelineImage(key, file)
+    updateInsert(bookId, sentence.id, insertId, { customImageId: key, imageUrl: undefined })
   }
 
-  const updateOverlayText = (text: string) => {
-    if (!activeUrl || !bookId) return
-    setPanelEdit(bookId, activeUrl, {
-      textOverlay: { text, position: edit.textOverlay?.position ?? 'top' },
+  const onPickSfx = async (file: File | null) => {
+    if (!file || !bookId || !sentence) return
+    const key = makeTimelineMediaKey(bookId, sentence.id, `sfx-${safeFrame}-${createId()}`)
+    await putTimelineAudio(key, file)
+    setFrameEdit(bookId, sentence.id, safeFrame, {
+      sfx: { customAudioId: key, volume: mergedFrame.sfx?.volume ?? 0.85 },
     })
   }
 
-  const updateOverlayPosition = (position: TextOverlayPosition) => {
-    if (!activeUrl || !bookId) return
-    const text = edit.textOverlay?.text ?? ''
-    if (!text.trim()) return
-    setPanelEdit(bookId, activeUrl, { textOverlay: { text, position } })
+  const onPickBgm = async (file: File | null) => {
+    if (!file || !bookId || !sentence) return
+    const key = makeTimelineMediaKey(bookId, sentence.id, 'bgm')
+    await putTimelineAudio(key, file)
+    setBgm(bookId, sentence.id, {
+      customAudioId: key,
+      volume: timeline?.bgm?.volume ?? 0.35,
+      loop: true,
+    })
   }
 
   if (!book || !pack) {
     return <p className="text-sm text-slate-600">편집할 픽북이 없습니다.</p>
   }
 
+  if (!sentence) {
+    return <p className="text-sm text-slate-600">문장을 선택해 주세요.</p>
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm">
-        <h2 className="text-sm font-bold text-indigo-900">픽북 사진 연출 편집</h2>
+        <h2 className="text-sm font-bold text-indigo-900">PicBook 타임라인 연출 편집</h2>
         <p className="mt-2 text-xs leading-relaxed text-slate-600">
-          카탈로그에 등록된 PicBook을 고른 뒤, 컷마다 화면 전환·짧은 자막·무대 효과를 설정합니다. 저장은 이 브라우저에만
-          되며, 재생 화면에 바로 반영됩니다.
+          한 글자마다 프레임을 두고, 그 순간의 그림·줌·전환·효과음·삽입 컷을 다룹니다. 저장은 이 브라우저(로컬·IndexedDB)에만
+          되며 재생 화면에 반영됩니다. 편집 없으면 기존 속담 연출과 동일합니다.
         </p>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-800">픽북 선택</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-800">픽북·문장</h2>
+        <div className="mt-2 flex flex-wrap gap-2">
           {AVAILABLE_BOOKS.map((b) => (
             <button
               key={b.id}
@@ -112,33 +184,16 @@ export function PicbookSceneEditor() {
               onClick={() => {
                 setBookId(b.id)
                 setSentenceIndex(0)
-                setPanelIndex(0)
+                setFrameIndex(0)
+                stopPlay()
               }}
-              className={[
-                'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
-                b.id === bookId
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
-                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
-              ].join(' ')}
+              className={chipCls(b.id === bookId)}
             >
               {b.title}
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="mt-3 text-xs font-semibold text-rose-600 hover:underline"
-          onClick={() => {
-            if (window.confirm(`「${book.title}」에 저장한 연출을 모두 지울까요?`)) clearBookEdits(bookId)
-          }}
-        >
-          이 픽북 연출 전체 초기화
-        </button>
-      </section>
-
-      {pack.sentences.length > 1 ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-800">문장(속담) 선택</h2>
+        {pack.sentences.length > 1 ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {pack.sentences.map((s, i) => (
               <button
@@ -146,131 +201,459 @@ export function PicbookSceneEditor() {
                 type="button"
                 onClick={() => {
                   setSentenceIndex(i)
-                  setPanelIndex(0)
+                  setFrameIndex(0)
+                  stopPlay()
                 }}
-                className={[
-                  'rounded-full border px-3 py-1.5 text-left text-xs font-medium transition',
-                  i === sentenceIndex
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
-                ].join(' ')}
+                className={chipCls(i === sentenceIndex)}
               >
-                <span className="font-semibold text-indigo-600">{i + 1}</span> · {s.text.slice(0, 18)}
-                {s.text.length > 18 ? '…' : ''}
+                {i + 1}. {s.text.slice(0, 14)}
+                {s.text.length > 14 ? '…' : ''}
               </button>
             ))}
           </div>
-        </section>
-      ) : null}
+        ) : null}
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="text-xs font-semibold text-rose-600 hover:underline"
+            onClick={() => {
+              if (window.confirm(`이 문장 타임라인을 지울까요?`)) clearSentence(bookId, sentence.id)
+            }}
+          >
+            이 문장 타임라인 초기화
+          </button>
+          <button
+            type="button"
+            className="text-xs font-semibold text-rose-600 hover:underline"
+            onClick={() => {
+              if (window.confirm(`「${book.title}」 타임라인 전체를 지울까요?`)) clearBook(bookId)
+            }}
+          >
+            픽북 타임라인 전체 초기화
+          </button>
+        </div>
+      </section>
 
-      {sentence ? (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-slate-800">컷 선택</h2>
-          <p className="mt-1 text-xs text-slate-500">{sentence.text}</p>
-          {panelUrls.length === 0 ? (
-            <p className="mt-3 text-xs text-amber-700">이 문장에서 찾은 그림 컷이 없습니다.</p>
-          ) : (
-            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {panelUrls.map((url, i) => (
-                <button
-                  key={url}
-                  type="button"
-                  onClick={() => setPanelIndex(i)}
-                  className={[
-                    'overflow-hidden rounded-lg border-2 transition',
-                    i === safePanelIndex ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-slate-200 hover:border-slate-300',
-                  ].join(' ')}
-                >
-                  <img src={url} alt="" className="aspect-[3/2] w-full object-cover" />
-                  <span className="block bg-slate-50 px-1 py-0.5 text-[9px] font-medium text-slate-600">
-                    {i + 1}컷
-                  </span>
-                </button>
-              ))}
+      {/* 미리보기 */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-800">미리 보기</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-indigo-700">
+              {safeFrame} / {maxFrame} 글자
+            </span>
+            <button
+              type="button"
+              className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-bold text-white hover:bg-indigo-700"
+              onClick={() => (playing ? stopPlay() : startPlay())}
+            >
+              {playing ? '정지' : '▶ 재생'}
+            </button>
+          </div>
+        </div>
+        <label className="mt-2 block text-xs text-slate-600">
+          재생 위치(글자 수)
+          <input
+            type="range"
+            min={0}
+            max={maxFrame}
+            value={safeFrame}
+            className="mt-1 block w-full"
+            onChange={(e) => {
+              stopPlay()
+              setFrameIndex(Number(e.target.value))
+            }}
+          />
+        </label>
+        <div className="mt-3">
+          <VisualStage
+            layers={layers}
+            centerImages
+            sceneTransition={stageFx.sceneTransition}
+            stagingEffect={stageFx.stagingEffect}
+            masterTextOverlay={stageFx.masterTextOverlay}
+          />
+        </div>
+      </section>
+
+      {/* 타임라인 */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-800">글자 타임라인</h2>
+        <p className="mt-1 text-xs text-slate-500">{sentence.text}</p>
+        <div className="mt-3">
+          <PicbookTimelineStrip
+            text={sentence.text}
+            selectedIndex={safeFrame}
+            editedIndices={editedIndices}
+            insertAfterIndices={insertAfterIndices}
+            onSelect={(i) => {
+              stopPlay()
+              setFrameIndex(i)
+            }}
+          />
+        </div>
+      </section>
+
+      {/* 인스펙터 */}
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-slate-800">
+            프레임 {safeFrame} · 그림·줌
+          </h2>
+
+          {panelUrls.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-slate-600">패널에서 고르기(이 프레임부터 교체)</p>
+              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {panelUrls.map((url, i) => (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() =>
+                      setFrameEdit(bookId, sentence.id, safeFrame, {
+                        imageUrl: url,
+                        customImageId: undefined,
+                      })
+                    }
+                    className="overflow-hidden rounded-lg border border-slate-200 hover:ring-2 hover:ring-indigo-300"
+                  >
+                    <img src={url} alt="" className="aspect-[3/2] w-full object-cover" />
+                    <span className="block bg-slate-50 py-0.5 text-center text-[9px]">{i + 1}컷</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </section>
-      ) : null}
+          ) : null}
 
-      {activeUrl ? (
-        <>
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-800">연출 설정 · {panelLabel(activeUrl, safePanelIndex)}</h2>
+          <label className="mt-3 block text-xs font-medium text-slate-600">
+            내 컴퓨터에서 그림 넣기·교체
+            <input
+              type="file"
+              accept="image/*"
+              className="mt-1 block w-full text-xs"
+              onChange={(e) => {
+                void onPickFrameImage(e.target.files?.[0] ?? null)
+                e.target.value = ''
+              }}
+            />
+          </label>
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <label className="block text-xs font-medium text-slate-600">
-                화면 전환
-                <select
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
-                  value={edit.transition}
-                  onChange={(e) => updateTransition(e.target.value as SceneTransition)}
-                >
-                  {SCENE_TRANSITION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <label className="mt-3 block text-xs font-medium text-slate-600">
+            그림 주소(URL)
+            <input
+              className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+              placeholder="https://..."
+              value={mergedFrame.imageUrl ?? ''}
+              onChange={(e) =>
+                setFrameEdit(bookId, sentence.id, safeFrame, {
+                  imageUrl: e.target.value.trim() || undefined,
+                  customImageId: undefined,
+                })
+              }
+            />
+          </label>
 
-              <label className="block text-xs font-medium text-slate-600">
-                무대 효과
-                <select
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
-                  value={edit.staging}
-                  onChange={(e) => updateStaging(e.target.value as SceneStaging)}
-                >
-                  {SCENE_STAGING_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <label className="mt-3 block text-xs font-medium text-slate-600">
+            확대 배율 ({mergedFrame.scale ?? 1})
+            <input
+              type="range"
+              min={0.6}
+              max={2}
+              step={0.05}
+              value={mergedFrame.scale ?? 1}
+              className="mt-1 block w-full"
+              onChange={(e) =>
+                setFrameEdit(bookId, sentence.id, safeFrame, { scale: Number(e.target.value) })
+              }
+            />
+          </label>
+
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <FieldRange
+              label="가로 이동 %"
+              value={mergedFrame.panX ?? 0}
+              min={-30}
+              max={30}
+              onChange={(v) => setFrameEdit(bookId, sentence.id, safeFrame, { panX: v })}
+            />
+            <FieldRange
+              label="세로 이동 %"
+              value={mergedFrame.panY ?? 0}
+              min={-30}
+              max={30}
+              onChange={(v) => setFrameEdit(bookId, sentence.id, safeFrame, { panY: v })}
+            />
+          </div>
+
+          {defaultPanelUrl ? (
+            <button
+              type="button"
+              className="mt-3 text-xs text-slate-600 hover:underline"
+              onClick={() => {
+                setPanelEdit(bookId, defaultPanelUrl, {
+                  transition: mergedFrame.transition,
+                  staging: mergedFrame.staging,
+                })
+                window.alert('현재 프레임 설정을 이 컷의 기본 연출(패널)에도 복사했습니다.')
+              }}
+            >
+              이 프레임 전환·무대를 패널 기본값으로 복사
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            className="mt-2 block text-xs font-semibold text-rose-600 hover:underline"
+            onClick={() => clearFrameAt(bookId, sentence.id, safeFrame)}
+          >
+            이 프레임 편집 지우기
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-800">전환·무대·자막</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <SelectField
+                label="화면 전환"
+                value={mergedFrame.transition ?? 'crossfade'}
+                options={SCENE_TRANSITION_OPTIONS}
+                onChange={(v) =>
+                  setFrameEdit(bookId, sentence.id, safeFrame, { transition: v as SceneTransition })
+                }
+              />
+              <SelectField
+                label="무대 효과"
+                value={mergedFrame.staging ?? 'none'}
+                options={SCENE_STAGING_OPTIONS}
+                onChange={(v) =>
+                  setFrameEdit(bookId, sentence.id, safeFrame, { staging: v as SceneStaging })
+                }
+              />
             </div>
+            <input
+              type="text"
+              className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              placeholder="짧은 자막 (선택)"
+              value={mergedFrame.textOverlay?.text ?? ''}
+              onChange={(e) =>
+                setFrameEdit(bookId, sentence.id, safeFrame, {
+                  textOverlay: {
+                    text: e.target.value,
+                    position: mergedFrame.textOverlay?.position ?? 'top',
+                  },
+                })
+              }
+            />
+            <SelectField
+              label="자막 위치"
+              value={mergedFrame.textOverlay?.position ?? 'top'}
+              options={TEXT_OVERLAY_POSITION_OPTIONS}
+              onChange={(v) =>
+                setFrameEdit(bookId, sentence.id, safeFrame, {
+                  textOverlay: {
+                    text: mergedFrame.textOverlay?.text ?? '',
+                    position: v as TextOverlayPosition,
+                  },
+                })
+              }
+            />
+          </div>
 
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-slate-700">짧은 자막 겹치기 (선택)</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-800">소리</h2>
+            <label className="mt-2 block text-xs font-medium text-slate-600">
+              이 프레임 효과음 (mp3/wav)
               <input
-                type="text"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                placeholder="예: 말이 고와야…"
-                value={edit.textOverlay?.text ?? ''}
-                onChange={(e) => updateOverlayText(e.target.value)}
+                type="file"
+                accept="audio/*"
+                className="mt-1 block w-full text-xs"
+                onChange={(e) => {
+                  void onPickSfx(e.target.files?.[0] ?? null)
+                  e.target.value = ''
+                }}
               />
-              <label className="block text-xs font-medium text-slate-600">
-                자막 위치
-                <select
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
-                  value={edit.textOverlay?.position ?? 'top'}
-                  onChange={(e) => updateOverlayPosition(e.target.value as TextOverlayPosition)}
-                  disabled={!edit.textOverlay?.text?.trim()}
-                >
-                  {TEXT_OVERLAY_POSITION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </section>
+            </label>
+            <label className="mt-2 block text-xs font-medium text-slate-600">
+              효과음 URL
+              <input
+                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                placeholder="https://..."
+                value={mergedFrame.sfx?.url ?? ''}
+                onChange={(e) =>
+                  setFrameEdit(bookId, sentence.id, safeFrame, {
+                    sfx: { ...mergedFrame.sfx, url: e.target.value.trim() || undefined },
+                  })
+                }
+              />
+            </label>
+            <hr className="my-3 border-slate-100" />
+            <label className="block text-xs font-medium text-slate-600">
+              배경음(BGM) 파일
+              <input
+                type="file"
+                accept="audio/*"
+                className="mt-1 block w-full text-xs"
+                onChange={(e) => {
+                  void onPickBgm(e.target.files?.[0] ?? null)
+                  e.target.value = ''
+                }}
+              />
+            </label>
+            <label className="mt-2 block text-xs font-medium text-slate-600">
+              BGM URL
+              <input
+                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                value={timeline?.bgm?.url ?? ''}
+                onChange={(e) =>
+                  setBgm(bookId, sentence.id, {
+                    url: e.target.value.trim() || undefined,
+                    volume: timeline?.bgm?.volume ?? 0.35,
+                    loop: true,
+                  })
+                }
+              />
+            </label>
+            {timeline?.bgm ? (
+              <button
+                type="button"
+                className="mt-2 text-xs text-rose-600 hover:underline"
+                onClick={() => setBgm(bookId, sentence.id, null)}
+              >
+                BGM 제거
+              </button>
+            ) : null}
+          </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-800">미리 보기</h2>
-            <p className="mt-1 text-xs text-slate-500">재생 화면과 같은 3:2 비율로 확인합니다.</p>
-            <div className="mt-4">
-              <VisualStage
-                layers={previewLayer(activeUrl)}
-                centerImages
-                sceneTransition={edit.transition}
-                stagingEffect={edit.staging}
-                masterTextOverlay={edit.textOverlay?.text.trim() ? edit.textOverlay : null}
-              />
-            </div>
-          </section>
-        </>
+          <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/50 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-fuchsia-900">글자 사이 삽입 컷</h2>
+            <p className="mt-1 text-xs text-fuchsia-800/80">
+              선택한 프레임 글자 <strong>바로 뒤</strong>부터 삽입 그림이 겹쳐 보입니다.
+            </p>
+            <button
+              type="button"
+              className="mt-2 rounded-lg bg-fuchsia-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-fuchsia-700"
+              onClick={() => {
+                const after = Math.max(0, safeFrame - 1)
+                addInsert(bookId, sentence.id, after)
+              }}
+            >
+              「{safeFrame > 0 ? sentence.text[safeFrame - 1] : '시작'}」 뒤에 삽입 추가
+            </button>
+
+            {timeline?.inserts.map((ins) => (
+              <div key={ins.id} className="mt-3 rounded-lg border border-fuchsia-200 bg-white p-3">
+                <p className="text-xs font-semibold text-fuchsia-900">
+                  {ins.afterCharIndex}글자 뒤 ~ (입력 &gt; {ins.afterCharIndex})
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="mt-2 block w-full text-xs"
+                  onChange={(e) => {
+                    void onPickInsertImage(ins.id, e.target.files?.[0] ?? null)
+                    e.target.value = ''
+                  }}
+                />
+                <FieldRange
+                  label="삽입 확대"
+                  value={ins.scale ?? 1}
+                  min={0.6}
+                  max={2}
+                  step={0.05}
+                  onChange={(v) => updateInsert(bookId, sentence.id, ins.id, { scale: v })}
+                />
+                <button
+                  type="button"
+                  className="mt-2 text-xs text-rose-600 hover:underline"
+                  onClick={() => removeInsert(bookId, sentence.id, ins.id)}
+                >
+                  삽입 삭제
+                </button>
+              </div>
+            ))}
+
+            {activeInsertCut ? (
+              <p className="mt-2 text-[10px] text-fuchsia-700">현재 프레임에서 삽입 컷이 활성입니다.</p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {defaultPanelUrl ? (
+        <p className="text-[10px] text-slate-400">
+          기준 패널: {panelLabel(defaultPanelUrl, panelUrls.indexOf(defaultPanelUrl))}
+        </p>
       ) : null}
     </div>
+  )
+}
+
+function chipCls(active: boolean): string {
+  return [
+    'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+    active
+      ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
+      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
+  ].join(' ')
+}
+
+function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+}) {
+  return (
+    <label className="block text-xs font-medium text-slate-600">
+      {label}
+      <select
+        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function FieldRange({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  onChange: (n: number) => void
+}) {
+  return (
+    <label className="block text-xs font-medium text-slate-600">
+      {label}: {value}
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        className="mt-1 block w-full"
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </label>
   )
 }

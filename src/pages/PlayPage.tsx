@@ -17,9 +17,10 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
 import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
-import { computeLayerSnapshot } from '../lib/cueEngine'
 import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
-import { useActivePanelSceneEdit } from '../hooks/useActivePanelSceneEdit'
+import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
+import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
+import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -202,22 +203,11 @@ export default function PlayPage() {
     setFocusToken((t) => t + 1)
   }, [safeSentenceIndex, sentence?.id])
 
-  /** 입력 길이에 맞춰 큐 적용 — 지운 글자만큼만 장면 되감기 */
-  const layers = useMemo(() => {
-    if (!sentence) return []
-    return computeLayerSnapshot(sentence, typed.length)
-  }, [sentence, typed.length])
-
-  const panelSceneEdit = useActivePanelSceneEdit(bookId, layers)
-  const stageFx = panelSceneEdit
-    ? {
-        sceneTransition: panelSceneEdit.transition,
-        stagingEffect: panelSceneEdit.staging,
-        masterTextOverlay: panelSceneEdit.textOverlay?.text.trim()
-          ? panelSceneEdit.textOverlay
-          : null,
-      }
-    : {}
+  const { layers, stageFx } = useTimelinePlayback(bookId, sentence, typed.length)
+  const playTimeline = usePicbookTimelineStore((s) =>
+    bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
+  )
+  useTimelineFrameAudio(playTimeline ?? null, typed.length, Boolean(sentence && !epilogueShown))
 
   const target = sentence?.text ?? ''
   const complete = target.length > 0 && typed === target

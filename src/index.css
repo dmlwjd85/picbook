@@ -127,6 +127,11 @@ html.play-active #root {
   transform-origin: center center;
 }
 
+/* 마스터 타임라인 편집기 */
+.picbook-timeline-strip {
+  scrollbar-width: thin;
+}
+
 .picbook-staging-vignette::after {
   content: '';
   pointer-events: none;
