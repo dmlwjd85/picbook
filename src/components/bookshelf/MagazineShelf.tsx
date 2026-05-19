@@ -1,5 +1,5 @@
 import { getUnlockedCatalogItems } from '../../data/picbookCatalog'
-import { useLibraryUnlockStore } from '../../state/libraryUnlockStore'
+import { useShelfBookIds } from '../../lib/bookAccess'
 import { MagazineCover } from './MagazineCover'
 
 type Props = {
@@ -9,8 +9,8 @@ type Props = {
 
 /** 개인 서재 — 매거진이 딱 맞게 진열된 선반 */
 export function MagazineShelf({ onOpenBook, onGoStore }: Props) {
-  const unlockedIds = useLibraryUnlockStore((s) => s.unlockedIds)
-  const books = getUnlockedCatalogItems(unlockedIds)
+  const shelfIds = useShelfBookIds()
+  const books = getUnlockedCatalogItems(shelfIds)
 
   return (
     <section>

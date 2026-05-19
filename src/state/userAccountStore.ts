@@ -1,6 +1,16 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import {
+  accountToCloudPayload,
+  fetchCloudAccount,
+  isCloudSyncEnabled,
+  mergeCloudIntoLocal,
+  pushCloudAccount,
+} from '../lib/accountCloudSync'
+import { importCloudMasterData } from '../lib/importCloudMasterData'
 import { isValidSixDigitPassword } from '../lib/password'
+import { usePicbookSceneEditStore } from './picbookSceneEditStore'
+import { usePicbookTimelineStore } from './picbookTimelineStore'
 
 const STORAGE_KEY = 'picbook.accounts.v1'
 
@@ -22,12 +32,14 @@ type UserAccountStore = {
   /** 현재 로그인 세션(계정 키) */
   sessionKey: string | null
   getActiveAccount: () => UserAccount | null
-  register: (name: string, password: string) => { ok: true } | { ok: false; error: string }
-  login: (name: string, password: string) => { ok: true } | { ok: false; error: string }
+  register: (name: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>
+  login: (name: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>
   logout: () => void
   isUnlocked: (bookId: string) => boolean
   unlock: (bookId: string) => void
   migrateLegacyStorage: () => void
+  /** 계정·연출을 클라우드에 올림 */
+  pushCloudSnapshot: () => Promise<void>
 }
 
 function touchLogin(accounts: Record<string, UserAccount>, key: string): Record<string, UserAccount> {
@@ -51,7 +63,7 @@ export const useUserAccountStore = create<UserAccountStore>()(
         return get().accounts[key] ?? null
       },
 
-      register: (name, password) => {
+      register: async (name, password) => {
         const trimmed = name.trim()
         if (trimmed.length < 1) return { ok: false, error: '이름을 입력해 주세요.' }
         if (!isValidSixDigitPassword(password)) {
@@ -73,27 +85,58 @@ export const useUserAccountStore = create<UserAccountStore>()(
           accounts: { ...s.accounts, [key]: account },
           sessionKey: key,
         }))
+        await get().pushCloudSnapshot()
         return { ok: true }
       },
 
-      login: (name, password) => {
+      login: async (name, password) => {
         const trimmed = name.trim()
         if (trimmed.length < 1) return { ok: false, error: '이름을 입력해 주세요.' }
         if (!isValidSixDigitPassword(password)) {
           return { ok: false, error: '비밀번호는 숫자 6자리로 입력해 주세요.' }
         }
         const key = accountKeyFromName(trimmed)
-        const account = get().accounts[key]
+        let account = get().accounts[key]
+
+        if (!account && isCloudSyncEnabled()) {
+          const cloudOnly = await fetchCloudAccount(trimmed, password)
+          if (cloudOnly) {
+            const now = new Date().toISOString()
+            account = {
+              name: cloudOnly.name,
+              password,
+              unlockedIds: cloudOnly.unlockedIds,
+              createdAt: now,
+              lastLoginAt: now,
+            }
+            set((s) => ({ accounts: { ...s.accounts, [key]: account! } }))
+            importCloudMasterData(cloudOnly)
+          }
+        }
+
         if (!account) {
           return { ok: false, error: '등록되지 않은 이름입니다. 처음이시면 가입해 주세요.' }
         }
         if (account.password !== password) {
           return { ok: false, error: '비밀번호가 맞지 않습니다.' }
         }
+
+        if (isCloudSyncEnabled()) {
+          const cloud = await fetchCloudAccount(trimmed, password)
+          if (cloud) {
+            importCloudMasterData(cloud)
+            account = mergeCloudIntoLocal(account, cloud)
+            set((s) => ({
+              accounts: { ...s.accounts, [key]: account! },
+            }))
+          }
+        }
+
         set((s) => ({
           sessionKey: key,
           accounts: touchLogin(s.accounts, key),
         }))
+        await get().pushCloudSnapshot()
         return { ok: true }
       },
 
@@ -118,6 +161,16 @@ export const useUserAccountStore = create<UserAccountStore>()(
             },
           }
         })
+        void get().pushCloudSnapshot()
+      },
+
+      pushCloudSnapshot: async () => {
+        if (!isCloudSyncEnabled()) return
+        const acc = get().getActiveAccount()
+        if (!acc) return
+        const timelines = usePicbookTimelineStore.getState().byBook
+        const sceneEditsByBook = usePicbookSceneEditStore.getState().editsByBook
+        await pushCloudAccount(accountToCloudPayload(acc, timelines, sceneEditsByBook))
       },
 
       migrateLegacyStorage: () => {

@@ -58,6 +58,28 @@ html.play-active #root {
     height: var(--play-overlay-stage-h, 36dvh);
     max-height: var(--play-overlay-stage-h, 44dvh);
   }
+
+  /* 전체화면 — 태블릿·모바일 주소창 영역까지 연출에 사용 */
+  html.play-fullscreen.play-active .play-shell {
+    top: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  html.play-fullscreen .play-stage-stacked {
+    height: var(--play-stacked-stage-h, min(52dvh, calc(100vw * 2 / 3)));
+    max-height: var(--play-stacked-stage-h, min(52dvh, calc(100vw * 2 / 3)));
+  }
+
+  html.play-fullscreen .play-stage-overlay {
+    height: var(--play-overlay-stage-h, 44dvh);
+    max-height: var(--play-overlay-stage-h, 48dvh);
+  }
+
+  html.play-fullscreen .play-stage-mobile img {
+    object-fit: contain;
+    object-position: center top;
+  }
 }
 
 @keyframes stamp-in {

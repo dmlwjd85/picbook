@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { SixDigitPasswordFields } from '../components/SixDigitPasswordFields'
+import { isCloudSyncEnabled } from '../lib/accountCloudSync'
 import { isValidSixDigitPassword } from '../lib/password'
 import { useUserAccountStore } from '../state/userAccountStore'
 
@@ -13,6 +14,7 @@ export default function SetupPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   if (sessionKey) {
     return <Navigate to="/bookshelf" replace />
@@ -34,12 +36,15 @@ export default function SetupPage() {
       setError('비밀번호가 서로 다릅니다. 다시 확인해 주세요.')
       return
     }
-    const result = register(trimmed, password)
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    navigate('/bookshelf', { replace: true })
+    setLoading(true)
+    void register(trimmed, password).then((result) => {
+      setLoading(false)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      navigate('/bookshelf', { replace: true })
+    })
   }
 
   return (
@@ -48,7 +53,8 @@ export default function SetupPage() {
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-amber-900/70">PicBook</p>
         <h1 className="mt-2 text-center text-2xl font-bold text-stone-900">처음 오신 걸 환영해요</h1>
         <p className="mt-2 text-center text-sm text-stone-600">
-          이름과 6자리 비밀번호를 등록하면, 이 기기에서 다시 로그인할 때 구매한 PicBook이 유지됩니다.
+          이름과 6자리 비밀번호를 등록하면, 다시 로그인할 때 구매한 PicBook이 유지됩니다.
+          {isCloudSyncEnabled() ? ' 다른 기기에서도 같은 이름·비밀번호로 이어집니다.' : ''}
         </p>
 
         <form
@@ -79,9 +85,10 @@ export default function SetupPage() {
 
           <button
             type="submit"
-            className="mt-6 w-full rounded-xl bg-amber-800 py-3.5 text-sm font-bold text-amber-50 shadow-md transition hover:bg-amber-900"
+            disabled={loading}
+            className="mt-6 w-full rounded-xl bg-amber-800 py-3.5 text-sm font-bold text-amber-50 shadow-md transition hover:bg-amber-900 disabled:opacity-60"
           >
-            등록하고 책장으로
+            {loading ? '저장 중…' : '등록하고 책장으로'}
           </button>
         </form>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { initCloudSyncSubscriptions } from '../lib/scheduleCloudPush'
 import { useMasterAuthStore } from '../state/masterAuthStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { useUserAccountStore } from '../state/userAccountStore'
@@ -36,6 +37,7 @@ export function PersistGate({ children }: { children: ReactNode }) {
       waitForHydration(usePicbookTimelineStore),
     ]).then(() => {
       migrateLegacyStorage()
+      initCloudSyncSubscriptions()
       if (!cancelled) setReady(true)
     })
     return () => {

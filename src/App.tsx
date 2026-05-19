@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { PersistGate } from './components/PersistGate'
 import { RequireMaster } from './components/RequireMaster'
-import { RequireProfile } from './components/RequireProfile'
+import { RequireUserOrMaster } from './components/RequireUserOrMaster'
 import BookshelfPage from './pages/BookshelfPage'
 import EditorPage from './pages/EditorPage'
 import HomePage from './pages/HomePage'
@@ -27,19 +27,19 @@ export default function App() {
         <Route
           path="/bookshelf"
           element={
-            <RequireProfile>
+            <RequireUserOrMaster>
               <BookshelfPage />
-            </RequireProfile>
+            </RequireUserOrMaster>
           }
         />
         <Route
           path="/play/:bookId"
           element={
-            <RequireProfile>
+            <RequireUserOrMaster>
               <PlayErrorBoundary>
                 <PlayPage />
               </PlayErrorBoundary>
-            </RequireProfile>
+            </RequireUserOrMaster>
           }
         />
         <Route path="/master/setup" element={<MasterSetupPage />} />

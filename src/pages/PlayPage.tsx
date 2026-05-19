@@ -22,6 +22,8 @@ import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { usePlaySessionStore } from '../state/playSessionStore'
+import { canOpenBook, useMasterPreviewMode } from '../lib/bookAccess'
+import { useFullscreen } from '../hooks/useFullscreen'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
 
@@ -99,9 +101,11 @@ export default function PlayPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const navigate = useNavigate()
   const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
-  const isBookUnlocked = useUserAccountStore((s) =>
-    Boolean(bookId && s.getActiveAccount()?.unlockedIds.includes(bookId)),
-  )
+  const unlockedIds = useUserAccountStore((s) => s.getActiveAccount()?.unlockedIds ?? [])
+  const masterPreview = useMasterPreviewMode()
+  const isBookUnlocked = Boolean(bookId && canOpenBook(bookId, unlockedIds, masterPreview))
+  const { active: fullscreenActive, supported: fullscreenSupported, toggle: toggleFullscreen } =
+    useFullscreen()
   const setSession = usePlaySessionStore((s) => s.setSession)
   const { inset: keyboardInset, height: vvHeight } = useVisualViewportLayout()
 
@@ -115,8 +119,14 @@ export default function PlayPage() {
   const [loading, setLoading] = useState(true)
 
   const overlayStageRatio = pack?.typingStyle === 'minimal' ? 0.4 : 0.34
-  const mobileStackedStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, 0.42)
-  const mobileOverlayStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, overlayStageRatio)
+  const stackedRatio = fullscreenActive ? 0.52 : 0.38
+  const mobileStackedStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, stackedRatio)
+  const mobileOverlayStagePx = useMobileStageHeight(
+    vvHeight,
+    keyboardInset,
+    true,
+    fullscreenActive ? overlayStageRatio + 0.08 : overlayStageRatio,
+  )
 
   useEffect(() => {
     document.documentElement.classList.add('play-active')
@@ -335,11 +345,29 @@ export default function PlayPage() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {fullscreenSupported ? (
+              <button
+                type="button"
+                onClick={() => void toggleFullscreen()}
+                className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-700 hover:bg-white lg:hidden"
+              >
+                {fullscreenActive ? '축소' : '전체'}
+              </button>
+            ) : null}
             <UserLogoutButton className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-600 hover:bg-white lg:hidden" />
             <div className="hidden text-right text-xs text-stone-500 lg:block">
               <span className="font-mono text-stone-700">{progressPct}%</span>
               <span className="ml-1">입력</span>
             </div>
+            {fullscreenSupported ? (
+              <button
+                type="button"
+                onClick={() => void toggleFullscreen()}
+                className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-white lg:inline-flex"
+              >
+                {fullscreenActive ? '전체화면 끄기' : '전체화면'}
+              </button>
+            ) : null}
             <UserLogoutButton className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600 hover:bg-white lg:inline-flex" />
           </div>
         </div>

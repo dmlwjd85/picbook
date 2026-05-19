@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { MagazineShelf } from '../components/bookshelf/MagazineShelf'
 import { PicbookStore } from '../components/bookshelf/PicbookStore'
 import { UserLogoutButton } from '../components/UserLogoutButton'
-import { useLibraryUnlockStore } from '../state/libraryUnlockStore'
+import { canOpenBook, useMasterPreviewMode } from '../lib/bookAccess'
 import { useUserAccountStore } from '../state/userAccountStore'
+import { useMasterAuthStore } from '../state/masterAuthStore'
 
 type Tab = 'shelf' | 'store'
 
@@ -12,7 +13,9 @@ export default function BookshelfPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
-  const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
+  const masterPreview = useMasterPreviewMode()
+  const masterLoggedIn = useMasterAuthStore((s) => s.isLoggedIn)
+  const unlockedIds = useUserAccountStore((s) => s.getActiveAccount()?.unlockedIds ?? [])
 
   const tabParam = searchParams.get('tab')
   const [tab, setTab] = useState<Tab>(tabParam === 'store' ? 'store' : 'shelf')
@@ -28,7 +31,7 @@ export default function BookshelfPage() {
   }
 
   const openBook = (bookId: string) => {
-    if (!isUnlocked(bookId)) {
+    if (!canOpenBook(bookId, unlockedIds, masterPreview)) {
       switchTab('store')
       return
     }
@@ -44,17 +47,35 @@ export default function BookshelfPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400/90">PicBook</p>
             <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
-              {profileName ? `${profileName}님의 책장` : '책장'}
+              {masterPreview && !profileName
+                ? '마스터 미리보기 · 책장'
+                : profileName
+                  ? `${profileName}님의 책장`
+                  : '책장'}
             </h1>
+            {masterPreview ? (
+              <p className="mt-1 text-xs text-amber-300/80">마스터 로그인 — 모든 PicBook을 열어볼 수 있어요</p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <UserLogoutButton className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/60" />
-            <Link
-              to="/master/login"
-              className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
-            >
-              마스터 로그인
-            </Link>
+            {profileName ? (
+              <UserLogoutButton className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/60" />
+            ) : null}
+            {masterLoggedIn ? (
+              <Link
+                to="/editor"
+                className="rounded-lg border border-violet-700/60 bg-violet-950/50 px-3 py-1.5 text-xs font-medium text-violet-200/90 hover:bg-violet-900/50"
+              >
+                마스터 편집
+              </Link>
+            ) : (
+              <Link
+                to="/master/login"
+                className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
+              >
+                마스터 로그인
+              </Link>
+            )}
           </div>
         </div>
 
