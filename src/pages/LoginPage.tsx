@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { isCloudSyncEnabled } from '../lib/accountCloudSync'
+import { isCloudSyncEnabled, isFirebaseSyncEnabled } from '../lib/accountCloudSync'
 import { isValidSixDigitPassword } from '../lib/password'
 import { useUserAccountStore } from '../state/userAccountStore'
 
@@ -43,7 +43,11 @@ export default function LoginPage() {
         <h1 className="mt-2 text-center text-2xl font-bold text-stone-900">다시 오신 것을 환영해요</h1>
         <p className="mt-2 text-center text-sm text-stone-600">
           이름과 비밀번호로 로그인하면 구매한 PicBook·서재가 그대로 이어집니다.
-          {isCloudSyncEnabled() ? (
+          {isFirebaseSyncEnabled() ? (
+            <span className="mt-1 block text-xs text-emerald-800">
+              Firebase에 PicBook 회원 정보가 저장되어, 다른 기기·태블릿에서도 같은 이름으로 로그인하면 이어집니다.
+            </span>
+          ) : isCloudSyncEnabled() ? (
             <span className="mt-1 block text-xs text-emerald-800">
               다른 기기·태블릿에서도 같은 이름으로 로그인하면 연동됩니다.
             </span>

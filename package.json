@@ -13,6 +13,7 @@
     "prebuild": "node scripts/verify-proverbs-pack.mjs"
   },
   "dependencies": {
+    "firebase": "^12.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.6.0",

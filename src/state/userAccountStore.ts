@@ -6,6 +6,7 @@ import {
   isCloudSyncEnabled,
   mergeCloudIntoLocal,
   pushCloudAccount,
+  remoteAccountExists,
 } from '../lib/accountCloudSync'
 import { importCloudMasterData } from '../lib/importCloudMasterData'
 import { isValidSixDigitPassword } from '../lib/password'
@@ -71,6 +72,9 @@ export const useUserAccountStore = create<UserAccountStore>()(
         }
         const key = accountKeyFromName(trimmed)
         if (get().accounts[key]) {
+          return { ok: false, error: '이미 등록된 이름입니다. 로그인해 주세요.' }
+        }
+        if (isCloudSyncEnabled() && (await remoteAccountExists(trimmed))) {
           return { ok: false, error: '이미 등록된 이름입니다. 로그인해 주세요.' }
         }
         const now = new Date().toISOString()

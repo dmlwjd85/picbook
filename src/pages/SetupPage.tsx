@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { SixDigitPasswordFields } from '../components/SixDigitPasswordFields'
-import { isCloudSyncEnabled } from '../lib/accountCloudSync'
+import { isCloudSyncEnabled, isFirebaseSyncEnabled } from '../lib/accountCloudSync'
 import { isValidSixDigitPassword } from '../lib/password'
 import { useUserAccountStore } from '../state/userAccountStore'
 
@@ -54,7 +54,11 @@ export default function SetupPage() {
         <h1 className="mt-2 text-center text-2xl font-bold text-stone-900">처음 오신 걸 환영해요</h1>
         <p className="mt-2 text-center text-sm text-stone-600">
           이름과 6자리 비밀번호를 등록하면, 다시 로그인할 때 구매한 PicBook이 유지됩니다.
-          {isCloudSyncEnabled() ? ' 다른 기기에서도 같은 이름·비밀번호로 이어집니다.' : ''}
+          {isFirebaseSyncEnabled()
+            ? ' Firebase에 PicBook 전용으로 저장되어 다른 기기에서도 이어집니다.'
+            : isCloudSyncEnabled()
+              ? ' 다른 기기에서도 같은 이름·비밀번호로 이어집니다.'
+              : ''}
         </p>
 
         <form

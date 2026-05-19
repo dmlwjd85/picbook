@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// PicBook 전용: picbook_accounts 컬렉션
+// Firebase 콘솔 → Firestore → 규칙에 붙여넣거나: firebase deploy --only firestore:rules
+//
+// 비밀번호는 앱에서 해시 후 저장·검증합니다.
+// (교육용 6자리 비밀번호 — 운영 시 App Check·규칙 강화 권장)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /picbook_accounts/{accountKey} {
+      allow read, write: if true;
+    }
+  }
+}
