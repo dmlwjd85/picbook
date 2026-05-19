@@ -18,6 +18,9 @@ export function createBeadsPearlProverbSentence() {
     ['서', '말', '이라도', '꿰어', '보배'],
     undefined,
     '좋은 재능도 가다듬지 않으면 쓸모가 없어요.',
-    [glossAt(BEADS_PEARL_TEXT, '보배', { term: '보배', definition: '아주 귀한 보석' })],
+    [
+      glossAt(BEADS_PEARL_TEXT, '서', { term: '서', definition: '충분히 많은 양' }),
+      glossAt(BEADS_PEARL_TEXT, '보배', { term: '보배', definition: '아주 귀한 보석' }),
+    ],
   )
 }

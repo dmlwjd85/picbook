@@ -58,6 +58,7 @@ export const PROVERBS_IMAGES = {
   frog04: p('proverbs-frog-04.png'),
   frog05: p('proverbs-frog-05.png'),
   frog06: p('proverbs-frog-06.png'),
+  frogTadpoleFlash: p('proverbs-frog-tadpole-flash.png'),
   dung01: p('proverbs-dung-01.png'),
   dung02: p('proverbs-dung-02.png'),
   dung03: p('proverbs-dung-03.png'),

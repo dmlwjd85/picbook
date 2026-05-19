@@ -16,6 +16,6 @@ export function createManyBranchesProverbSentence() {
     ],
     ['나무', '바람', '잘', '날', '없다'],
     undefined,
-    '가지가 많으면 걱정할 일도 많은 법이야.',
+    '사람이나 해야 할 일이 많으면 걱정할 일도 많아져요.',
   )
 }

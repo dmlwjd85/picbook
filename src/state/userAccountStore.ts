@@ -97,6 +97,7 @@ export const useUserAccountStore = create<UserAccountStore>()(
         return { ok: true }
       },
 
+      /** 세션만 종료 — accounts·unlockedIds는 localStorage에 유지 */
       logout: () => set({ sessionKey: null }),
 
       isUnlocked: (bookId) => {

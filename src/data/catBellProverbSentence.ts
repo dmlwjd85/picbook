@@ -16,6 +16,6 @@ export function createCatBellProverbSentence() {
     ],
     ['목에', '방울', '을', '달', '기'],
     undefined,
-    '무서운 고양이 앞에 아무도 나서지 못하면, 좋은 계획도 실행이 안 돼요.',
+    '실행할 수 없는 계획은 쓸모가 없어요.',
   )
 }
