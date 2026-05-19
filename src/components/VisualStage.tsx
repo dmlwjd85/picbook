@@ -1,27 +1,30 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
+import type { SceneStaging, SceneTransition, TextOverlayPosition } from '../types/sceneEdit'
 
 const IMG_PROPS = {
   decoding: 'async' as const,
   loading: 'eager' as const,
 }
 
-const CROSSFADE_MS = 300
-const crossfadeCls =
-  'transition-[opacity,filter] duration-[300ms] ease-in-out motion-reduce:transition-none'
+const TRANSITION_MS = 300
+const transitionCls =
+  'transition-[opacity,filter,transform] duration-[300ms] ease-in-out motion-reduce:transition-none'
 
-/** 장면 전환 — 다음 이미지 로드 후 겹쳐 페이드(빈 프레임 없음) */
+/** 장면 전환 — 다음 이미지 로드 후 겹쳐 전환(빈 프레임 없음) */
 function LayerPicture({
   imageUrl,
   label,
   className,
   style,
+  sceneTransition = 'crossfade',
 }: {
   imageUrl: string
   label: string
   className?: string
   style?: CSSProperties
+  sceneTransition?: SceneTransition
 }) {
   const [activeUrl, setActiveUrl] = useState(imageUrl)
   const [fadeOutUrl, setFadeOutUrl] = useState<string | null>(null)
@@ -30,6 +33,12 @@ function LayerPicture({
 
   useEffect(() => {
     if (imageUrl === activeUrl) return
+    if (sceneTransition === 'none') {
+      setActiveUrl(imageUrl)
+      setFadeOutUrl(null)
+      setCrossfading(false)
+      return
+    }
     let cancelled = false
     const img = new Image()
     const beginCrossfade = () => {
@@ -46,7 +55,7 @@ function LayerPicture({
             setFadeOutUrl(null)
             setCrossfading(false)
           }
-        }, CROSSFADE_MS + 40)
+        }, TRANSITION_MS + 40)
       })
     }
     img.onload = beginCrossfade
@@ -56,20 +65,48 @@ function LayerPicture({
     return () => {
       cancelled = true
     }
-  }, [imageUrl, activeUrl])
+  }, [imageUrl, activeUrl, sceneTransition])
 
   useEffect(() => {
     if (imageUrl !== activeUrl && !fadeOutUrl) setActiveUrl(imageUrl)
   }, [imageUrl, activeUrl, fadeOutUrl])
 
   const wrapCls = isAbsolute ? 'absolute inset-0' : 'relative w-full'
+  const instant = sceneTransition === 'none'
+  const slideLeft = sceneTransition === 'slide-left'
+  const slideRight = sceneTransition === 'slide-right'
+  const useBlur = sceneTransition === 'crossfade'
+
+  const enterSlide = crossfading
+    ? slideLeft
+      ? 'translate-x-0'
+      : slideRight
+        ? 'translate-x-0'
+        : ''
+    : slideLeft
+      ? 'translate-x-full'
+      : slideRight
+        ? '-translate-x-full'
+        : ''
+
+  const exitSlide = crossfading
+    ? slideLeft
+      ? '-translate-x-full opacity-0'
+      : slideRight
+        ? 'translate-x-full opacity-0'
+        : useBlur
+          ? 'opacity-0 blur-[3px]'
+          : 'opacity-0'
+    : useBlur
+      ? 'opacity-100 blur-0'
+      : 'opacity-100'
 
   return (
     <div className={wrapCls}>
       <img
         src={activeUrl}
         alt={label}
-        className={`${className ?? ''} ${crossfadeCls} opacity-100`}
+        className={`${className ?? ''} ${instant ? '' : transitionCls} opacity-100 ${enterSlide}`}
         style={style}
         draggable={false}
         {...IMG_PROPS}
@@ -80,18 +117,56 @@ function LayerPicture({
           el.style.opacity = '0.35'
         }}
       />
-      {fadeOutUrl ? (
+      {fadeOutUrl && !instant ? (
         <img
           src={fadeOutUrl}
           alt=""
           aria-hidden
-          className={`${className ?? ''} ${crossfadeCls} absolute inset-0 ${
-            crossfading ? 'opacity-0 blur-[3px]' : 'opacity-100 blur-0'
-          }`}
+          className={`${className ?? ''} ${transitionCls} absolute inset-0 ${exitSlide}`}
           style={style}
           draggable={false}
         />
       ) : null}
+    </div>
+  )
+}
+
+function stagingWrapClass(staging: SceneStaging): string {
+  switch (staging) {
+    case 'ken-burns':
+      return 'picbook-staging-ken-burns'
+    case 'soft-zoom':
+      return 'picbook-staging-soft-zoom'
+    case 'vignette':
+      return 'picbook-staging-vignette'
+    default:
+      return ''
+  }
+}
+
+function MasterTextOverlay({
+  text,
+  position,
+}: {
+  text: string
+  position: TextOverlayPosition
+}) {
+  const posCls =
+    position === 'top'
+      ? 'top-3'
+      : position === 'bottom'
+        ? 'bottom-3'
+        : 'top-1/2 -translate-y-1/2'
+  return (
+    <div
+      className={`pointer-events-none absolute inset-x-0 z-[3] flex justify-center px-4 ${posCls}`}
+    >
+      <p
+        className="max-w-[92%] rounded-lg bg-black/72 px-3 py-2 text-center text-[clamp(0.75rem,2.4vw,1rem)] font-bold leading-snug text-amber-50 shadow-lg ring-1 ring-white/20"
+        style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+      >
+        {text}
+      </p>
     </div>
   )
 }
@@ -137,6 +212,10 @@ type Props = {
   epilogueFullscreen?: boolean
   onOverlayTap?: () => void
   overlayTapLabel?: string
+  /** 마스터 연출 — 패널 전환 방식 */
+  sceneTransition?: SceneTransition
+  stagingEffect?: SceneStaging
+  masterTextOverlay?: { text: string; position: TextOverlayPosition } | null
 }
 
 function RedXStamp() {
@@ -192,6 +271,9 @@ export function VisualStage({
   epilogueFullscreen = false,
   onOverlayTap,
   overlayTapLabel = '다음 속담 →',
+  sceneTransition = 'crossfade',
+  stagingEffect = 'none',
+  masterTextOverlay = null,
 }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
@@ -264,6 +346,7 @@ export function VisualStage({
                         imageUrl={imageUrl}
                         label={l.label}
                         className="absolute inset-0 h-full w-full object-cover"
+                        sceneTransition={sceneTransition}
                       />
                       {anchors ? <AnchorOverlay labels={anchors} /> : null}
                     </div>
@@ -272,7 +355,9 @@ export function VisualStage({
                     </div>
                   </div>
                 ) : fill ? (
-                  <div className="relative h-full w-full bg-stone-900">
+                  <div
+                    className={`relative h-full w-full bg-stone-900 ${stagingWrapClass(stagingEffect)}`}
+                  >
                     <div
                       className={
                         proverbFill
@@ -284,6 +369,7 @@ export function VisualStage({
                         imageUrl={imageUrl}
                         label={l.label}
                         className={`h-full w-full ${imgFit}`}
+                        sceneTransition={sceneTransition}
                         style={
                           proverbFill
                             ? { objectPosition: 'center center' }
@@ -302,6 +388,7 @@ export function VisualStage({
                       imageUrl={imageUrl}
                       label={l.label}
                       className="block h-auto w-full object-cover"
+                      sceneTransition={sceneTransition}
                     />
                     {anchors ? <AnchorOverlay labels={anchors} /> : null}
                   </div>
@@ -316,6 +403,10 @@ export function VisualStage({
           <span>아직 연출 이미지가 없습니다.</span>
           <span className="text-xs text-slate-500">따라 쓰면 장면이 바뀝니다.</span>
         </div>
+      ) : null}
+
+      {masterTextOverlay?.text.trim() ? (
+        <MasterTextOverlay text={masterTextOverlay.text.trim()} position={masterTextOverlay.position} />
       ) : null}
 
       <StageInlays glosses={vocabGlosses} karaoke={karaoke} showKaraoke={showKaraoke} />

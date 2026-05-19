@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { PicbookSceneEditor } from '../components/PicbookSceneEditor'
 import { useMasterAuthStore } from '../state/masterAuthStore'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { getActiveCaption } from '../lib/getActiveCaption'
@@ -35,9 +36,12 @@ function ImageFormatGuide() {
   )
 }
 
+type MasterEditorTab = 'picbook' | 'pack'
+
 export default function EditorPage() {
   const navigate = useNavigate()
   const logout = useMasterAuthStore((s) => s.logout)
+  const [editorTab, setEditorTab] = useState<MasterEditorTab>('picbook')
   const pack = usePackEditorStore((s) => s.pack)
   const activeSentenceIndex = usePackEditorStore((s) => s.activeSentenceIndex)
   const setActiveSentenceIndex = usePackEditorStore((s) => s.setActiveSentenceIndex)
@@ -123,10 +127,6 @@ export default function EditorPage() {
     reader.readAsDataURL(file)
   }
 
-  if (!sentence) {
-    return <div className="p-6">문장이 없습니다.</div>
-  }
-
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-6">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -135,8 +135,10 @@ export default function EditorPage() {
             <Link to="/bookshelf" className="text-xs font-medium text-indigo-600 hover:underline">
               ← 책장
             </Link>
-            <h1 className="text-2xl font-bold text-slate-900">마스터 · 연습 팩 만들기</h1>
-            <p className="mt-1 max-w-xl text-sm text-slate-600">어려운 말 없이, 문장 → 그림 → 「몇 글째에 뭐가 보일지」 순서로만 채우면 됩니다.</p>
+            <h1 className="text-2xl font-bold text-slate-900">마스터 편집</h1>
+            <p className="mt-1 max-w-xl text-sm text-slate-600">
+              PicBook 사진 연출(전환·자막·무대) 또는 연습 팩 JSON 제작을 선택하세요.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -182,6 +184,39 @@ export default function EditorPage() {
           </div>
         </header>
 
+        <div className="flex gap-1 rounded-xl bg-slate-200/80 p-1">
+          <button
+            type="button"
+            onClick={() => setEditorTab('picbook')}
+            className={[
+              'flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition',
+              editorTab === 'picbook'
+                ? 'bg-white text-indigo-900 shadow'
+                : 'text-slate-600 hover:text-slate-900',
+            ].join(' ')}
+          >
+            PicBook 사진 연출
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditorTab('pack')}
+            className={[
+              'flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition',
+              editorTab === 'pack'
+                ? 'bg-white text-indigo-900 shadow'
+                : 'text-slate-600 hover:text-slate-900',
+            ].join(' ')}
+          >
+            연습 팩 만들기
+          </button>
+        </div>
+
+        {editorTab === 'picbook' ? (
+          <PicbookSceneEditor />
+        ) : !sentence ? (
+          <p className="text-sm text-slate-600">문장이 없습니다. 「연습 팩 만들기」에서 문장을 추가해 주세요.</p>
+        ) : (
+          <>
         {/* 한눈에 보는 순서 */}
         <section className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm">
           <h2 className="text-sm font-bold text-indigo-900">이렇게만 하면 돼요</h2>
@@ -398,6 +433,8 @@ export default function EditorPage() {
             <VisualStage layers={previewLayers} overlayCaption={getActiveCaption(sentence.captions, previewLen)} />
           </div>
         </section>
+          </>
+        )}
       </div>
     </div>
   )

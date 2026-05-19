@@ -19,6 +19,7 @@ import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
 import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
+import { useActivePanelSceneEdit } from '../hooks/useActivePanelSceneEdit'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { ReadingPack } from '../types/pack'
@@ -207,6 +208,17 @@ export default function PlayPage() {
     return computeLayerSnapshot(sentence, typed.length)
   }, [sentence, typed.length])
 
+  const panelSceneEdit = useActivePanelSceneEdit(bookId, layers)
+  const stageFx = panelSceneEdit
+    ? {
+        sceneTransition: panelSceneEdit.transition,
+        stagingEffect: panelSceneEdit.staging,
+        masterTextOverlay: panelSceneEdit.textOverlay?.text.trim()
+          ? panelSceneEdit.textOverlay
+          : null,
+      }
+    : {}
+
   const target = sentence?.text ?? ''
   const complete = target.length > 0 && typed === target
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
@@ -359,6 +371,7 @@ export default function PlayPage() {
                 centerImages
                 embedded
                 epilogueFullscreen
+                {...stageFx}
               />
             </div>
           </div>
@@ -404,7 +417,7 @@ export default function PlayPage() {
         <div
           className="play-stage-mobile play-stage-overlay relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
         >
-          <VisualStage layers={layers} embedded />
+          <VisualStage layers={layers} embedded {...stageFx} />
           <SentenceNavPrevOverlay
             canPrev={safeSentenceIndex > 0}
             onPrev={goPrevSentence}
@@ -434,6 +447,7 @@ export default function PlayPage() {
               centerImages
               compact
               large
+              {...stageFx}
             />
             <SentenceNavPrevOverlay
               canPrev={safeSentenceIndex > 0}
@@ -488,7 +502,7 @@ export default function PlayPage() {
             </div>
           ) : null}
           <div className="relative flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-stone-900">
-            <VisualStage layers={layers} />
+            <VisualStage layers={layers} {...stageFx} />
             <SentenceNavPrevOverlay
               canPrev={safeSentenceIndex > 0}
               onPrev={goPrevSentence}

@@ -96,3 +96,42 @@ html.play-active #root {
 .play-sentence-in {
   animation: play-sentence-in 0.22s ease-out;
 }
+
+/* 마스터 연출 — 무대 효과 */
+@keyframes picbook-ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes picbook-soft-zoom {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.picbook-staging-ken-burns > div > div:first-child {
+  animation: picbook-ken-burns 10s ease-in-out infinite alternate;
+  transform-origin: center center;
+}
+
+.picbook-staging-soft-zoom > div > div:first-child {
+  animation: picbook-soft-zoom 6s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.picbook-staging-vignette::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+}
