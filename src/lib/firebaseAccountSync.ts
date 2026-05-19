@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, type DocumentReference } from 'firebase/firestore'
 import { accountKeyFromName, type UserAccount } from '../state/userAccountStore'
 import type { PanelSceneEdit } from '../types/sceneEdit'
 import type { SentenceTimeline } from '../types/timeline'
@@ -6,11 +6,10 @@ import type { CloudAccountPayload } from './accountCloudSync'
 import { getPicbookFirestore, isFirebaseEnabled } from './firebase'
 import { hashPassword, verifyPassword } from './passwordHash'
 
-/** PicBook 회원·구매·연출 전용 컬렉션 (다른 Firebase 앱 데이터와 분리) */
+/** PicBook 회원·구매·연출 전용 컬렉션 (삼봉월드 Firebase와 분리된 컬렉션) */
 export const PICBOOK_ACCOUNTS_COLLECTION = 'picbook_accounts'
 
 export type PicbookAccountDoc = {
-  /** 표시 이름 */
   name: string
   passwordHash: string
   unlockedIds: string[]
@@ -20,15 +19,15 @@ export type PicbookAccountDoc = {
   updatedAt: string
 }
 
-function accountRef(accountKey: string) {
-  const db = getPicbookFirestore()
+async function accountRef(accountKey: string): Promise<DocumentReference | null> {
+  const db = await getPicbookFirestore()
   if (!db) return null
   return doc(db, PICBOOK_ACCOUNTS_COLLECTION, accountKey)
 }
 
 export async function firebaseAccountExists(accountKey: string): Promise<boolean> {
   if (!isFirebaseEnabled()) return false
-  const ref = accountRef(accountKey)
+  const ref = await accountRef(accountKey)
   if (!ref) return false
   try {
     const snap = await getDoc(ref)
@@ -45,7 +44,7 @@ export async function fetchFirebaseAccount(
 ): Promise<CloudAccountPayload | null> {
   if (!isFirebaseEnabled()) return null
   const key = accountKeyFromName(name)
-  const ref = accountRef(key)
+  const ref = await accountRef(key)
   if (!ref) return null
 
   try {
@@ -75,7 +74,7 @@ export async function pushFirebaseAccount(
 ): Promise<boolean> {
   if (!isFirebaseEnabled()) return false
   const key = accountKeyFromName(account.name)
-  const ref = accountRef(key)
+  const ref = await accountRef(key)
   if (!ref) return false
 
   try {

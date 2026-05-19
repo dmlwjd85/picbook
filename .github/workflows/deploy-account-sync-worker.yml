@@ -103,7 +103,7 @@ jobs:
           gh variable set VITE_ACCOUNT_SYNC_URL --body "${{ steps.deploy.outputs.worker_url }}"
 
   rebuild-pages:
-    needs: deploy-worker
+    needs: [check-secrets, deploy-worker]
     runs-on: ubuntu-latest
     permissions:
       contents: read

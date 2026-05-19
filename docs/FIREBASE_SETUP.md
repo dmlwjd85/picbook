@@ -1,7 +1,9 @@
-# PicBook Firebase 회원 연동
+# PicBook Firebase 회원 연동 (삼봉월드 공용)
 
-PicBook은 **Firestore 컬렉션 `picbook_accounts`** 에만 회원·구매·타임라인 연출을 저장합니다.  
-(삼봉월드 등 다른 앱 컬렉션과 분리)
+PicBook은 **삼봉월드와 같은 Firebase 프로젝트** `sambong-world-2026` 를 씁니다.  
+회원 데이터는 **`picbook_accounts` 컬렉션** 에만 저장합니다 (학생·월드 데이터와 분리).
+
+**삼봉월드 마스터 탭** → 「PicBook 회원」에서 목록·비밀번호 변경·삭제가 가능합니다.
 
 ## 1. Firebase 프로젝트
 
