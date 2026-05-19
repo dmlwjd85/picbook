@@ -1,0 +1,11 @@
+{
+  "name": "picbook-account-sync",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "kv:create": "wrangler kv namespace create ACCOUNTS"
+  },
+  "devDependencies": {
+    "wrangler": "^4.93.0"
+  }
+}

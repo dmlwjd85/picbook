@@ -1,0 +1,137 @@
+name: Deploy Account Sync Worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'workers/account-sync/**'
+      - '.github/workflows/deploy-account-sync-worker.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  check-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloudflare secrets 확인
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "::error::GitHub Secrets에 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID 를 추가한 뒤 워크플로를 다시 실행하세요."
+            echo "가이드: workers/account-sync/README.md"
+            exit 1
+          fi
+
+  deploy-worker:
+    needs: check-secrets
+    runs-on: ubuntu-latest
+    outputs:
+      worker_url: ${{ steps.deploy.outputs.worker_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install wrangler
+        working-directory: workers/account-sync
+        run: npm ci
+
+      - name: Ensure KV namespace
+        id: kv
+        working-directory: workers/account-sync
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          PLACEHOLDER='00000000000000000000000000000000'
+          CURRENT=$(grep -E '^id = ' wrangler.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ "$CURRENT" = "$PLACEHOLDER" ]; then
+            EXISTING=$(npx wrangler kv namespace list 2>/dev/null | node -e "
+              let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{
+                try {
+                  const list=JSON.parse(d);
+                  const hit=list.find(n=>n.title==='ACCOUNTS');
+                  if(hit) console.log(hit.id);
+                } catch {}
+              });
+            " || true)
+            if [ -n "$EXISTING" ]; then
+              KV_ID="$EXISTING"
+              echo "Reusing KV namespace $KV_ID"
+            else
+              echo "Creating KV namespace ACCOUNTS…"
+              CREATE_LOG=$(npx wrangler kv namespace create ACCOUNTS)
+              echo "$CREATE_LOG"
+              KV_ID=$(echo "$CREATE_LOG" | grep -oE 'id = "[a-f0-9]+"' | head -1 | sed 's/id = "\(.*\)"/\1/')
+            fi
+            sed -i "s/id = \"$PLACEHOLDER\"/id = \"$KV_ID\"/" wrangler.toml
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add wrangler.toml
+            git diff --staged --quiet || git commit -m "chore: account-sync KV namespace id"
+            git push || echo "KV id commit skipped (no push permission or unchanged)"
+          fi
+
+      - name: Deploy Worker
+        id: deploy
+        working-directory: workers/account-sync
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          LOG=$(npx wrangler deploy 2>&1 | tee /tmp/wrangler-deploy.log)
+          echo "$LOG"
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/wrangler-deploy.log | head -1)
+          if [ -z "$URL" ]; then
+            echo "Could not parse worker URL from deploy log" >&2
+            exit 1
+          fi
+          echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $URL"
+
+      - name: Save sync URL for Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh variable set VITE_ACCOUNT_SYNC_URL --body "${{ steps.deploy.outputs.worker_url }}" -R ${{ github.repository }} || \
+          gh variable set VITE_ACCOUNT_SYNC_URL --body "${{ steps.deploy.outputs.worker_url }}"
+
+  rebuild-pages:
+    needs: deploy-worker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_ACCOUNT_SYNC_URL: ${{ needs.deploy-worker.outputs.worker_url }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-pages:
+    needs: rebuild-pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
