@@ -36,10 +36,12 @@ export function PicbookSceneEditor() {
   const [playing, setPlaying] = useState(false)
   const playRef = useRef<number | null>(null)
 
+  const book = AVAILABLE_BOOKS.find((b) => b.id === bookId)
+  const pack: ReadingPack | null = useMemo(() => (book ? book.loadPack() : null), [book])
+  const sentence = pack?.sentences[sentenceIndex]
+
   const timelineRaw = usePicbookTimelineStore((s) =>
-    bookId && pack?.sentences[sentenceIndex]
-      ? s.byBook[bookId]?.[pack.sentences[sentenceIndex]!.id]
-      : undefined,
+    bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
   )
   const setFrameEdit = usePicbookTimelineStore((s) => s.setFrameEdit)
   const clearFrameAt = usePicbookTimelineStore((s) => s.clearFrameAt)
@@ -51,9 +53,6 @@ export function PicbookSceneEditor() {
   const clearBook = usePicbookTimelineStore((s) => s.clearBook)
   const setPanelEdit = usePicbookSceneEditStore((s) => s.setPanelEdit)
 
-  const book = AVAILABLE_BOOKS.find((b) => b.id === bookId)
-  const pack: ReadingPack | null = useMemo(() => (book ? book.loadPack() : null), [book])
-  const sentence = pack?.sentences[sentenceIndex]
   const timeline = timelineRaw ?? null
 
   const panelUrls = useMemo(

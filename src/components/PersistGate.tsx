@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMasterAuthStore } from '../state/masterAuthStore'
+import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 
 type PersistStore = {
@@ -32,6 +33,7 @@ export function PersistGate({ children }: { children: ReactNode }) {
     void Promise.all([
       waitForHydration(useUserAccountStore),
       waitForHydration(useMasterAuthStore),
+      waitForHydration(usePicbookTimelineStore),
     ]).then(() => {
       migrateLegacyStorage()
       if (!cancelled) setReady(true)

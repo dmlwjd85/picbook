@@ -7,6 +7,7 @@ import EditorPage from './pages/EditorPage'
 import HomePage from './pages/HomePage'
 import MasterLoginPage from './pages/MasterLoginPage'
 import MasterSetupPage from './pages/MasterSetupPage'
+import { EditorErrorBoundary } from './components/EditorErrorBoundary'
 import { PlayErrorBoundary } from './components/PlayErrorBoundary'
 import PlayPage from './pages/PlayPage'
 import LoginPage from './pages/LoginPage'
@@ -47,7 +48,9 @@ export default function App() {
           path="/editor"
           element={
             <RequireMaster>
-              <EditorPage />
+              <EditorErrorBoundary>
+                <EditorPage />
+              </EditorErrorBoundary>
             </RequireMaster>
           }
         />
