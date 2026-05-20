@@ -17,8 +17,9 @@ import {
   type TextOverlayPosition,
 } from '../types/sceneEdit'
 import type { ReadingPack } from '../types/pack'
-import { VisualStage } from './VisualStage'
-import { PicbookTimelineStrip } from './PicbookTimelineStrip'
+import { EditablePreviewStage, type PreviewSelectTarget } from './EditablePreviewStage'
+import { PremiereTimeline } from './PremiereTimeline'
+import { EditorDeployBar } from './EditorDeployBar'
 import { createId } from '../lib/ids'
 
 const AVAILABLE_BOOKS = PICBOOK_CATALOG.filter((b) => !b.comingSoon)
@@ -34,6 +35,7 @@ export function PicbookSceneEditor() {
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [frameIndex, setFrameIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
+  const [previewSelect, setPreviewSelect] = useState<PreviewSelectTarget>(null)
   const playRef = useRef<number | null>(null)
 
   const book = AVAILABLE_BOOKS.find((b) => b.id === bookId)
@@ -51,6 +53,7 @@ export function PicbookSceneEditor() {
   const setBgm = usePicbookTimelineStore((s) => s.setBgm)
   const clearSentence = usePicbookTimelineStore((s) => s.clearSentence)
   const clearBook = usePicbookTimelineStore((s) => s.clearBook)
+  const bookTimelines = usePicbookTimelineStore((s) => s.byBook[bookId] ?? {})
   const setPanelEdit = usePicbookSceneEditStore((s) => s.setPanelEdit)
 
   const timeline = timelineRaw ?? null
@@ -117,6 +120,29 @@ export function PicbookSceneEditor() {
 
   useEffect(() => () => stopPlay(), [stopPlay])
 
+  useEffect(() => {
+    setPreviewSelect(null)
+  }, [bookId, sentenceIndex, safeFrame])
+
+  const previewScale =
+    previewSelect === 'insert' && activeInsertCut
+      ? (activeInsertCut.scale ?? 1)
+      : (mergedFrame.scale ?? 1)
+  const previewPanX =
+    previewSelect === 'insert' && activeInsertCut
+      ? (activeInsertCut.panX ?? 0)
+      : (mergedFrame.panX ?? 0)
+  const previewPanY =
+    previewSelect === 'insert' && activeInsertCut
+      ? (activeInsertCut.panY ?? 0)
+      : (mergedFrame.panY ?? 0)
+
+  const hasMainVisual =
+    Boolean(mergedFrame.imageUrl || mergedFrame.customImageId) || layers.some((l) => l.visible && l.imageUrl)
+  const hasInsertVisual = Boolean(
+    activeInsertCut && (activeInsertCut.imageUrl || activeInsertCut.customImageId),
+  )
+
   const onPickFrameImage = async (file: File | null) => {
     if (!file || !bookId || !sentence) return
     if (!file.type.startsWith('image/')) {
@@ -168,9 +194,12 @@ export function PicbookSceneEditor() {
       <section className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm">
         <h2 className="text-sm font-bold text-indigo-900">PicBook 타임라인 연출 편집</h2>
         <p className="mt-2 text-xs leading-relaxed text-slate-600">
-          한 글자마다 프레임을 두고, 그 순간의 그림·줌·전환·효과음·삽입 컷을 다룹니다. 저장은 이 브라우저(로컬·IndexedDB)에만
-          되며 재생 화면에 반영됩니다. 편집 없으면 기존 속담 연출과 동일합니다.
+          한 글자마다 프레임을 두고, 그 순간의 그림·줌·전환·효과음·삽입 컷을 다룹니다. 저장·배포 시 Firebase에 올리면 모든
+          기기 재생에 반영됩니다. 미리보기에서 이미지를 눌러 크기 조절·삭제할 수 있습니다.
         </p>
+        <div className="mt-3">
+          <EditorDeployBar bookId={bookId} bookTitle={book.title} timelines={bookTimelines} />
+        </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -265,24 +294,49 @@ export function PicbookSceneEditor() {
           />
         </label>
         <div className="mt-3">
-          <VisualStage
+          <EditablePreviewStage
             layers={layers}
+            stageFx={stageFx}
             centerImages
-            sceneTransition={stageFx.sceneTransition}
-            stagingEffect={stageFx.stagingEffect}
-            masterTextOverlay={stageFx.masterTextOverlay}
+            scale={previewScale}
+            panX={previewPanX}
+            panY={previewPanY}
+            hasMainEdit={hasMainVisual}
+            hasInsert={hasInsertVisual}
+            selectTarget={previewSelect}
+            onSelectTarget={setPreviewSelect}
+            onScaleChange={(s) => {
+              if (previewSelect === 'insert' && activeInsertCut) {
+                updateInsert(bookId, sentence.id, activeInsertCut.id, { scale: s })
+              } else {
+                setFrameEdit(bookId, sentence.id, safeFrame, { scale: s })
+              }
+            }}
+            onPanChange={(px, py) => {
+              if (previewSelect === 'insert' && activeInsertCut) {
+                updateInsert(bookId, sentence.id, activeInsertCut.id, { panX: px, panY: py })
+              } else {
+                setFrameEdit(bookId, sentence.id, safeFrame, { panX: px, panY: py })
+              }
+            }}
+            onDeleteMain={() => clearFrameAt(bookId, sentence.id, safeFrame)}
+            onDeleteInsert={() => {
+              if (activeInsertCut) removeInsert(bookId, sentence.id, activeInsertCut.id)
+            }}
           />
         </div>
       </section>
 
       {/* 타임라인 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-800">글자 타임라인</h2>
+        <h2 className="text-sm font-semibold text-slate-800">프리미어 타임라인</h2>
         <p className="mt-1 text-xs text-slate-500">{sentence.text}</p>
         <div className="mt-3">
-          <PicbookTimelineStrip
+          <PremiereTimeline
             text={sentence.text}
+            maxFrame={maxFrame}
             selectedIndex={safeFrame}
+            timeline={timeline}
             editedIndices={editedIndices}
             insertAfterIndices={insertAfterIndices}
             onSelect={(i) => {

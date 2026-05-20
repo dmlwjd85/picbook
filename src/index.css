@@ -154,6 +154,14 @@ html.play-active #root {
   scrollbar-width: thin;
 }
 
+.premiere-timeline .premiere-playhead {
+  pointer-events: none;
+}
+
+.premiere-timeline ::-webkit-scrollbar {
+  height: 6px;
+}
+
 .picbook-staging-vignette::after {
   content: '';
   pointer-events: none;

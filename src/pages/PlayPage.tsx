@@ -21,6 +21,7 @@ import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGl
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
+import { fetchPublishedBookTimelines } from '../lib/publishedTimelineFirebase'
 import { usePlaySessionStore } from '../state/playSessionStore'
 import { canOpenBook, useMasterPreviewMode } from '../lib/bookAccess'
 import { useFullscreen } from '../hooks/useFullscreen'
@@ -198,6 +199,20 @@ export default function PlayPage() {
       window.clearTimeout(tid)
     }
   }, [bookId, isBookUnlocked, navigate, setSession])
+
+  const mergePublishedBook = usePicbookTimelineStore((s) => s.mergePublishedBook)
+
+  useEffect(() => {
+    if (!bookId) return
+    let cancelled = false
+    void fetchPublishedBookTimelines(bookId).then((timelines) => {
+      if (cancelled || !timelines) return
+      mergePublishedBook(bookId, timelines)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [bookId, mergePublishedBook])
 
   const safeSentenceIndex =
     pack && pack.sentences.length > 0

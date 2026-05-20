@@ -22,6 +22,8 @@ type TimelineStore = {
   setBgm: (bookId: string, sentenceId: string, bgm: SentenceTimeline['bgm'] | null) => void
   clearSentence: (bookId: string, sentenceId: string) => void
   clearBook: (bookId: string) => void
+  /** Firebase 배포본을 로컬에 병합 */
+  mergePublishedBook: (bookId: string, timelines: Record<string, SentenceTimeline>) => void
 }
 
 function ensureSentence(
@@ -178,6 +180,17 @@ export const usePicbookTimelineStore = create<TimelineStore>()(
           if (!s.byBook[bookId]) return s
           const byBook = { ...s.byBook }
           delete byBook[bookId]
+          return { byBook }
+        }),
+
+      mergePublishedBook: (bookId, timelines) =>
+        set((s) => {
+          const byBook = { ...s.byBook }
+          const book = { ...(byBook[bookId] ?? {}) }
+          for (const [sentenceId, tl] of Object.entries(timelines)) {
+            if (tl?.version === 2) book[sentenceId] = tl
+          }
+          byBook[bookId] = book
           return { byBook }
         }),
     }),
