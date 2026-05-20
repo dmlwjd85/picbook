@@ -58,11 +58,20 @@ export async function resolveTimelineMedia(
   return { imageUrls, audioUrls }
 }
 
-function pickMainLayer(layers: LayerState[]): LayerState | null {
+export function pickMainLayer(layers: LayerState[]): LayerState | null {
   const visible = layers.filter((l) => l.visible && l.imageUrl)
   const fill = visible.filter((l) => l.fillHeight)
   if (fill.length > 0) return fill[fill.length - 1]!
   return visible[visible.length - 1] ?? null
+}
+
+/** 타임라인 편집이 적용될 레이어 */
+export function pickTargetLayer(layers: LayerState[], layerId?: string): LayerState | null {
+  if (layerId) {
+    const hit = layers.find((l) => l.id === layerId && l.visible && l.imageUrl)
+    if (hit) return hit
+  }
+  return pickMainLayer(layers)
 }
 
 function applyEditToLayer(layer: LayerState, edit: CharFrameEdit, media: ResolvedMedia): LayerState {
@@ -147,7 +156,7 @@ export function applyTimelineToLayers(
   let layers = baseLayers.map((l) => ({ ...l }))
 
   if (hasFrameEdit) {
-    const main = pickMainLayer(layers)
+    const main = pickTargetLayer(layers, merged.layerId)
     if (main) {
       layers = layers.map((l) => (l.id === main.id ? applyEditToLayer(l, merged, media) : l))
     }

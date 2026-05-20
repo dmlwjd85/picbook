@@ -5,6 +5,7 @@ import { panelKeyFromImageUrl } from '../lib/panelKey'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { makeTimelineMediaKey, putTimelineAudio, putTimelineImage } from '../lib/timelineMediaDb'
 import { activeInsert as pickActiveInsert, mergeFrameEditsUpTo } from '../lib/mergeFrameEdits'
+import { pickMainLayer } from '../lib/applyTimelinePlayback'
 import { usePicbookSceneEditStore } from '../state/picbookSceneEditStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
@@ -143,6 +144,24 @@ export function PicbookSceneEditor() {
     activeInsertCut && (activeInsertCut.imageUrl || activeInsertCut.customImageId),
   )
 
+  const selectableLayers = useMemo(
+    () => baseLayersAtFrame.filter((l) => l.visible && l.imageUrl),
+    [baseLayersAtFrame],
+  )
+
+  const editTargetLayerId = useMemo(() => {
+    if (mergedFrame.layerId && selectableLayers.some((l) => l.id === mergedFrame.layerId)) {
+      return mergedFrame.layerId
+    }
+    return pickMainLayer(selectableLayers)?.id
+  }, [mergedFrame.layerId, selectableLayers])
+
+  const patchFrame = (patch: Parameters<typeof setFrameEdit>[3]) => {
+    if (!bookId || !sentence) return
+    const layerId = editTargetLayerId ?? patch.layerId
+    setFrameEdit(bookId, sentence.id, safeFrame, layerId ? { ...patch, layerId } : patch)
+  }
+
   const onPickFrameImage = async (file: File | null) => {
     if (!file || !bookId || !sentence) return
     if (!file.type.startsWith('image/')) {
@@ -151,7 +170,7 @@ export function PicbookSceneEditor() {
     }
     const key = makeTimelineMediaKey(bookId, sentence.id, `frame-${safeFrame}-${createId()}`)
     await putTimelineImage(key, file)
-    setFrameEdit(bookId, sentence.id, safeFrame, { customImageId: key, imageUrl: undefined })
+    patchFrame({ customImageId: key, imageUrl: undefined })
   }
 
   const onPickInsertImage = async (insertId: string, file: File | null) => {
@@ -165,7 +184,7 @@ export function PicbookSceneEditor() {
     if (!file || !bookId || !sentence) return
     const key = makeTimelineMediaKey(bookId, sentence.id, `sfx-${safeFrame}-${createId()}`)
     await putTimelineAudio(key, file)
-    setFrameEdit(bookId, sentence.id, safeFrame, {
+    patchFrame({
       sfx: { customAudioId: key, volume: mergedFrame.sfx?.volume ?? 0.85 },
     })
   }
@@ -222,7 +241,29 @@ export function PicbookSceneEditor() {
           ))}
         </div>
         {pack.sentences.length > 1 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 space-y-2">
+            {pack.sentences.length > 10 ? (
+              <label className="block text-xs font-medium text-slate-600">
+                속담·문장 선택 ({pack.sentences.length}개)
+                <select
+                  className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm"
+                  value={sentenceIndex}
+                  onChange={(e) => {
+                    setSentenceIndex(Number(e.target.value))
+                    setFrameIndex(0)
+                    stopPlay()
+                  }}
+                >
+                  {pack.sentences.map((s, i) => (
+                    <option key={s.id} value={i}>
+                      {i + 1}. {s.text.slice(0, 36)}
+                      {s.text.length > 36 ? '…' : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
             {pack.sentences.map((s, i) => (
               <button
                 key={s.id}
@@ -238,6 +279,7 @@ export function PicbookSceneEditor() {
                 {s.text.length > 14 ? '…' : ''}
               </button>
             ))}
+            </div>
           </div>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-3">
@@ -297,7 +339,7 @@ export function PicbookSceneEditor() {
           <EditablePreviewStage
             layers={layers}
             stageFx={stageFx}
-            centerImages
+            centerImages={bookId === 'elementary-proverbs'}
             scale={previewScale}
             panX={previewPanX}
             panY={previewPanY}
@@ -309,14 +351,14 @@ export function PicbookSceneEditor() {
               if (previewSelect === 'insert' && activeInsertCut) {
                 updateInsert(bookId, sentence.id, activeInsertCut.id, { scale: s })
               } else {
-                setFrameEdit(bookId, sentence.id, safeFrame, { scale: s })
+                patchFrame({ scale: s })
               }
             }}
             onPanChange={(px, py) => {
               if (previewSelect === 'insert' && activeInsertCut) {
                 updateInsert(bookId, sentence.id, activeInsertCut.id, { panX: px, panY: py })
               } else {
-                setFrameEdit(bookId, sentence.id, safeFrame, { panX: px, panY: py })
+                patchFrame({ panX: px, panY: py })
               }
             }}
             onDeleteMain={() => clearFrameAt(bookId, sentence.id, safeFrame)}
@@ -354,6 +396,24 @@ export function PicbookSceneEditor() {
             프레임 {safeFrame} · 그림·줌
           </h2>
 
+          {selectableLayers.length > 1 ? (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-slate-600">편집할 레이어 (삼분할·다중 화면)</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectableLayers.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => patchFrame({ layerId: l.id })}
+                    className={chipCls(editTargetLayerId === l.id)}
+                  >
+                    {l.label || l.id.slice(0, 6)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {panelUrls.length > 0 ? (
             <div className="mt-3">
               <p className="text-xs font-medium text-slate-600">패널에서 고르기(이 프레임부터 교체)</p>
@@ -363,7 +423,7 @@ export function PicbookSceneEditor() {
                     key={url}
                     type="button"
                     onClick={() =>
-                      setFrameEdit(bookId, sentence.id, safeFrame, {
+                      patchFrame({
                         imageUrl: url,
                         customImageId: undefined,
                       })
@@ -398,7 +458,7 @@ export function PicbookSceneEditor() {
               placeholder="https://..."
               value={mergedFrame.imageUrl ?? ''}
               onChange={(e) =>
-                setFrameEdit(bookId, sentence.id, safeFrame, {
+                patchFrame({
                   imageUrl: e.target.value.trim() || undefined,
                   customImageId: undefined,
                 })
@@ -415,9 +475,7 @@ export function PicbookSceneEditor() {
               step={0.05}
               value={mergedFrame.scale ?? 1}
               className="mt-1 block w-full"
-              onChange={(e) =>
-                setFrameEdit(bookId, sentence.id, safeFrame, { scale: Number(e.target.value) })
-              }
+              onChange={(e) => patchFrame({ scale: Number(e.target.value) })}
             />
           </label>
 
@@ -427,14 +485,14 @@ export function PicbookSceneEditor() {
               value={mergedFrame.panX ?? 0}
               min={-30}
               max={30}
-              onChange={(v) => setFrameEdit(bookId, sentence.id, safeFrame, { panX: v })}
+              onChange={(v) => patchFrame({ panX: v })}
             />
             <FieldRange
               label="세로 이동 %"
               value={mergedFrame.panY ?? 0}
               min={-30}
               max={30}
-              onChange={(v) => setFrameEdit(bookId, sentence.id, safeFrame, { panY: v })}
+              onChange={(v) => patchFrame({ panY: v })}
             />
           </div>
 
@@ -472,7 +530,7 @@ export function PicbookSceneEditor() {
                 value={mergedFrame.transition ?? 'crossfade'}
                 options={SCENE_TRANSITION_OPTIONS}
                 onChange={(v) =>
-                  setFrameEdit(bookId, sentence.id, safeFrame, { transition: v as SceneTransition })
+                  patchFrame({ transition: v as SceneTransition })
                 }
               />
               <SelectField
@@ -480,7 +538,7 @@ export function PicbookSceneEditor() {
                 value={mergedFrame.staging ?? 'none'}
                 options={SCENE_STAGING_OPTIONS}
                 onChange={(v) =>
-                  setFrameEdit(bookId, sentence.id, safeFrame, { staging: v as SceneStaging })
+                  patchFrame({ staging: v as SceneStaging })
                 }
               />
             </div>
@@ -490,7 +548,7 @@ export function PicbookSceneEditor() {
               placeholder="짧은 자막 (선택)"
               value={mergedFrame.textOverlay?.text ?? ''}
               onChange={(e) =>
-                setFrameEdit(bookId, sentence.id, safeFrame, {
+                patchFrame({
                   textOverlay: {
                     text: e.target.value,
                     position: mergedFrame.textOverlay?.position ?? 'top',
@@ -503,7 +561,7 @@ export function PicbookSceneEditor() {
               value={mergedFrame.textOverlay?.position ?? 'top'}
               options={TEXT_OVERLAY_POSITION_OPTIONS}
               onChange={(v) =>
-                setFrameEdit(bookId, sentence.id, safeFrame, {
+                patchFrame({
                   textOverlay: {
                     text: mergedFrame.textOverlay?.text ?? '',
                     position: v as TextOverlayPosition,
@@ -534,7 +592,7 @@ export function PicbookSceneEditor() {
                 placeholder="https://..."
                 value={mergedFrame.sfx?.url ?? ''}
                 onChange={(e) =>
-                  setFrameEdit(bookId, sentence.id, safeFrame, {
+                  patchFrame({
                     sfx: { ...mergedFrame.sfx, url: e.target.value.trim() || undefined },
                   })
                 }

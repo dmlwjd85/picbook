@@ -216,6 +216,8 @@ type Props = {
   sceneTransition?: SceneTransition
   stagingEffect?: SceneStaging
   masterTextOverlay?: { text: string; position: TextOverlayPosition } | null
+  /** false면 전환용 홀드 백드롭 비활성(편집기·삼분할 겹침 방지) */
+  holdBackdrop?: boolean
 }
 
 function RedXStamp() {
@@ -274,6 +276,7 @@ export function VisualStage({
   sceneTransition = 'crossfade',
   stagingEffect = 'none',
   masterTextOverlay = null,
+  holdBackdrop = true,
 }: Props) {
   const visibleLayers = layers.filter((l) => l.visible && l.imageUrl)
   const hasImage = visibleLayers.length > 0
@@ -281,7 +284,11 @@ export function VisualStage({
   const holdUrlRef = useRef<string | null>(null)
   const topVisibleUrl = visibleLayers[visibleLayers.length - 1]?.imageUrl ?? null
   if (topVisibleUrl) holdUrlRef.current = topVisibleUrl
-  const holdUrl = topVisibleUrl ?? holdUrlRef.current
+  const splitPanels =
+    visibleLayers.filter((l) => l.fillHeight && (l.width ?? 100) < 99).length >= 2
+  /** 레이어가 보일 때 백드롭을 깔면 삼분할·속담에서 이미지가 이중으로 겹침 */
+  const holdUrl =
+    holdBackdrop && !splitPanels && visibleLayers.length === 0 ? holdUrlRef.current : null
 
   const shellClass = embedded
     ? 'relative h-full w-full overflow-hidden bg-stone-900'

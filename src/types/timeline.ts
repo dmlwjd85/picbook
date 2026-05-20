@@ -2,6 +2,8 @@ import type { SceneStaging, SceneTransition, TextOverlayPosition } from './scene
 
 /** 한 글자(프레임) 단위 연출 — 해당 글자까지 입력했을 때 적용(누적 병합) */
 export type CharFrameEdit = {
+  /** 적용할 레이어 id(삼분할 등 다중 레이어). 없으면 주 레이어 자동 */
+  layerId?: string
   /** 패널 URL 대신 쓸 이미지(패널 목록·URL) */
   imageUrl?: string
   /** IndexedDB에 저장한 커스텀 이미지 키 */

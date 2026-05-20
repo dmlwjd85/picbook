@@ -101,6 +101,7 @@ export function EditablePreviewStage({
         sceneTransition={stageFx.sceneTransition}
         stagingEffect={stageFx.stagingEffect}
         masterTextOverlay={stageFx.masterTextOverlay}
+        holdBackdrop={false}
       />
       {selected ? (
         <div
