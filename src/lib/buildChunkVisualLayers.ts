@@ -32,9 +32,11 @@ function overlayBoxLayouts(count: number): BoxLayout[] {
   ].slice(0, count)
 }
 
-const SINGLE_BOX: BoxLayout = { x: 6, y: 8, width: 88, height: 84 }
+/** 한 글자 청크 — 연출창 여백 최소 */
+const SINGLE_BOX: BoxLayout = { x: 0, y: 0, width: 100, height: 100 }
 
 function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState {
+  const plate = entry.plate_caption?.trim() || null
   return {
     id: `${CHUNK_LAYER_PREFIX}${entry.word_id}`,
     label: entry.word,
@@ -47,9 +49,10 @@ function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState 
     width: box.width,
     height: box.height,
     scale: 1,
-    fillHeight: false,
+    fillHeight: !plate && box.width >= 96,
     panX: 0,
     panY: 0,
+    plateCaption: plate,
   }
 }
 

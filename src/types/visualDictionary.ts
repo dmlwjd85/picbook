@@ -29,6 +29,8 @@ export type VisualDictionaryEntry = {
   /** 배포 후 Firebase Storage URL (없으면 로컬 public 경로) */
   image_url?: string
   updated_at?: string
+  /** 청크 레이어 하단 막대에 표시할 설명(예: 권력(권리와 힘)) */
+  plate_caption?: string
 }
 
 export type VisualDictionaryInsertMode = 'background' | 'overlay' | 'frame'

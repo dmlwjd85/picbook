@@ -5,9 +5,35 @@ export const SEPARATION_STORY_ID = 'demo-separation-three-powers'
 /** 삼권분립 — 글자·어절 청크 연출 */
 export const SEPARATION_CHUNK_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
   {
+    word_id: 'sep_intro_gwonryeok',
+    word: '권력',
+    synonyms: [],
+    part_of_speech: 'noun',
+    file_name: 'sep_three_powers_circle_01.png',
+    image_direction: '권력 — 권리와 힘',
+    z_index: 45,
+    tags: ['도입'],
+    chunk_hints: ['권력'],
+    plate_caption: '권력(권리와 힘)',
+    status: 'ready',
+  },
+  {
+    word_id: 'sep_intro_bunrip',
+    word: '분립',
+    synonyms: [],
+    part_of_speech: 'noun',
+    file_name: 'sep_circle_split_01.png',
+    image_direction: '분립 — 나누어 세움',
+    z_index: 45,
+    tags: ['도입'],
+    chunk_hints: ['분립'],
+    plate_caption: '분립(나누어 세움)',
+    status: 'ready',
+  },
+  {
     word_id: 'sep_sam',
     word: '삼',
-    synonyms: ['삼권', '삼권분립'],
+    synonyms: [],
     part_of_speech: 'noun',
     file_name: 'sep_three_num_01.png',
     image_direction: '큰 숫자 3, 수채화 일러스트, 흰 배경',
@@ -19,7 +45,7 @@ export const SEPARATION_CHUNK_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
   {
     word_id: 'sep_gwon',
     word: '권',
-    synonyms: ['권력', '삼권'],
+    synonyms: [],
     part_of_speech: 'noun',
     file_name: 'sep_three_powers_circle_01.png',
     image_direction: '원 안에 입법부·행정부·사법부 3등분',
@@ -31,7 +57,7 @@ export const SEPARATION_CHUNK_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
   {
     word_id: 'sep_bun',
     word: '분',
-    synonyms: ['분립', '분할'],
+    synonyms: [],
     part_of_speech: 'verb',
     file_name: 'sep_circle_split_01.png',
     image_direction: '원이 세 조각으로 쪼개지는 그림',
@@ -43,7 +69,7 @@ export const SEPARATION_CHUNK_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
   {
     word_id: 'sep_rip',
     word: '립',
-    synonyms: ['분립', '삼권분립'],
+    synonyms: [],
     part_of_speech: 'verb',
     file_name: 'sep_powers_check_01.png',
     image_direction: '세 권력이 서로 견제하는 화살표·저울',

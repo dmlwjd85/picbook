@@ -10,6 +10,7 @@ import {
   SLIDE_URLS,
   W,
   W3,
+  idxAfter,
   splitRemain,
 } from './separationPackShared'
 
@@ -100,24 +101,12 @@ export function createSeparationMainSentence(): SentenceBlock {
   const cues: Cue[] = [
     {
       id: createId(),
-      charIndex: 0,
+      charIndex: idxAfter(MAIN_SEPARATION_TEXT, '한'),
       effects: [
         { kind: 'layerShow', layerId: layerJustice },
         { kind: 'layerImage', layerId: layerJustice, imageUrl: urlJustice },
-      ],
-    },
-    {
-      id: createId(),
-      charIndex: 2,
-      effects: [
         { kind: 'layerShow', layerId: layerLegis },
         { kind: 'layerImage', layerId: layerLegis, imageUrl: urlLegis },
-      ],
-    },
-    {
-      id: createId(),
-      charIndex: 4,
-      effects: [
         { kind: 'layerShow', layerId: layerExec },
         { kind: 'layerImage', layerId: layerExec, imageUrl: urlExec },
       ],

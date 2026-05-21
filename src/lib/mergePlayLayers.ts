@@ -5,10 +5,10 @@ import type { LayerState } from '../types/pack'
 export function mergePlayLayers(baseLayers: LayerState[], chunkLayers: LayerState[]): LayerState[] {
   if (chunkLayers.length === 0) return baseLayers
 
-  const hasChunkBg = chunkLayers.some((l) => l.zIndex <= 5 && l.fillHeight)
   const filteredBase = baseLayers.filter((l) => {
     if (!l.visible || !l.imageUrl) return false
-    if (hasChunkBg && l.fillHeight && (l.width ?? 100) >= 99) return false
+    // 청크 연출 중 samgwon·도입 전체화면 등과 겹치지 않게 큰 레이어 숨김
+    if (l.fillHeight || (l.width ?? 100) >= 85) return false
     return true
   })
 

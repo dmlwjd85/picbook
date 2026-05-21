@@ -21,6 +21,7 @@ import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGl
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
 import { mergePlayLayers } from '../lib/mergePlayLayers'
+import { playbackTypedLength, playbackTypedPrefix } from '../lib/typingMatch'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
 import { findVisualMatchesInText } from '../lib/matchVisualChunks'
 import { getVisualDictionaryForBook, getVisualDictionaryForStory } from '../lib/storyVisualDictionary'
@@ -233,8 +234,18 @@ export default function PlayPage() {
     setFocusToken((t) => t + 1)
   }, [safeSentenceIndex, sentence?.id])
 
-  const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, typed.length)
-  const chunkLayers = useChunkVisualLayers(typed, bookId, pack?.visualDictionaryStoryId)
+  const target = sentence?.text ?? ''
+  const visualTypedLen = useMemo(
+    () => playbackTypedLength(target, typed, typingDraft),
+    [target, typed, typingDraft],
+  )
+  const visualTyped = useMemo(
+    () => playbackTypedPrefix(typingDraft.length > typed.length ? typingDraft : typed, target),
+    [target, typed, typingDraft],
+  )
+
+  const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, visualTypedLen)
+  const chunkLayers = useChunkVisualLayers(visualTyped, bookId, pack?.visualDictionaryStoryId)
   const layers = useMemo(
     () => mergePlayLayers(timelineLayers, chunkLayers),
     [timelineLayers, chunkLayers],
@@ -245,14 +256,12 @@ export default function PlayPage() {
     if (!useChunkMode || !sentence) return []
     const entries = getVisualDictionaryForStory(pack?.visualDictionaryStoryId)
     const byBook = entries.length ? entries : getVisualDictionaryForBook(bookId)
-    return findVisualMatchesInText(typed, byBook).slice(-6)
-  }, [useChunkMode, typed, bookId, pack?.visualDictionaryStoryId, sentence])
+    return findVisualMatchesInText(visualTyped, byBook).slice(-6)
+  }, [useChunkMode, visualTyped, bookId, pack?.visualDictionaryStoryId, sentence])
   const playTimeline = usePicbookTimelineStore((s) =>
     bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
   )
-  useTimelineFrameAudio(playTimeline ?? null, typed.length, Boolean(sentence && !epilogueShown))
-
-  const target = sentence?.text ?? ''
+  useTimelineFrameAudio(playTimeline ?? null, visualTypedLen, Boolean(sentence && !epilogueShown))
   const complete = target.length > 0 && typed === target
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0

@@ -17,3 +17,87 @@ export function syncTypingFromRaw(
   if (matched !== typed) onTypedChange(matched)
   return matched
 }
+
+const CHOSEONG = [
+  'ㄱ',
+  'ㄲ',
+  'ㄴ',
+  'ㄷ',
+  'ㄸ',
+  'ㄹ',
+  'ㅁ',
+  'ㅂ',
+  'ㅃ',
+  'ㅅ',
+  'ㅆ',
+  'ㅇ',
+  'ㅈ',
+  'ㅉ',
+  'ㅊ',
+  'ㅋ',
+  'ㅌ',
+  'ㅍ',
+  'ㅎ',
+] as const
+
+const JAMO_CHO: Record<string, string> = {
+  'ㄱ': 'ㄱ',
+  'ㄲ': 'ㄲ',
+  'ㄴ': 'ㄴ',
+  'ㄷ': 'ㄷ',
+  'ㄸ': 'ㄸ',
+  'ㄹ': 'ㄹ',
+  'ㅁ': 'ㅁ',
+  'ㅂ': 'ㅂ',
+  'ㅃ': 'ㅃ',
+  'ㅅ': 'ㅅ',
+  'ㅆ': 'ㅆ',
+  'ㅇ': 'ㅇ',
+  'ㅈ': 'ㅈ',
+  'ㅉ': 'ㅉ',
+  'ㅊ': 'ㅊ',
+  'ㅋ': 'ㅋ',
+  'ㅌ': 'ㅌ',
+  'ㅍ': 'ㅍ',
+  'ㅎ': 'ㅎ',
+}
+
+function choseongOfSyllable(ch: string): string | null {
+  const c = ch.charCodeAt(0)
+  if (c >= 0xac00 && c <= 0xd7a3) {
+    return CHOSEONG[Math.floor((c - 0xac00) / 588)] ?? null
+  }
+  return JAMO_CHO[ch] ?? null
+}
+
+/**
+ * 연출·청크 매칭용 — 조합 중에도 다음 글자 초성이 맞으면 한 글자 앞당겨 반영
+ * (완성형이 아니어도 이미지가 늦게 뜨지 않게)
+ */
+export function playbackTypedPrefix(raw: string, target: string): string {
+  const matched = longestMatchingPrefix(raw, target)
+  if (matched.length >= target.length) return matched
+
+  const nextIdx = matched.length
+  const targetCh = target[nextIdx]
+  if (!targetCh) return matched
+
+  const tail = raw.slice(matched.length)
+  if (!tail) return matched
+
+  const targetCho = choseongOfSyllable(targetCh)
+  if (!targetCho) return matched
+
+  const last = tail[tail.length - 1]!
+  const typedCho = choseongOfSyllable(last)
+  if (typedCho === targetCho) {
+    return target.slice(0, nextIdx + 1)
+  }
+  return matched
+}
+
+/** 타이핑·조합 중 글자 수(연출 큐·청크와 동일하게 draft 반영) */
+export function playbackTypedLength(target: string, typed: string, draft: string): number {
+  const raw = draft.length > typed.length ? draft : typed
+  return playbackTypedPrefix(raw, target).length
+}

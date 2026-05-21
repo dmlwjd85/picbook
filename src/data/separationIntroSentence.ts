@@ -35,11 +35,6 @@ export function createSeparationIntroSentence(): SentenceBlock {
   const cues: Cue[] = [
     {
       id: createId(),
-      charIndex: 0,
-      effects: showStage(POWERS_INTRO_IMAGES.title),
-    },
-    {
-      id: createId(),
       charIndex: idxAfter(INTRO_TEXT, '국가권력'),
       effects: showStage(POWERS_INTRO_IMAGES.nation),
     },
@@ -112,6 +107,10 @@ export function createSeparationIntroSentence(): SentenceBlock {
   return {
     id: createId(),
     text: INTRO_TEXT,
+    vocabGlosses: [
+      { charIndex: 0, term: '권력', definition: '권리와 힘' },
+      { charIndex: 2, term: '분립', definition: '나누어 세움' },
+    ],
     captions: [
       { charIndex: 0, text: '권력분립 — 국가권력을 나누는 원칙' },
       { charIndex: idxAfter(INTRO_TEXT, '국회'), text: '국회·행정부·법원이 각각 역할을 맡습니다' },

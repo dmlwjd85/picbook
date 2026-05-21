@@ -1,10 +1,9 @@
 import type { SentenceBlock, VocabGloss } from '../types/pack'
-import { longestMatchingPrefix } from './typingMatch'
+import { playbackTypedLength } from './typingMatch'
 
-/** 타이핑·조합 중 글자 수(연출 큐와 동일하게 draft 반영) */
+/** 타이핑·조합 중 글자 수(연출 큐·청크와 동일하게 draft·초성 반영) */
 export function vocabTypedLength(target: string, typed: string, draft: string): number {
-  const raw = draft.length > typed.length ? draft : typed
-  return longestMatchingPrefix(raw, target).length
+  return playbackTypedLength(target, typed, draft)
 }
 
 /** 해당 낱말 구간을 치는 동안 연출 상단에 풀이 표시 */

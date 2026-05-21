@@ -21,7 +21,7 @@ function buildSeparationThreePowersDemoPack(): ReadingPack {
     author: 'PicBook',
     typingStyle: 'stacked',
     visualDictionaryStoryId: SEPARATION_STORY_ID,
-    updatedAt: '2026-05-21T14:00:00.000Z',
+    updatedAt: '2026-05-22T10:00:00.000Z',
     sentences: [
       createSeparationIntroSentence(),
       createSeparationMainSentence(),
