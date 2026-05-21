@@ -21,7 +21,7 @@ const outRoot = path.join(root, 'public/visual-dictionary')
 function folderFromFileName(fileName) {
   const n = fileName.toLowerCase()
   if (n.startsWith('bg_')) return 'backgrounds'
-  if (n.startsWith('n_')) return 'nouns'
+  if (n.startsWith('n_') || n.startsWith('sep_')) return 'nouns'
   if (n.startsWith('v_')) return 'verbs'
   if (n.startsWith('a_')) return 'adjectives'
   if (n.startsWith('e_')) return 'emotions'
@@ -69,7 +69,9 @@ function collectFiles(dir, acc = []) {
 
 async function main() {
   const files = inPlace ? collectFiles(inDir) : fs.readdirSync(inDir).map((f) => path.join(inDir, f))
-  const imageFiles = files.filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+  const imageFiles = files
+    .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+    .filter((f) => !path.basename(f).startsWith('c__Users'))
   if (imageFiles.length === 0) {
     console.error('이미지 없음:', inDir)
     process.exit(1)

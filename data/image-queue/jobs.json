@@ -1,0 +1,8 @@
+[
+  { "src": "powers-intro-nation-joseon.png", "dest": "public/demo/powers/powers-intro-nation.png" },
+  { "src": "sep_three_num_01.png", "dest": "public/visual-dictionary/nouns/sep_three_num_01.png", "resize": "512" },
+  { "src": "sep_three_powers_circle_01.png", "dest": "public/visual-dictionary/nouns/sep_three_powers_circle_01.png", "resize": "512" },
+  { "src": "sep_circle_split_01.png", "dest": "public/visual-dictionary/nouns/sep_circle_split_01.png", "resize": "512" },
+  { "src": "sep_powers_check_01.png", "dest": "public/visual-dictionary/nouns/sep_powers_check_01.png", "resize": "512" },
+  { "src": "sep_nation_king_01.png", "dest": "public/visual-dictionary/nouns/sep_nation_king_01.png", "resize": "512" }
+]

@@ -1,4 +1,8 @@
 import {
+  SEPARATION_CHUNK_VISUAL_DICTIONARY,
+  SEPARATION_STORY_ID,
+} from '../data/separationChunkVisualDictionary'
+import {
   TORTOISE_HARE_STORY_ID,
   TORTOISE_HARE_VISUAL_DICTIONARY,
 } from '../data/tortoiseHareVisualDictionary'
@@ -7,6 +11,7 @@ import type { VisualDictionaryEntry } from '../types/visualDictionary'
 
 const STATIC_BY_STORY: Record<string, VisualDictionaryEntry[]> = {
   [TORTOISE_HARE_STORY_ID]: TORTOISE_HARE_VISUAL_DICTIONARY,
+  [SEPARATION_STORY_ID]: SEPARATION_CHUNK_VISUAL_DICTIONARY,
 }
 
 /** storyId·bookId → 시각 사전 (커스텀 픽북은 편집기 store) */

@@ -12,8 +12,12 @@
     "dict:process": "node scripts/process-visual-dictionary-images.mjs scripts/_gen_vdict",
     "dict:reprocess": "node scripts/process-visual-dictionary-images.mjs --in-place",
     "verify:proverbs": "node scripts/verify-proverbs-pack.mjs",
+    "fix:proverbs:panels": "node scripts/fix-proverb-panels-3x2.mjs",
+    "workspace:sync": "node scripts/sync-editor-workspace.mjs",
+    "queue:images": "node scripts/image-queue.mjs",
+    "queue:images:watch": "node scripts/image-queue.mjs --watch",
     "outpaint:proverbs": "node scripts/batch-outpaint-proverbs.mjs",
-    "prebuild": "node scripts/verify-proverbs-pack.mjs"
+    "prebuild": "node scripts/sync-editor-workspace.mjs && node scripts/fix-proverb-panels-3x2.mjs && node scripts/verify-proverbs-pack.mjs"
   },
   "dependencies": {
     "firebase": "^12.13.0",

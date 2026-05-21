@@ -29,6 +29,9 @@ import { resolveVisualImageUrl } from '../lib/visualDictionaryPaths'
 import type { VisualDictionaryEntry, VisualDictionaryInsertMode } from '../types/visualDictionary'
 import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import { createId } from '../lib/ids'
+import { urlToPublicRelative } from '../lib/editorWorkspacePaths'
+import { useEditorWorkspaceStore } from '../state/editorWorkspaceStore'
+import { SEPARATION_CHUNK_VISUAL_DICTIONARY } from '../data/separationChunkVisualDictionary'
 
 /** Zustand 셀렉터에서 매번 새 {}를 만들면 무한 리렌더(React #185) 발생 */
 const EMPTY_BOOK_TIMELINES: Record<string, import('../types/timeline').SentenceTimeline> = {}
@@ -133,6 +136,8 @@ export function PicbookSceneEditor() {
   useEffect(() => () => stopPlay(), [stopPlay])
 
   const usesChunkDictionary = Boolean(pack?.visualDictionaryStoryId || isCustomBook)
+  const registerAssetOverride = useEditorWorkspaceStore((s) => s.registerAssetOverride)
+  const pendingInbox = useEditorWorkspaceStore((s) => s.getPending(bookId))
 
   useEffect(() => {
     setSentenceIndex(0)
@@ -145,6 +150,9 @@ export function PicbookSceneEditor() {
     const storyId = pack?.visualDictionaryStoryId ?? bookId
     if (bookId === 'tortoise-and-hare' && !isCustomBook) {
       useVisualDictionaryStore.getState().resetToTortoiseHareSeed()
+    } else if (bookId === 'demo-separation-three-powers') {
+      useVisualDictionaryStore.getState().setStoryId(storyId)
+      useVisualDictionaryStore.getState().mergeEntries(SEPARATION_CHUNK_VISUAL_DICTIONARY)
     } else {
       useVisualDictionaryStore.getState().setStoryId(storyId)
     }
@@ -187,10 +195,16 @@ export function PicbookSceneEditor() {
     return pickMainLayer(selectableLayers)?.id
   }, [mergedFrame.layerId, selectableLayers])
 
+  const noteAssetOverride = (imageUrl: string | null | undefined, label: string) => {
+    const rel = imageUrl ? urlToPublicRelative(imageUrl) : null
+    if (rel) registerAssetOverride(bookId, rel, label)
+  }
+
   const patchFrame = (patch: Parameters<typeof setFrameEdit>[3]) => {
     if (!bookId || !sentence) return
     const layerId = editTargetLayerId ?? patch.layerId
     setFrameEdit(bookId, sentence.id, safeFrame, layerId ? { ...patch, layerId } : patch)
+    if (patch.imageUrl) noteAssetOverride(patch.imageUrl, `프레임 ${safeFrame}`)
   }
 
   const onDictionaryInsert = useCallback(
@@ -404,10 +418,18 @@ export function PicbookSceneEditor() {
         </>
       ) : null}
 
+      {pendingInbox.length > 0 ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <strong>inbox 대기 {pendingInbox.length}개</strong> — 교체한 그림을{' '}
+          <code className="rounded bg-white px-1">editor-inbox/{bookId}/</code>에 넣은 뒤 저장·배포하세요.
+        </p>
+      ) : null}
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(280px,380px)_1fr]">
       {/* 미리보기 */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm xl:sticky xl:top-4 xl:self-start">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-800">미리 보기</h2>
+          <h2 className="text-sm font-semibold text-indigo-900">미리 보기</h2>
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-indigo-700">
               {safeFrame} / {maxFrame} 글자
@@ -440,6 +462,7 @@ export function PicbookSceneEditor() {
             layers={layers}
             stageFx={stageFx}
             centerImages={bookId === 'elementary-proverbs'}
+            aspect32={bookId === 'elementary-proverbs'}
             scale={previewScale}
             panX={previewPanX}
             panY={previewPanY}
@@ -467,8 +490,10 @@ export function PicbookSceneEditor() {
             }}
           />
         </div>
+        <p className="mt-2 text-[10px] text-slate-500">미리보기를 누른 뒤 크기·이동·삭제. 슬라이더로 재생 위치를 맞추세요.</p>
       </section>
 
+      <div className="flex min-w-0 flex-col gap-4">
       {/* 타임라인 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-800">프리미어 타임라인</h2>
@@ -522,15 +547,16 @@ export function PicbookSceneEditor() {
                   <button
                     key={url}
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
                       patchFrame({
                         imageUrl: url,
                         customImageId: undefined,
                       })
-                    }
+                      noteAssetOverride(url, `패널 ${i + 1}컷`)
+                    }}
                     className="overflow-hidden rounded-lg border border-slate-200 hover:ring-2 hover:ring-indigo-300"
                   >
-                    <img src={url} alt="" className="aspect-[3/2] w-full object-cover" />
+                    <img src={url} alt="" className="aspect-[3/2] w-full object-contain bg-stone-900" />
                     <span className="block bg-slate-50 py-0.5 text-center text-[9px]">{i + 1}컷</span>
                   </button>
                 ))}
@@ -796,6 +822,8 @@ export function PicbookSceneEditor() {
           기준 패널: {panelLabel(defaultPanelUrl, panelUrls.indexOf(defaultPanelUrl))}
         </p>
       ) : null}
+      </div>
+      </div>
     </div>
   )
 }

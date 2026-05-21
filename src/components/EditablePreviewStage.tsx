@@ -9,6 +9,8 @@ type Props = {
   layers: LayerState[]
   stageFx: TimelineStageFx
   centerImages: boolean
+  /** 속담 등 3:2 재생 비율과 동일하게 */
+  aspect32?: boolean
   scale: number
   panX: number
   panY: number
@@ -27,6 +29,7 @@ export function EditablePreviewStage({
   layers,
   stageFx,
   centerImages,
+  aspect32 = false,
   scale,
   panX,
   panY,
@@ -91,13 +94,15 @@ export function EditablePreviewStage({
   return (
     <div
       ref={wrapRef}
-      className="relative mx-auto w-full max-w-[min(100%,420px)] cursor-pointer"
+      className={`relative mx-auto w-full cursor-pointer ${aspect32 ? 'max-w-[min(100%,480px)]' : 'max-w-[min(100%,420px)]'}`}
       onClick={onStageClick}
       role="presentation"
     >
       <VisualStage
         layers={layers}
         centerImages={centerImages}
+        compact={aspect32}
+        large={aspect32}
         sceneTransition={stageFx.sceneTransition}
         stagingEffect={stageFx.stagingEffect}
         masterTextOverlay={stageFx.masterTextOverlay}

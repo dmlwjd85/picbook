@@ -1,0 +1,67 @@
+import type { VisualDictionaryEntry } from '../types/visualDictionary'
+
+export const SEPARATION_STORY_ID = 'demo-separation-three-powers'
+
+/** 삼권분립 — 글자·어절 청크 연출 */
+export const SEPARATION_CHUNK_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
+  {
+    word_id: 'sep_sam',
+    word: '삼',
+    synonyms: ['삼권', '삼권분립'],
+    part_of_speech: 'noun',
+    file_name: 'sep_three_num_01.png',
+    image_direction: '큰 숫자 3, 수채화 일러스트, 흰 배경',
+    z_index: 40,
+    tags: ['삼권분립', '숫자'],
+    chunk_hints: ['삼'],
+    status: 'ready',
+  },
+  {
+    word_id: 'sep_gwon',
+    word: '권',
+    synonyms: ['권력', '삼권'],
+    part_of_speech: 'noun',
+    file_name: 'sep_three_powers_circle_01.png',
+    image_direction: '원 안에 입법부·행정부·사법부 3등분',
+    z_index: 41,
+    tags: ['삼권분립'],
+    chunk_hints: ['권'],
+    status: 'ready',
+  },
+  {
+    word_id: 'sep_bun',
+    word: '분',
+    synonyms: ['분립', '분할'],
+    part_of_speech: 'verb',
+    file_name: 'sep_circle_split_01.png',
+    image_direction: '원이 세 조각으로 쪼개지는 그림',
+    z_index: 42,
+    tags: ['삼권분립'],
+    chunk_hints: ['분'],
+    status: 'ready',
+  },
+  {
+    word_id: 'sep_rip',
+    word: '립',
+    synonyms: ['분립', '삼권분립'],
+    part_of_speech: 'verb',
+    file_name: 'sep_powers_check_01.png',
+    image_direction: '세 권력이 서로 견제하는 화살표·저울',
+    z_index: 43,
+    tags: ['삼권분립'],
+    chunk_hints: ['립'],
+    status: 'ready',
+  },
+  {
+    word_id: 'sep_nation_power',
+    word: '국가권력',
+    synonyms: ['국가 권력', '국가의 권력'],
+    part_of_speech: 'noun',
+    file_name: 'sep_nation_king_01.png',
+    image_direction: '조선시대 느낌 중년 왕, 국가권력 상징',
+    z_index: 38,
+    tags: ['도입'],
+    chunk_hints: ['국가권력', '국가'],
+    status: 'ready',
+  },
+]

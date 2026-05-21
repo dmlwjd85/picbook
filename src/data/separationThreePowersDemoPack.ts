@@ -5,6 +5,7 @@ import { createSeparationIntroSentence } from './separationIntroSentence'
 import { createSeparationMainSentence } from './separationMainSentence'
 import { createSeparationOutroSentence } from './separationOutroSentence'
 import { W } from './separationPackShared'
+import { SEPARATION_STORY_ID } from './separationChunkVisualDictionary'
 
 export const SEPARATION_DEMO_VISUAL_MILESTONES = [0, W(6), W(25), W(39), W(48)] as const
 
@@ -19,7 +20,8 @@ function buildSeparationThreePowersDemoPack(): ReadingPack {
       '권력분립의 헌법적 의미부터 삼권 견제·균형, 국민의 자유와 권리 보장까지 타이핑에 맞춰 이어지는 PicBook.',
     author: 'PicBook',
     typingStyle: 'stacked',
-    updatedAt: '2026-05-18T14:00:00.000Z',
+    visualDictionaryStoryId: SEPARATION_STORY_ID,
+    updatedAt: '2026-05-21T14:00:00.000Z',
     sentences: [
       createSeparationIntroSentence(),
       createSeparationMainSentence(),
