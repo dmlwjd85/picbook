@@ -1,3 +1,5 @@
+import type { LayerAnchorLabel } from './pack'
+
 /** 수어·의미 청크 시각 사전 — 품사(레이어 역할) */
 export type VisualPartOfSpeech =
   | 'background'
@@ -31,6 +33,10 @@ export type VisualDictionaryEntry = {
   updated_at?: string
   /** 청크 레이어 하단 막대에 표시할 설명(예: 권력(권리와 힘)) */
   plate_caption?: string
+  /** 이 시작 인덱스에서만 매칭 (한 글자 청크 오매칭 방지) */
+  match_start_indices?: number[]
+  /** 이미지 위 라벨(예: 국회·정부·법원) */
+  anchor_labels?: LayerAnchorLabel[]
 }
 
 export type VisualDictionaryInsertMode = 'background' | 'overlay' | 'frame'

@@ -20,7 +20,7 @@ import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
 import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
-import { mergePlayLayers } from '../lib/mergePlayLayers'
+import { mergePlayLayers, separationChunkHidesTimeline } from '../lib/mergePlayLayers'
 import { playbackTypedLength, playbackTypedPrefix } from '../lib/typingMatch'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
 import { findVisualMatchesInText } from '../lib/matchVisualChunks'
@@ -246,9 +246,14 @@ export default function PlayPage() {
 
   const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, visualTypedLen)
   const chunkLayers = useChunkVisualLayers(visualTyped, bookId, pack?.visualDictionaryStoryId)
+  const hideTimelineForChunk = useMemo(
+    () =>
+      separationChunkHidesTimeline(bookId, safeSentenceIndex, visualTypedLen, chunkLayers.length),
+    [bookId, safeSentenceIndex, visualTypedLen, chunkLayers.length],
+  )
   const layers = useMemo(
-    () => mergePlayLayers(timelineLayers, chunkLayers),
-    [timelineLayers, chunkLayers],
+    () => mergePlayLayers(timelineLayers, chunkLayers, { hideTimelineForChunk }),
+    [timelineLayers, chunkLayers, hideTimelineForChunk],
   )
 
   const useChunkMode = bookUsesChunkVisuals(bookId, pack?.visualDictionaryStoryId)

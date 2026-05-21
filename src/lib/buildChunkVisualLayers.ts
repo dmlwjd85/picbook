@@ -37,6 +37,7 @@ const SINGLE_BOX: BoxLayout = { x: 0, y: 0, width: 100, height: 100 }
 
 function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState {
   const plate = entry.plate_caption?.trim() || null
+  const anchors = entry.anchor_labels?.length ? entry.anchor_labels : null
   return {
     id: `${CHUNK_LAYER_PREFIX}${entry.word_id}`,
     label: entry.word,
@@ -49,10 +50,11 @@ function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState 
     width: box.width,
     height: box.height,
     scale: 1,
-    fillHeight: !plate && box.width >= 96,
+    fillHeight: !plate && !anchors && box.width >= 96,
     panX: 0,
     panY: 0,
     plateCaption: plate,
+    anchorLabels: anchors,
   }
 }
 
@@ -91,7 +93,11 @@ export function buildChunkVisualLayers(
   const matches = findVisualMatchesInText(typed, entries)
   if (matches.length === 0) return []
 
-  const visible = pickVisibleEntries(matches)
+  const tailLen = typed.length
+  const tailMatches = matches.filter((m) => m.end === tailLen)
+  if (tailMatches.length === 0) return []
+
+  const visible = pickVisibleEntries(tailMatches)
   const boxes = overlayBoxLayouts(visible.length)
 
   return visible

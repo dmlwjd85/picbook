@@ -45,11 +45,17 @@ export function findVisualMatchesInText(
           }
         }
         if (!overlap) {
+          const absStart = offset + idx
+          const allowed = entry.match_start_indices
+          if (allowed != null && allowed.length > 0 && !allowed.includes(absStart)) {
+            i = idx + 1
+            continue
+          }
           for (let j = idx; j < end; j++) used[j] = true
           matches.push({
             entry,
             matchedText: needle,
-            start: offset + idx,
+            start: absStart,
             end: offset + end,
           })
         }

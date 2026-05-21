@@ -1,14 +1,23 @@
 import { CHUNK_LAYER_PREFIX } from './buildChunkVisualLayers'
 import type { LayerState } from '../types/pack'
 
+export type MergePlayLayersOptions = {
+  /** 삼권분립 첫 어절 등 — 청크만 쓸 때 타임라인 큰 레이어 숨김 */
+  hideTimelineForChunk?: boolean
+}
+
 /** 팩/타임라인 레이어 + 의미 청크 레이어 병합 */
-export function mergePlayLayers(baseLayers: LayerState[], chunkLayers: LayerState[]): LayerState[] {
+export function mergePlayLayers(
+  baseLayers: LayerState[],
+  chunkLayers: LayerState[],
+  options?: MergePlayLayersOptions,
+): LayerState[] {
   if (chunkLayers.length === 0) return baseLayers
 
+  const hideTimeline = options?.hideTimelineForChunk === true
   const filteredBase = baseLayers.filter((l) => {
     if (!l.visible || !l.imageUrl) return false
-    // 청크 연출 중 samgwon·도입 전체화면 등과 겹치지 않게 큰 레이어 숨김
-    if (l.fillHeight || (l.width ?? 100) >= 85) return false
+    if (hideTimeline && (l.fillHeight || (l.width ?? 100) >= 85)) return false
     return true
   })
 
@@ -17,4 +26,17 @@ export function mergePlayLayers(baseLayers: LayerState[], chunkLayers: LayerStat
 
 export function isChunkLayerId(id: string): boolean {
   return id.startsWith(CHUNK_LAYER_PREFIX)
+}
+
+/** 삼권분립 팩 — 청크만 단독으로 쓰는 구간(이후 타임라인 연출 유지) */
+export function separationChunkHidesTimeline(
+  bookId: string | undefined,
+  sentenceIndex: number,
+  visualTypedLen: number,
+  chunkCount: number,
+): boolean {
+  if (bookId !== 'demo-separation-three-powers' || chunkCount === 0) return false
+  if (sentenceIndex === 0) return visualTypedLen <= 4
+  if (sentenceIndex === 1) return visualTypedLen <= 6
+  return false
 }
