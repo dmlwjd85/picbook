@@ -30,6 +30,9 @@ import type { VisualDictionaryEntry, VisualDictionaryInsertMode } from '../types
 import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import { createId } from '../lib/ids'
 
+/** Zustand 셀렉터에서 매번 새 {}를 만들면 무한 리렌더(React #185) 발생 */
+const EMPTY_BOOK_TIMELINES: Record<string, import('../types/timeline').SentenceTimeline> = {}
+
 function panelLabel(url: string, index: number): string {
   const key = panelKeyFromImageUrl(url)
   const file = key.split('/').pop() ?? key
@@ -62,7 +65,7 @@ export function PicbookSceneEditor() {
   const setBgm = usePicbookTimelineStore((s) => s.setBgm)
   const clearSentence = usePicbookTimelineStore((s) => s.clearSentence)
   const clearBook = usePicbookTimelineStore((s) => s.clearBook)
-  const bookTimelines = usePicbookTimelineStore((s) => s.byBook[bookId] ?? {})
+  const bookTimelines = usePicbookTimelineStore((s) => s.byBook[bookId] ?? EMPTY_BOOK_TIMELINES)
   const setPanelEdit = usePicbookSceneEditStore((s) => s.setPanelEdit)
 
   const timeline = timelineRaw ?? null
@@ -129,17 +132,23 @@ export function PicbookSceneEditor() {
 
   useEffect(() => () => stopPlay(), [stopPlay])
 
-  const dictEntries = useVisualDictionaryStore((s) => s.entries)
-  const setDictStoryId = useVisualDictionaryStore((s) => s.setStoryId)
+  const usesChunkDictionary = Boolean(pack?.visualDictionaryStoryId || isCustomBook)
 
   useEffect(() => {
+    setSentenceIndex(0)
+    setFrameIndex(0)
+    stopPlay()
+  }, [bookId, stopPlay])
+
+  useEffect(() => {
+    if (!usesChunkDictionary) return
     const storyId = pack?.visualDictionaryStoryId ?? bookId
-    setDictStoryId(storyId)
     if (bookId === 'tortoise-and-hare' && !isCustomBook) {
       useVisualDictionaryStore.getState().resetToTortoiseHareSeed()
-      setDictStoryId('tortoise-and-hare')
+    } else {
+      useVisualDictionaryStore.getState().setStoryId(storyId)
     }
-  }, [bookId, pack?.visualDictionaryStoryId, isCustomBook, setDictStoryId])
+  }, [bookId, pack?.visualDictionaryStoryId, isCustomBook, usesChunkDictionary])
 
   const chunkTypedPrefix = sentence?.text.slice(0, safeFrame) ?? ''
 
@@ -376,23 +385,24 @@ export function PicbookSceneEditor() {
         </div>
       </section>
 
-      {pack.visualDictionaryStoryId || isCustomBook ? (
-        <section className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/50 p-4">
-          <h3 className="text-xs font-bold text-fuchsia-900">청크 연출 미리보기 (재생과 동일)</h3>
-          <p className="mt-1 text-[11px] text-slate-600">
-            글자 {safeFrame}번째까지 — 기본 한 장씩 표시, <code className="rounded bg-white px-1">combine_group</code> 있으면 함께
-          </p>
-          <div className="mt-2 max-w-md">
-            <ChunkDictionaryStagingPreview typedPrefix={chunkTypedPrefix} entries={dictEntries} />
-          </div>
-        </section>
+      {usesChunkDictionary ? (
+        <>
+          <section className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/50 p-4">
+            <h3 className="text-xs font-bold text-fuchsia-900">청크 연출 미리보기 (재생과 동일)</h3>
+            <p className="mt-1 text-[11px] text-slate-600">
+              글자 {safeFrame}번째까지 — 기본 한 장씩 표시, <code className="rounded bg-white px-1">combine_group</code> 있으면 함께
+            </p>
+            <div className="mt-2 max-w-md">
+              <ChunkDictionaryStagingPreview typedPrefix={chunkTypedPrefix} />
+            </div>
+          </section>
+          <VisualDictionaryEditorPanel
+            sentenceText={sentence.text}
+            typedPrefix={chunkTypedPrefix}
+            onInsert={onDictionaryInsert}
+          />
+        </>
       ) : null}
-
-      <VisualDictionaryEditorPanel
-        sentenceText={sentence.text}
-        typedPrefix={chunkTypedPrefix}
-        onInsert={onDictionaryInsert}
-      />
 
       {/* 미리보기 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

@@ -1,16 +1,21 @@
 import { useMemo } from 'react'
 import { buildChunkVisualLayers } from '../lib/buildChunkVisualLayers'
+import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import { VisualStage } from './VisualStage'
 import type { VisualDictionaryEntry } from '../types/visualDictionary'
 
 type Props = {
   /** 현재까지 친(또는 편집 중인) 문장 앞부분 */
   typedPrefix: string
-  entries: VisualDictionaryEntry[]
+  /** 미지정 시 편집기 사전 store 사용 */
+  entries?: VisualDictionaryEntry[]
 }
 
 /** 수어 사전 — 문장 청크가 재생 화면에서 어떻게 뜨는지 미리보기 */
-export function ChunkDictionaryStagingPreview({ typedPrefix, entries }: Props) {
+export function ChunkDictionaryStagingPreview({ typedPrefix, entries: entriesProp }: Props) {
+  const storeEntries = useVisualDictionaryStore((s) => s.entries)
+  const entries = entriesProp ?? storeEntries
+
   const layers = useMemo(
     () => buildChunkVisualLayers(typedPrefix, entries),
     [typedPrefix, entries],
