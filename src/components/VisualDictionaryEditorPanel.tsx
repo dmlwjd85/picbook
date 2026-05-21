@@ -1,6 +1,7 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { resolveVisualImageUrl } from '../lib/visualDictionaryPaths'
 import { findVisualMatchesInText } from '../lib/matchVisualChunks'
+import { ChunkDictionaryStagingPreview } from './ChunkDictionaryStagingPreview'
 import {
   filterVisualEntries,
   useVisualDictionaryStore,
@@ -21,10 +22,16 @@ const POS_OPTIONS: { id: VisualPartOfSpeech | 'all'; label: string }[] = [
 type Props = {
   /** 현재 편집 중인 문장 텍스트 — 청크 매칭 미리보기 */
   sentenceText?: string
+  /** 타자 시뮬 글자 수까지 — 재생 연출 미리보기 */
+  typedPrefix?: string
   onInsert: (entry: VisualDictionaryEntry, mode: VisualDictionaryInsertMode) => void
 }
 
-export function VisualDictionaryEditorPanel({ sentenceText = '', onInsert }: Props) {
+export function VisualDictionaryEditorPanel({
+  sentenceText = '',
+  typedPrefix = '',
+  onInsert,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const entries = useVisualDictionaryStore((s) => s.entries)
   const search = useVisualDictionaryStore((s) => s.search)
@@ -35,6 +42,8 @@ export function VisualDictionaryEditorPanel({ sentenceText = '', onInsert }: Pro
   const resetToTortoiseHareSeed = useVisualDictionaryStore((s) => s.resetToTortoiseHareSeed)
   const loadFromCloud = useVisualDictionaryStore((s) => s.loadFromCloud)
   const publishToCloud = useVisualDictionaryStore((s) => s.publishToCloud)
+  const assignEntryImageUrl = useVisualDictionaryStore((s) => s.assignEntryImageUrl)
+  const [imageSearchUrl, setImageSearchUrl] = useState('')
 
   const filtered = useMemo(
     () => filterVisualEntries(entries, search, posFilter),
@@ -137,6 +146,26 @@ export function VisualDictionaryEditorPanel({ sentenceText = '', onInsert }: Pro
         ))}
       </div>
 
+      <div className="mt-3 rounded-lg border border-violet-100 bg-white/80 p-2">
+        <p className="text-[10px] font-semibold text-violet-800">연출 미리보기 (검색·불러온 그림 반영)</p>
+        <div className="mt-2 max-w-sm">
+          <ChunkDictionaryStagingPreview
+            typedPrefix={typedPrefix || sentenceText}
+            entries={entries}
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <input
+          type="url"
+          placeholder="검색한 그림 URL 붙여넣기 → 아래 카드에서 「URL 연결」"
+          value={imageSearchUrl}
+          onChange={(e) => setImageSearchUrl(e.target.value)}
+          className="min-w-[14rem] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+        />
+      </div>
+
       {chunkPreview.length > 0 ? (
         <div className="mt-3 rounded-lg border border-violet-100 bg-white/80 p-2">
           <p className="text-[10px] font-semibold text-violet-800">문장 청크 매칭 ({chunkPreview.length})</p>
@@ -157,7 +186,13 @@ export function VisualDictionaryEditorPanel({ sentenceText = '', onInsert }: Pro
 
       <ul className="mt-3 grid max-h-[420px] gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((entry) => (
-          <DictionaryCard key={entry.word_id} entry={entry} onInsert={onInsert} />
+          <DictionaryCard
+            key={entry.word_id}
+            entry={entry}
+            onInsert={onInsert}
+            pendingImageUrl={imageSearchUrl.trim()}
+            onAssignUrl={(url) => assignEntryImageUrl(entry.word_id, url)}
+          />
         ))}
       </ul>
       {filtered.length === 0 ? (
@@ -170,9 +205,13 @@ export function VisualDictionaryEditorPanel({ sentenceText = '', onInsert }: Pro
 function DictionaryCard({
   entry,
   onInsert,
+  pendingImageUrl,
+  onAssignUrl,
 }: {
   entry: VisualDictionaryEntry
   onInsert: (entry: VisualDictionaryEntry, mode: VisualDictionaryInsertMode) => void
+  pendingImageUrl: string
+  onAssignUrl: (url: string) => void
 }) {
   const url = resolveVisualImageUrl(entry)
   return (
@@ -213,6 +252,18 @@ function DictionaryCard({
           >
             오버레이
           </button>
+          {pendingImageUrl ? (
+            <button
+              type="button"
+              className="rounded bg-amber-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
+              onClick={() => {
+                onAssignUrl(pendingImageUrl)
+                onInsert({ ...entry, image_url: pendingImageUrl }, 'frame')
+              }}
+            >
+              URL 연결
+            </button>
+          ) : null}
         </div>
       </div>
     </li>

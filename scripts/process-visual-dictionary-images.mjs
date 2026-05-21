@@ -1,5 +1,5 @@
 /**
- * PNG → 512×512 cover 채움, 여백 trim, 비배경은 흰색 알파 제거
+ * PNG → 512×512 contain(전체 보임), 여백 trim, 비배경은 흰색 알파 제거
  * 사용:
  *   node scripts/process-visual-dictionary-images.mjs <입력폴더>
  *   node scripts/process-visual-dictionary-images.mjs --in-place  (public/visual-dictionary 전체 재처리)
@@ -29,7 +29,7 @@ function folderFromFileName(fileName) {
   return 'nouns'
 }
 
-async function trimAndCover(inputBuf, isBackground) {
+async function trimAndFit(inputBuf) {
   let pipeline = sharp(inputBuf)
   try {
     pipeline = pipeline.trim({ threshold: 14 })
@@ -37,12 +37,8 @@ async function trimAndCover(inputBuf, isBackground) {
     /* trim 실패 시 원본 */
   }
 
-  if (isBackground) {
-    return pipeline.resize(512, 512, { fit: 'cover', position: 'centre' }).png().toBuffer()
-  }
-
   const { data, info } = await pipeline
-    .resize(512, 512, { fit: 'cover', position: 'centre' })
+    .resize(512, 512, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
@@ -86,8 +82,7 @@ async function main() {
     const outDir = inPlace ? path.dirname(filePath) : path.join(outRoot, folder)
     fs.mkdirSync(outDir, { recursive: true })
     const buf = fs.readFileSync(filePath)
-    const isBg = folder === 'backgrounds'
-    const out = await trimAndCover(buf, isBg)
+    const out = await trimAndFit(buf)
     const dest = inPlace ? filePath : path.join(outDir, base)
     fs.writeFileSync(dest, out)
     console.log('OK', path.relative(root, dest))

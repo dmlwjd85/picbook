@@ -1,4 +1,4 @@
-import { PICBOOK_CATALOG } from '../data/picbookCatalog'
+import { getEditableCatalogItems } from '../data/picbookCatalog'
 import { loadCatalogPack } from './loadCatalogPack'
 
 let started = false
@@ -8,7 +8,7 @@ export function prewarmCatalogPacks(): void {
   if (started) return
   started = true
   const run = () => {
-    for (const item of PICBOOK_CATALOG) {
+    for (const item of getEditableCatalogItems()) {
       if (!item.comingSoon) {
         try {
           loadCatalogPack(item)

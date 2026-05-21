@@ -323,8 +323,8 @@ export function VisualStage({
         const faceZoom = !centerImages && fill && !hasPlate && (l.scale ?? 1) > 1.02
         const isChunk = isChunkLayerId(l.id)
         const proverbFill = centerImages && fill && !hasPlate && !isChunk
-        /** 청크 레이어 — 박스를 꽉 채움(검은 배경 비침 방지) */
-        const imgFit = isChunk || !proverbFill ? 'object-cover' : 'object-contain'
+        /** 청크 레이어 — 잘리지 않고 전체가 보이도록 */
+        const imgFit = isChunk ? 'object-contain' : proverbFill ? 'object-contain' : 'object-cover'
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
         const chunkFade = isChunkLayerId(l.id) ? ' layer-fade-in' : ''
         const layerChrome =
@@ -398,13 +398,19 @@ export function VisualStage({
                     {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
                   </div>
                 ) : (
-                  <div className={`relative w-full ${isChunk ? 'h-full bg-stone-900' : ''}`}>
+                  <div
+                    className={
+                      isChunk
+                        ? 'relative flex h-full w-full items-center justify-center bg-stone-900'
+                        : 'relative w-full'
+                    }
+                  >
                     <LayerPicture
                       imageUrl={imageUrl}
                       label={l.label}
                       className={
                         isChunk
-                          ? 'absolute inset-0 h-full w-full object-cover object-center'
+                          ? 'max-h-full max-w-full object-contain object-center'
                           : 'block h-auto w-full object-cover'
                       }
                       sceneTransition={sceneTransition}

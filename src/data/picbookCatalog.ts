@@ -1,8 +1,11 @@
 import { createElementaryProverbsPack } from './elementaryProverbsPack'
 import { createSeparationThreePowersDemoPack } from './separationThreePowersDemoPack'
 import { createTortoiseHarePack } from './tortoiseHarePack'
+import { createCustomPicbookPack } from '../lib/createCustomPicbookPack'
 import { normalizeProductKey } from '../lib/productKey'
 import { getPackContentVersion } from './packContentVersions'
+import { useCustomPicbookStore } from '../state/customPicbookStore'
+import type { CustomPicbookRecord } from '../types/customPicbook'
 import type { ReadingPack } from '../types/pack'
 
 const base = import.meta.env.BASE_URL
@@ -107,16 +110,45 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
   },
 ]
 
+export function customRecordToCatalogItem(meta: CustomPicbookRecord): PicbookCatalogItem {
+  return {
+    id: meta.id,
+    title: meta.title,
+    subtitle: meta.subtitle,
+    blurb: meta.blurb,
+    author: meta.author,
+    coverImage: meta.coverImage,
+    magazineTone: meta.magazineTone,
+    productKey: meta.productKey,
+    productKeyDisplay: meta.productKeyDisplay,
+    listPrice: meta.listPrice,
+    contentVersion: meta.contentVersion,
+    loadPack: () => createCustomPicbookPack(meta),
+  }
+}
+
+/** 편집·재생용 — 출판 예정 제외 + 마스터가 만든 픽북 */
+export function getEditableCatalogItems(): PicbookCatalogItem[] {
+  const custom = useCustomPicbookStore.getState().books.map(customRecordToCatalogItem)
+  return [...PICBOOK_CATALOG.filter((b) => !b.comingSoon), ...custom]
+}
+
 export function getCatalogItem(id: string): PicbookCatalogItem | undefined {
+  const custom = useCustomPicbookStore.getState().books.find((b) => b.id === id)
+  if (custom) return customRecordToCatalogItem(custom)
   return PICBOOK_CATALOG.find((b) => b.id === id)
 }
 
 export function findCatalogByProductKey(rawKey: string): PicbookCatalogItem | undefined {
   const key = normalizeProductKey(rawKey)
   if (!key) return undefined
+  const custom = useCustomPicbookStore
+    .getState()
+    .books.find((b) => b.productKey === key)
+  if (custom) return customRecordToCatalogItem(custom)
   return PICBOOK_CATALOG.find((b) => !b.comingSoon && b.productKey === key)
 }
 
 export function getUnlockedCatalogItems(unlockedIds: string[]): PicbookCatalogItem[] {
-  return PICBOOK_CATALOG.filter((b) => !b.comingSoon && unlockedIds.includes(b.id))
+  return getEditableCatalogItems().filter((b) => unlockedIds.includes(b.id))
 }

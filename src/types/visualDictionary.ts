@@ -23,6 +23,8 @@ export type VisualDictionaryEntry = {
   tags: string[]
   /** 타자 청크 매칭 힌트(쉼표 구분 문자열 또는 배열) */
   chunk_hints: string[]
+  /** 같은 값이면 한 화면에 함께 표시 (예: 토끼+거북이) */
+  combine_group?: string
   status: VisualDictionaryStatus
   /** 배포 후 Firebase Storage URL (없으면 로컬 public 경로) */
   image_url?: string

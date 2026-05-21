@@ -20,6 +20,8 @@ type VisualDictionaryStore = {
   resetToTortoiseHareSeed: () => void
   importCsvText: (text: string) => { ok: true; count: number } | { ok: false; error: string }
   mergeEntries: (next: VisualDictionaryEntry[]) => void
+  updateEntry: (wordId: string, patch: Partial<VisualDictionaryEntry>) => void
+  assignEntryImageUrl: (wordId: string, imageUrl: string) => void
   loadFromCloud: () => Promise<void>
   publishToCloud: () => Promise<boolean>
 }
@@ -61,6 +63,18 @@ export const useVisualDictionaryStore = create<VisualDictionaryStore>((set, get)
   },
 
   mergeEntries: (next) => set((s) => ({ entries: mergeById(s.entries, next) })),
+
+  updateEntry: (wordId, patch) =>
+    set((s) => ({
+      entries: s.entries.map((e) => (e.word_id === wordId ? { ...e, ...patch } : e)),
+    })),
+
+  assignEntryImageUrl: (wordId, imageUrl) =>
+    set((s) => ({
+      entries: s.entries.map((e) =>
+        e.word_id === wordId ? { ...e, image_url: imageUrl.trim(), status: 'ready' as const } : e,
+      ),
+    })),
 
   loadFromCloud: async () => {
     if (!isVisualDictionaryCloudEnabled()) return

@@ -1,17 +1,29 @@
 import { useState } from 'react'
 import { downloadTimelineBundle } from '../lib/exportTimelineBundle'
 import { publishBookTimelines } from '../lib/publishedTimelineFirebase'
+import { publishCustomPicbook } from '../lib/customPicbookFirebase'
 import { isFirebaseEnabled } from '../lib/firebase'
 import { useUserAccountStore } from '../state/userAccountStore'
+import { useCustomPicbookStore } from '../state/customPicbookStore'
+import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import type { SentenceTimeline } from '../types/timeline'
 
 type Props = {
   bookId: string
   bookTitle: string
   timelines: Record<string, SentenceTimeline>
+  /** 청크·사전 연동 픽북 — 배포 시 사전·커스텀 메타도 함께 */
+  visualDictionaryStoryId?: string
+  isCustomBook?: boolean
 }
 
-export function EditorDeployBar({ bookId, bookTitle, timelines }: Props) {
+export function EditorDeployBar({
+  bookId,
+  bookTitle,
+  timelines,
+  visualDictionaryStoryId,
+  isCustomBook,
+}: Props) {
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const pushCloud = useUserAccountStore((s) => s.pushCloudSnapshot)
@@ -38,8 +50,25 @@ export function EditorDeployBar({ bookId, bookTitle, timelines }: Props) {
 
     if (isFirebaseEnabled()) {
       const ok = await publishBookTimelines(bookId, timelines)
-      if (ok) parts.push('Firebase 배포(전체 재생 반영)')
-      else parts.push('Firebase 배포 실패')
+      if (ok) parts.push('타임라인 Firebase')
+      else parts.push('타임라인 배포 실패')
+
+      const storyId = visualDictionaryStoryId ?? bookId
+      useVisualDictionaryStore.getState().setStoryId(storyId)
+      const dictOk = await useVisualDictionaryStore.getState().publishToCloud()
+      if (dictOk) parts.push(`사전(${storyId})`)
+      else parts.push('사전 배포 실패')
+
+      if (isCustomBook) {
+        const meta = useCustomPicbookStore.getState().books.find((b) => b.id === bookId)
+        if (meta) {
+          useCustomPicbookStore.getState().bumpVersion(bookId)
+          const bumped = useCustomPicbookStore.getState().books.find((b) => b.id === bookId)!
+          const bookOk = await publishCustomPicbook(bumped)
+          if (bookOk) parts.push('커스텀 픽북 메타')
+          else parts.push('픽북 메타 실패')
+        }
+      }
     }
     try {
       await pushCloud()

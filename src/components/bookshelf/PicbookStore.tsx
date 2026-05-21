@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
-import { PICBOOK_CATALOG, findCatalogByProductKey } from '../../data/picbookCatalog'
+import { useMemo, useState, type FormEvent } from 'react'
+import { getEditableCatalogItems, findCatalogByProductKey } from '../../data/picbookCatalog'
+import { useCustomPicbookStore } from '../../state/customPicbookStore'
 import { normalizeProductKey } from '../../lib/productKey'
 import { useLibraryUnlockStore } from '../../state/libraryUnlockStore'
 import type { PicbookCatalogItem } from '../../data/picbookCatalog'
@@ -109,6 +110,8 @@ function StoreCard({
 
 /** 전자서점 — 출판·예정 PicBook 진열 및 제품키 등록 */
 export function PicbookStore({ onUnlocked }: Props) {
+  const customBooks = useCustomPicbookStore((s) => s.books)
+  const catalog = useMemo(() => getEditableCatalogItems(), [customBooks])
   const unlock = useLibraryUnlockStore((s) => s.unlock)
   const isUnlocked = useLibraryUnlockStore((s) => s.isUnlocked)
 
@@ -136,7 +139,7 @@ export function PicbookStore({ onUnlocked }: Props) {
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        {PICBOOK_CATALOG.map((book) => (
+        {catalog.map((book) => (
           <StoreCard key={book.id} book={book} owned={isUnlocked(book.id)} onUnlock={handleUnlock} />
         ))}
       </div>

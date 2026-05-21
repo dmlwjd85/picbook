@@ -38,6 +38,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 20,
     tags: ['동물', '주인공'],
     chunk_hints: ['토끼'],
+    combine_group: 'cast',
     status: 'ready',
   },
   {
@@ -50,6 +51,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 20,
     tags: ['동물', '주인공'],
     chunk_hints: ['거북이', '거북'],
+    combine_group: 'cast',
     status: 'ready',
   },
   {

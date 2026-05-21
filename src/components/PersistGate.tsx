@@ -3,6 +3,7 @@ import { initCloudSyncSubscriptions } from '../lib/scheduleCloudPush'
 import { useMasterAuthStore } from '../state/masterAuthStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { useUserAccountStore } from '../state/userAccountStore'
+import { useCustomPicbookStore } from '../state/customPicbookStore'
 
 type PersistStore = {
   persist: {
@@ -35,9 +36,11 @@ export function PersistGate({ children }: { children: ReactNode }) {
       waitForHydration(useUserAccountStore),
       waitForHydration(useMasterAuthStore),
       waitForHydration(usePicbookTimelineStore),
-    ]).then(() => {
+      waitForHydration(useCustomPicbookStore),
+    ]).then(async () => {
       migrateLegacyStorage()
       initCloudSyncSubscriptions()
+      await useCustomPicbookStore.getState().syncFromCloud()
       if (!cancelled) setReady(true)
     })
     return () => {

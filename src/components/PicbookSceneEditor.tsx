@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { PICBOOK_CATALOG } from '../data/picbookCatalog'
+import { getEditableCatalogItems } from '../data/picbookCatalog'
+import { NewPicbookPanel } from './NewPicbookPanel'
+import { ChunkDictionaryStagingPreview } from './ChunkDictionaryStagingPreview'
+import { useCustomPicbookStore } from '../state/customPicbookStore'
 import { extractPanelUrlsFromSentence } from '../lib/extractPanelUrls'
 import { panelKeyFromImageUrl } from '../lib/panelKey'
 import { computeLayerSnapshot } from '../lib/cueEngine'
@@ -27,8 +30,6 @@ import type { VisualDictionaryEntry, VisualDictionaryInsertMode } from '../types
 import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import { createId } from '../lib/ids'
 
-const AVAILABLE_BOOKS = PICBOOK_CATALOG.filter((b) => !b.comingSoon)
-
 function panelLabel(url: string, index: number): string {
   const key = panelKeyFromImageUrl(url)
   const file = key.split('/').pop() ?? key
@@ -36,14 +37,17 @@ function panelLabel(url: string, index: number): string {
 }
 
 export function PicbookSceneEditor() {
-  const [bookId, setBookId] = useState(AVAILABLE_BOOKS[0]?.id ?? '')
+  const customBooks = useCustomPicbookStore((s) => s.books)
+  const availableBooks = useMemo(() => getEditableCatalogItems(), [customBooks])
+  const [bookId, setBookId] = useState(availableBooks[0]?.id ?? '')
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [frameIndex, setFrameIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [previewSelect, setPreviewSelect] = useState<PreviewSelectTarget>(null)
   const playRef = useRef<number | null>(null)
 
-  const book = AVAILABLE_BOOKS.find((b) => b.id === bookId)
+  const book = availableBooks.find((b) => b.id === bookId)
+  const isCustomBook = customBooks.some((b) => b.id === bookId)
   const pack: ReadingPack | null = useMemo(() => (book ? book.loadPack() : null), [book])
   const sentence = pack?.sentences[sentenceIndex]
 
@@ -125,11 +129,19 @@ export function PicbookSceneEditor() {
 
   useEffect(() => () => stopPlay(), [stopPlay])
 
+  const dictEntries = useVisualDictionaryStore((s) => s.entries)
+  const setDictStoryId = useVisualDictionaryStore((s) => s.setStoryId)
+
   useEffect(() => {
-    if (bookId === 'tortoise-and-hare') {
+    const storyId = pack?.visualDictionaryStoryId ?? bookId
+    setDictStoryId(storyId)
+    if (bookId === 'tortoise-and-hare' && !isCustomBook) {
       useVisualDictionaryStore.getState().resetToTortoiseHareSeed()
+      setDictStoryId('tortoise-and-hare')
     }
-  }, [bookId])
+  }, [bookId, pack?.visualDictionaryStoryId, isCustomBook, setDictStoryId])
+
+  const chunkTypedPrefix = sentence?.text.slice(0, safeFrame) ?? ''
 
   useEffect(() => {
     setPreviewSelect(null)
@@ -263,15 +275,28 @@ export function PicbookSceneEditor() {
           한 글자마다 프레임을 두고, 그 순간의 그림·줌·전환·효과음·삽입 컷을 다룹니다. 저장·배포 시 Firebase에 올리면 모든
           기기 재생에 반영됩니다. 미리보기에서 이미지를 눌러 크기 조절·삭제할 수 있습니다.
         </p>
-        <div className="mt-3">
-          <EditorDeployBar bookId={bookId} bookTitle={book.title} timelines={bookTimelines} />
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <EditorDeployBar
+            bookId={bookId}
+            bookTitle={book.title}
+            timelines={bookTimelines}
+            visualDictionaryStoryId={pack.visualDictionaryStoryId ?? bookId}
+            isCustomBook={isCustomBook}
+          />
+          <NewPicbookPanel
+            onCreated={(id) => {
+              setBookId(id)
+              setSentenceIndex(0)
+              setFrameIndex(0)
+            }}
+          />
         </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-800">픽북·문장</h2>
         <div className="mt-2 flex flex-wrap gap-2">
-          {AVAILABLE_BOOKS.map((b) => (
+          {availableBooks.map((b) => (
             <button
               key={b.id}
               type="button"
@@ -351,7 +376,23 @@ export function PicbookSceneEditor() {
         </div>
       </section>
 
-      <VisualDictionaryEditorPanel sentenceText={sentence.text} onInsert={onDictionaryInsert} />
+      {pack.visualDictionaryStoryId || isCustomBook ? (
+        <section className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/50 p-4">
+          <h3 className="text-xs font-bold text-fuchsia-900">청크 연출 미리보기 (재생과 동일)</h3>
+          <p className="mt-1 text-[11px] text-slate-600">
+            글자 {safeFrame}번째까지 — 기본 한 장씩 표시, <code className="rounded bg-white px-1">combine_group</code> 있으면 함께
+          </p>
+          <div className="mt-2 max-w-md">
+            <ChunkDictionaryStagingPreview typedPrefix={chunkTypedPrefix} entries={dictEntries} />
+          </div>
+        </section>
+      ) : null}
+
+      <VisualDictionaryEditorPanel
+        sentenceText={sentence.text}
+        typedPrefix={chunkTypedPrefix}
+        onInsert={onDictionaryInsert}
+      />
 
       {/* 미리보기 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
