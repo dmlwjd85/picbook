@@ -29,6 +29,8 @@ export type LayerState = {
   x: number
   y: number
   width: number
+  /** fillHeight가 false일 때 박스 높이(%) */
+  height?: number
   scale: number
   /** 레이어 기준 가로·세로 이동(%, translate). 견제 장면 흔들림 등. */
   panX?: number

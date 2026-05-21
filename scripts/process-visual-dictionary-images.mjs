@@ -1,6 +1,8 @@
 /**
- * 생성된 PNG → 512×512, 비배경 에셋은 흰 배경을 알파로 변환
- * 사용: node scripts/process-visual-dictionary-images.mjs <입력폴더>
+ * PNG → 512×512 cover 채움, 여백 trim, 비배경은 흰색 알파 제거
+ * 사용:
+ *   node scripts/process-visual-dictionary-images.mjs <입력폴더>
+ *   node scripts/process-visual-dictionary-images.mjs --in-place  (public/visual-dictionary 전체 재처리)
  */
 import fs from 'fs'
 import path from 'path'
@@ -8,9 +10,12 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const inDir = process.argv[2]
-  ? path.resolve(process.argv[2])
-  : path.join(root, 'scripts/_gen_vdict')
+const inPlace = process.argv.includes('--in-place')
+const inDir = inPlace
+  ? path.join(root, 'public/visual-dictionary')
+  : process.argv[2] && !process.argv[2].startsWith('--')
+    ? path.resolve(process.argv[2])
+    : path.join(root, 'scripts/_gen_vdict')
 const outRoot = path.join(root, 'public/visual-dictionary')
 
 function folderFromFileName(fileName) {
@@ -24,20 +29,31 @@ function folderFromFileName(fileName) {
   return 'nouns'
 }
 
-async function knockWhiteAlpha(inputBuf, isBackground) {
-  const { data, info } = await sharp(inputBuf)
-    .resize(512, 512, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+async function trimAndCover(inputBuf, isBackground) {
+  let pipeline = sharp(inputBuf)
+  try {
+    pipeline = pipeline.trim({ threshold: 14 })
+  } catch {
+    /* trim 실패 시 원본 */
+  }
+
+  if (isBackground) {
+    return pipeline.resize(512, 512, { fit: 'cover', position: 'centre' }).png().toBuffer()
+  }
+
+  const { data, info } = await pipeline
+    .resize(512, 512, { fit: 'cover', position: 'centre' })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
 
-  const threshold = isBackground ? 250 : 238
+  const threshold = 242
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i]
     const g = data[i + 1]
     const b = data[i + 2]
     if (r >= threshold && g >= threshold && b >= threshold) {
-      data[i + 3] = isBackground ? 255 : 0
+      data[i + 3] = 0
     }
   }
 
@@ -46,28 +62,35 @@ async function knockWhiteAlpha(inputBuf, isBackground) {
     .toBuffer()
 }
 
-async function main() {
-  if (!fs.existsSync(inDir)) {
-    console.error('입력 폴더 없음:', inDir)
-    process.exit(1)
+function collectFiles(dir, acc = []) {
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, ent.name)
+    if (ent.isDirectory()) collectFiles(p, acc)
+    else if (/\.(png|jpg|jpeg|webp)$/i.test(ent.name)) acc.push(p)
   }
-  const files = fs.readdirSync(inDir).filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
-  if (files.length === 0) {
-    console.error('이미지 파일 없음:', inDir)
+  return acc
+}
+
+async function main() {
+  const files = inPlace ? collectFiles(inDir) : fs.readdirSync(inDir).map((f) => path.join(inDir, f))
+  const imageFiles = files.filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+  if (imageFiles.length === 0) {
+    console.error('이미지 없음:', inDir)
     process.exit(1)
   }
 
-  for (const file of files) {
+  for (const filePath of imageFiles) {
+    const file = path.basename(filePath)
     const base = file.replace(/\.[^.]+$/, '') + '.png'
     const folder = folderFromFileName(base)
-    const outDir = path.join(outRoot, folder)
+    const outDir = inPlace ? path.dirname(filePath) : path.join(outRoot, folder)
     fs.mkdirSync(outDir, { recursive: true })
-    const buf = fs.readFileSync(path.join(inDir, file))
+    const buf = fs.readFileSync(filePath)
     const isBg = folder === 'backgrounds'
-    const out = await knockWhiteAlpha(buf, isBg)
-    const dest = path.join(outDir, base)
+    const out = await trimAndCover(buf, isBg)
+    const dest = inPlace ? filePath : path.join(outDir, base)
     fs.writeFileSync(dest, out)
-    console.log('OK', path.join(folder, base))
+    console.log('OK', path.relative(root, dest))
   }
 }
 

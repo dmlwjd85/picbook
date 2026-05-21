@@ -321,13 +321,14 @@ export function VisualStage({
               ? 'left center'
               : 'center center'
         const faceZoom = !centerImages && fill && !hasPlate && (l.scale ?? 1) > 1.02
-        const proverbFill = centerImages && fill && !hasPlate
-        /** 3:2 속담 — 잘리지 않고 전체 프레임 */
-        const imgFit = proverbFill ? 'object-contain' : 'object-cover'
+        const isChunk = isChunkLayerId(l.id)
+        const proverbFill = centerImages && fill && !hasPlate && !isChunk
+        /** 청크 레이어 — 박스를 꽉 채움(검은 배경 비침 방지) */
+        const imgFit = isChunk || !proverbFill ? 'object-cover' : 'object-contain'
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
         const chunkFade = isChunkLayerId(l.id) ? ' layer-fade-in' : ''
         const layerChrome =
-          proverbFill || (fill && !hasPlate)
+          isChunk || proverbFill || (fill && !hasPlate)
             ? `absolute overflow-hidden will-change-transform transition-opacity duration-300 ease-in-out${chunkFade}`
             : `absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 will-change-transform transition-opacity duration-300 ease-in-out ${layoutMotion}${chunkFade}`
 
@@ -339,7 +340,12 @@ export function VisualStage({
               left: `${l.x}%`,
               width: `${l.width}%`,
               zIndex: l.zIndex,
-              ...(fill ? { top: 0, height: '100%' } : { top: `${l.y}%` }),
+              ...(fill
+                ? { top: 0, height: '100%' }
+                : {
+                    top: `${l.y}%`,
+                    height: l.height != null ? `${l.height}%` : undefined,
+                  }),
               opacity: l.opacity,
             }}
           >
@@ -392,11 +398,15 @@ export function VisualStage({
                     {l.stampOverlay === 'red-x' ? <RedXStamp /> : null}
                   </div>
                 ) : (
-                  <div className="relative w-full">
+                  <div className={`relative w-full ${isChunk ? 'h-full bg-stone-900' : ''}`}>
                     <LayerPicture
                       imageUrl={imageUrl}
                       label={l.label}
-                      className="block h-auto w-full object-cover"
+                      className={
+                        isChunk
+                          ? 'absolute inset-0 h-full w-full object-cover object-center'
+                          : 'block h-auto w-full object-cover'
+                      }
                       sceneTransition={sceneTransition}
                     />
                     {anchors ? <AnchorOverlay labels={anchors} /> : null}
