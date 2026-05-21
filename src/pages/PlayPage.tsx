@@ -19,6 +19,11 @@ import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
 import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
 import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
+import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
+import { mergePlayLayers } from '../lib/mergePlayLayers'
+import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
+import { findVisualMatchesInText } from '../lib/matchVisualChunks'
+import { getVisualDictionaryForBook, getVisualDictionaryForStory } from '../lib/storyVisualDictionary'
 import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { fetchPublishedBookTimelines } from '../lib/publishedTimelineFirebase'
@@ -228,7 +233,20 @@ export default function PlayPage() {
     setFocusToken((t) => t + 1)
   }, [safeSentenceIndex, sentence?.id])
 
-  const { layers, stageFx } = useTimelinePlayback(bookId, sentence, typed.length)
+  const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, typed.length)
+  const chunkLayers = useChunkVisualLayers(typed, bookId, pack?.visualDictionaryStoryId)
+  const layers = useMemo(
+    () => mergePlayLayers(timelineLayers, chunkLayers),
+    [timelineLayers, chunkLayers],
+  )
+
+  const useChunkMode = bookUsesChunkVisuals(bookId, pack?.visualDictionaryStoryId)
+  const chunkMatchPreview = useMemo(() => {
+    if (!useChunkMode || !sentence) return []
+    const entries = getVisualDictionaryForStory(pack?.visualDictionaryStoryId)
+    const byBook = entries.length ? entries : getVisualDictionaryForBook(bookId)
+    return findVisualMatchesInText(typed, byBook).slice(-6)
+  }, [useChunkMode, typed, bookId, pack?.visualDictionaryStoryId, sentence])
   const playTimeline = usePicbookTimelineStore((s) =>
     bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
   )
@@ -307,6 +325,7 @@ export default function PlayPage() {
 
   const minimalTyping = pack?.typingStyle === 'minimal'
   const isStacked = pack?.typingStyle === 'stacked'
+  const centerImages = Boolean(isStacked && (useChunkMode || bookId === 'elementary-proverbs'))
 
   if (loading || !pack || !sentence) {
     return (
@@ -401,7 +420,7 @@ export default function PlayPage() {
               <VisualStage
                 layers={layers}
                 overlayCaption={closingCaption}
-                centerImages
+                centerImages={centerImages}
                 embedded
                 epilogueFullscreen
                 {...stageFx}
@@ -477,7 +496,7 @@ export default function PlayPage() {
               overlayCaption={closingCaption}
               karaoke={karaokeProps}
               vocabGlosses={activeVocab}
-              centerImages
+              centerImages={centerImages}
               compact
               large
               {...stageFx}
@@ -507,6 +526,21 @@ export default function PlayPage() {
               karaokeOnly
               focusToken={focusToken}
             />
+            {useChunkMode && chunkMatchPreview.length > 0 ? (
+              <div className="mt-2 rounded-lg border border-lime-200 bg-lime-50/90 px-2 py-1.5">
+                <p className="text-[10px] font-bold text-lime-900">지금 그려진 의미</p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {chunkMatchPreview.map((m) => (
+                    <span
+                      key={`${m.entry.word_id}-${m.start}`}
+                      className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-lime-900 ring-1 ring-lime-300"
+                    >
+                      {m.entry.word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="mt-1">
               <PlayActions
                 complete={complete}

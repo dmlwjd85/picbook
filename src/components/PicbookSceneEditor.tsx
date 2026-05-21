@@ -24,6 +24,7 @@ import { EditorDeployBar } from './EditorDeployBar'
 import { VisualDictionaryEditorPanel } from './VisualDictionaryEditorPanel'
 import { resolveVisualImageUrl } from '../lib/visualDictionaryPaths'
 import type { VisualDictionaryEntry, VisualDictionaryInsertMode } from '../types/visualDictionary'
+import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import { createId } from '../lib/ids'
 
 const AVAILABLE_BOOKS = PICBOOK_CATALOG.filter((b) => !b.comingSoon)
@@ -123,6 +124,12 @@ export function PicbookSceneEditor() {
   }, [maxFrame, stopPlay])
 
   useEffect(() => () => stopPlay(), [stopPlay])
+
+  useEffect(() => {
+    if (bookId === 'tortoise-and-hare') {
+      useVisualDictionaryStore.getState().resetToTortoiseHareSeed()
+    }
+  }, [bookId])
 
   useEffect(() => {
     setPreviewSelect(null)

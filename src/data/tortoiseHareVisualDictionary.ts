@@ -73,7 +73,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     image_direction: '체크 무늬 결승 띠, 투명 배경',
     z_index: 18,
     tags: ['경주'],
-    chunk_hints: ['결승', '골인', '끝'],
+    chunk_hints: ['결승', '골인', '끝', '도착'],
     status: 'draft',
   },
   {
@@ -175,7 +175,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
   {
     word_id: 'w_a_proud',
     word: '자만하다',
-    synonyms: ['자만', '거만', '건방'],
+    synonyms: ['자만', '거만', '건방', '자만한'],
     part_of_speech: 'adjective',
     file_name: 'a_proud_01.png',
     image_direction: '턱 괸 토끼 표정 클로즈업',

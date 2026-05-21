@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { isChunkLayerId } from '../lib/mergePlayLayers'
 import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
 import type { SceneStaging, SceneTransition, TextOverlayPosition } from '../types/sceneEdit'
@@ -324,10 +325,11 @@ export function VisualStage({
         /** 3:2 속담 — 잘리지 않고 전체 프레임 */
         const imgFit = proverbFill ? 'object-contain' : 'object-cover'
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
+        const chunkFade = isChunkLayerId(l.id) ? ' layer-fade-in' : ''
         const layerChrome =
           proverbFill || (fill && !hasPlate)
-            ? 'absolute overflow-hidden will-change-transform transition-opacity duration-300 ease-in-out'
-            : `absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 will-change-transform transition-opacity duration-300 ease-in-out ${layoutMotion}`
+            ? `absolute overflow-hidden will-change-transform transition-opacity duration-300 ease-in-out${chunkFade}`
+            : `absolute overflow-hidden rounded-lg shadow-xl ring-1 ring-white/15 will-change-transform transition-opacity duration-300 ease-in-out ${layoutMotion}${chunkFade}`
 
         return (
           <div

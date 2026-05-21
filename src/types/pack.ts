@@ -116,4 +116,6 @@ export type ReadingPack = {
   contentVersion?: string
   /** minimal: 짧은 한글만, 안내·자막 최소화 / stacked: 연출 중앙·따라쓰기 하단 */
   typingStyle?: 'default' | 'minimal' | 'stacked'
+  /** 의미 청크 시각 사전 작품 id (예: tortoise-and-hare) */
+  visualDictionaryStoryId?: string
 }

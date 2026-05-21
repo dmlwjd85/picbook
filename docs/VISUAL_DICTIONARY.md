@@ -26,8 +26,13 @@ PicBook은 타자 **청크(의미 단위)**에 맞춰 PNG 에셋을 레이어처
 - CSV: `data/visual-dictionary/stories/tortoise_and_hare.csv`  
 - 플레이스홀더 생성: `npm run dict:placeholders`
 
+## 재생(Play) 연동
+
+- 팩에 `visualDictionaryStoryId` 또는 `bookId: tortoise-and-hare` 가 있으면 타자에 맞춰 청크 PNG가 레이어로 쌓입니다.
+- 예시 팩: **토끼와 거북이** (`/play/tortoise-and-hare`) — 제품키 `PICBOOK-TORTOISE-2026` 또는 마스터 미리보기
+
 ## 고도화 제안
 
-- **형태소 분석**: `mecab`/`kiwi` wasm으로 「거북이가」→「거북이」 정규화  
+- **형태소 분석**: `mecab`/`kiwi` wasm으로 「거북이가」→「거북이」 정규화 (일부 조사는 `visualDictionaryNeedles.ts`에서 처리 중)  
 - **Lottie**: 짧은 동작은 JSON, 정지는 PNG  
-- **청크 엔진**: `matchVisualChunks.ts`를 PlayPage 타자 루프에 연결해 실시간 오버레이
+- **Storage 일괄 업로드**: PNG → `image_url` 자동 매핑 스크립트

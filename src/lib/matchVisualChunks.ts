@@ -1,3 +1,4 @@
+import { expandEntryNeedles } from './visualDictionaryNeedles'
 import type { VisualDictionaryEntry } from '../types/visualDictionary'
 
 export type ChunkMatch = {
@@ -7,19 +8,9 @@ export type ChunkMatch = {
   end: number
 }
 
-/** 표제어·유사어·청크힌트로 입력 텍스트에서 가장 긴 매칭 (형태소 분석 전 단계) */
+/** 표제어·유사어·청크힌트·조사 변형으로 입력 텍스트에서 가장 긴 매칭 */
 function allNeedles(entry: VisualDictionaryEntry): string[] {
-  const set = new Set<string>()
-  set.add(entry.word)
-  for (const s of entry.synonyms) {
-    const t = s.trim()
-    if (t) set.add(t)
-  }
-  for (const h of entry.chunk_hints) {
-    const t = h.trim()
-    if (t) set.add(t)
-  }
-  return [...set].sort((a, b) => b.length - a.length)
+  return expandEntryNeedles(entry)
 }
 
 export function findVisualMatchesInText(
