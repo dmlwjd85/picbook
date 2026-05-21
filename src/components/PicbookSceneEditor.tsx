@@ -21,6 +21,9 @@ import type { ReadingPack } from '../types/pack'
 import { EditablePreviewStage, type PreviewSelectTarget } from './EditablePreviewStage'
 import { PremiereTimeline } from './PremiereTimeline'
 import { EditorDeployBar } from './EditorDeployBar'
+import { VisualDictionaryEditorPanel } from './VisualDictionaryEditorPanel'
+import { resolveVisualImageUrl } from '../lib/visualDictionaryPaths'
+import type { VisualDictionaryEntry, VisualDictionaryInsertMode } from '../types/visualDictionary'
 import { createId } from '../lib/ids'
 
 const AVAILABLE_BOOKS = PICBOOK_CATALOG.filter((b) => !b.comingSoon)
@@ -161,6 +164,43 @@ export function PicbookSceneEditor() {
     const layerId = editTargetLayerId ?? patch.layerId
     setFrameEdit(bookId, sentence.id, safeFrame, layerId ? { ...patch, layerId } : patch)
   }
+
+  const onDictionaryInsert = useCallback(
+    (entry: VisualDictionaryEntry, mode: VisualDictionaryInsertMode) => {
+      if (!bookId || !sentence) return
+      const url = resolveVisualImageUrl(entry)
+      if (mode === 'overlay') {
+        const insId = addInsert(bookId, sentence.id, Math.max(0, safeFrame - 1))
+        updateInsert(bookId, sentence.id, insId, {
+          imageUrl: url,
+          customImageId: undefined,
+          scale: entry.part_of_speech === 'emotion' || entry.part_of_speech === 'effect' ? 1.1 : 1,
+        })
+        setPreviewSelect('insert')
+        return
+      }
+      const layerId = editTargetLayerId
+      setFrameEdit(
+        bookId,
+        sentence.id,
+        safeFrame,
+        layerId
+          ? {
+              imageUrl: url,
+              customImageId: undefined,
+              scale: entry.part_of_speech === 'background' ? 1 : undefined,
+              layerId,
+            }
+          : {
+              imageUrl: url,
+              customImageId: undefined,
+              scale: entry.part_of_speech === 'background' ? 1 : undefined,
+            },
+      )
+      setPreviewSelect('main')
+    },
+    [bookId, sentence, safeFrame, addInsert, updateInsert, editTargetLayerId, setFrameEdit, setPreviewSelect],
+  )
 
   const onPickFrameImage = async (file: File | null) => {
     if (!file || !bookId || !sentence) return
@@ -303,6 +343,8 @@ export function PicbookSceneEditor() {
           </button>
         </div>
       </section>
+
+      <VisualDictionaryEditorPanel sentenceText={sentence.text} onInsert={onDictionaryInsert} />
 
       {/* 미리보기 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

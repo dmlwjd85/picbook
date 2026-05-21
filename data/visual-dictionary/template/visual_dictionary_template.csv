@@ -1,0 +1,7 @@
+word_id,word,synonyms,part_of_speech,file_name,image_direction,z_index,tags,chunk_hints,status
+w_example_rabbit,토끼,"토끼가,토끼는",noun,n_rabbit_01.png,"투명 PNG, 정면, 귀 세움, 512x512",20,"동물,예시","토끼",draft
+w_example_turtle,거북이,"거북,자라",noun,n_turtle_01.png,"투명 PNG, 옆면, 등껍질",20,"동물,예시","거북이",draft
+w_example_bg,숲,숲속,background,bg_forest_01.png,"배경만, 캐릭터 없음, 넓은 원경",0,"배경","숲,숲에서",draft
+w_example_run,달리다,"뛰다,달려",verb,v_run_01.png,"속도선 이펙트만, 투명",30,"동작","달리,뛰",draft
+w_example_fast,빠르다,"빠른,빨리",adjective,a_fast_01.png,"번개/가속선 소형",35,"속도","빠르,빨리",draft
+w_example_happy,기쁘다,"기쁜,기뻐",emotion,e_happy_01.png,"하트 파티클",40,"감정","기쁘,기뻐",draft

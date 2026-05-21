@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "dict:placeholders": "node scripts/generate-visual-dictionary-placeholders.mjs",
     "verify:proverbs": "node scripts/verify-proverbs-pack.mjs",
     "outpaint:proverbs": "node scripts/batch-outpaint-proverbs.mjs",
     "prebuild": "node scripts/verify-proverbs-pack.mjs"

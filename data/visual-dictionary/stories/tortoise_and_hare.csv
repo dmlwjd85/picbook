@@ -1,0 +1,25 @@
+word_id,word,synonyms,part_of_speech,file_name,image_direction,z_index,tags,chunk_hints,status
+w_bg_forest,숲,"숲속,나무숲",background,bg_forest_01.png,"햇빛 숲 원경, 캐릭터 없음",0,"토끼와거북이,배경","숲,숲에서",draft
+w_bg_meadow,들판,"초원,풀밭",background,bg_meadow_01.png,"넓은 들판 경주장",0,"배경,경주","들판,들에서",draft
+w_n_rabbit,토끼,"토끼가,토끼는,토끼의",noun,n_rabbit_01.png,"흰 토끼 정면, 투명 PNG",20,"주인공","토끼",draft
+w_n_turtle,거북이,"거북,자라,거북이가",noun,n_turtle_01.png,"거북이 옆면, 투명 PNG",20,"주인공","거북이,거북",draft
+w_n_race,경주,"시합,달리기 시합",noun,n_race_01.png,"출발/결승 아이콘",15,"사건","경주,시합",draft
+w_n_finish,결승선,"골인,끝선",noun,n_finish_line_01.png,"체크 띠",18,"경주","결승,골인",draft
+w_v_run,달리다,"뛰다,달려,달리고",verb,v_run_01.png,"속도선 이펙트",30,"동작","달리,뛰",draft
+w_v_sleep,자다,"잠,잠자,자고",verb,v_sleep_01.png,"Zzz 표시",30,"동작","자,잠",draft
+w_v_crawl,기어가다,"기어,천천히 가",verb,v_crawl_01.png,"느린 화살표",30,"동작","기어,천천히",draft
+w_v_start,출발,"시작,출발하",verb,v_start_01.png,"출발 깃발",28,"경주","출발,시작",draft
+w_v_win,이기다,"이겨,승리,이겼",verb,v_win_01.png,"트로피",32,"결말","이기,이겼,승리",draft
+w_v_lose,지다,"져,패배,졌",verb,v_lose_01.png,"어깨 축 늘어짐",32,"결말","지,졌,패배",draft
+w_a_fast,빠르다,"빠른,빨리",adjective,a_fast_01.png,"번개/가속선",35,"속도","빠르,빨리",draft
+w_a_slow,느리다,"느린,천천히",adjective,a_slow_01.png,"느린 시계",35,"속도","느리,천천히",draft
+w_a_proud,자만하다,"자만,거만",adjective,a_proud_01.png,"턱 괸 토끼 표정",35,"토끼","자만,거만",draft
+w_e_happy,기쁘다,"기쁜,기뻐",emotion,e_happy_01.png,"하트 파티클",40,"감정","기쁘,기뻐",draft
+w_e_sad,슬프다,"슬픈,슬퍼",emotion,e_sad_01.png,"눈물",40,"감정","슬프,슬퍼",draft
+w_e_surprise,놀랍다,"놀란,깜짝",emotion,e_surprise_01.png,"느낌표",40,"감정","놀라,깜짝",draft
+w_fx_dust,먼지,"먼지구름",effect,fx_dust_01.png,"달리기 먼지",25,"이펙트","먼지",draft
+w_n_tree,나무,"그늘,큰나무",noun,n_tree_01.png,"그늘 나무 한 그루",12,"배경요소","나무,그늘",draft
+w_v_mock,놀리다,"놀려,비웃",verb,v_mock_01.png,"비웃음 말풍선",30,"대화","놀리,비웃",draft
+w_v_say,말하다,"말했,외치",verb,v_say_01.png,"빈 말풍선",30,"대화","말하,말했",draft
+w_n_friend,친구,"벗",noun,n_friend_01.png,"토끼 거북 나란히",20,"관계","친구",draft
+w_a_steady,성실하다,"꾸준,묵묵히",adjective,a_steady_01.png,"거북이 발자국",35,"교훈","성실,꾸준",draft
