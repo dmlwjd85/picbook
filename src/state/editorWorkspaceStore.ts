@@ -15,6 +15,9 @@ export type WorkspaceAssetEntry = {
   note?: string
 }
 
+/** Zustand 셀렉터에서 ?? [] 시 매번 새 배열 → 무한 리렌더 방지 */
+export const EMPTY_WORKSPACE_ASSETS: WorkspaceAssetEntry[] = []
+
 type EditorWorkspaceStore = {
   /** bookId → 대기 중인 public 파일 교체 */
   assetsByBook: Record<string, WorkspaceAssetEntry[]>

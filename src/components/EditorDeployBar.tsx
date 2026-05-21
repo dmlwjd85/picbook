@@ -8,6 +8,7 @@ import { useCustomPicbookStore } from '../state/customPicbookStore'
 import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import {
   downloadEditorWorkspaceBundle,
+  EMPTY_WORKSPACE_ASSETS,
   useEditorWorkspaceStore,
 } from '../state/editorWorkspaceStore'
 import type { SentenceTimeline } from '../types/timeline'
@@ -30,7 +31,13 @@ export function EditorDeployBar({
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const pushCloud = useUserAccountStore((s) => s.pushCloudSnapshot)
-  const pendingAssets = useEditorWorkspaceStore((s) => s.getPending(bookId))
+  const bookWorkspaceAssets = useEditorWorkspaceStore(
+    (s) => s.assetsByBook[bookId] ?? EMPTY_WORKSPACE_ASSETS,
+  )
+  const pendingAssets = useMemo(
+    () => bookWorkspaceAssets.filter((e) => !e.synced),
+    [bookWorkspaceAssets],
+  )
   const pendingCount = pendingAssets.length
 
   const inboxHint = useMemo(

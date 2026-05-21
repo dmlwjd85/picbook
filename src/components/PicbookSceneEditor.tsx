@@ -8,6 +8,7 @@ import { panelKeyFromImageUrl } from '../lib/panelKey'
 import { computeLayerSnapshot } from '../lib/cueEngine'
 import { makeTimelineMediaKey, putTimelineAudio, putTimelineImage } from '../lib/timelineMediaDb'
 import { activeInsert as pickActiveInsert, mergeFrameEditsUpTo } from '../lib/mergeFrameEdits'
+import type { CharFrameEdit } from '../types/timeline'
 import { pickMainLayer } from '../lib/applyTimelinePlayback'
 import { usePicbookSceneEditStore } from '../state/picbookSceneEditStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
@@ -30,11 +31,12 @@ import type { VisualDictionaryEntry, VisualDictionaryInsertMode } from '../types
 import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import { createId } from '../lib/ids'
 import { urlToPublicRelative } from '../lib/editorWorkspacePaths'
-import { useEditorWorkspaceStore } from '../state/editorWorkspaceStore'
+import { EMPTY_WORKSPACE_ASSETS, useEditorWorkspaceStore } from '../state/editorWorkspaceStore'
 import { SEPARATION_CHUNK_VISUAL_DICTIONARY } from '../data/separationChunkVisualDictionary'
 
 /** Zustand 셀렉터에서 매번 새 {}를 만들면 무한 리렌더(React #185) 발생 */
 const EMPTY_BOOK_TIMELINES: Record<string, import('../types/timeline').SentenceTimeline> = {}
+const EMPTY_MERGED_FRAME: CharFrameEdit = {}
 
 function panelLabel(url: string, index: number): string {
   const key = panelKeyFromImageUrl(url)
@@ -84,7 +86,7 @@ export function PicbookSceneEditor() {
   const { layers, stageFx } = useTimelinePlayback(bookId, sentence, safeFrame)
 
   const mergedFrame = useMemo(
-    () => (timeline ? mergeFrameEditsUpTo(timeline, safeFrame) : {}),
+    () => (timeline ? mergeFrameEditsUpTo(timeline, safeFrame) : EMPTY_MERGED_FRAME),
     [timeline, safeFrame],
   )
 
@@ -137,7 +139,13 @@ export function PicbookSceneEditor() {
 
   const usesChunkDictionary = Boolean(pack?.visualDictionaryStoryId || isCustomBook)
   const registerAssetOverride = useEditorWorkspaceStore((s) => s.registerAssetOverride)
-  const pendingInbox = useEditorWorkspaceStore((s) => s.getPending(bookId))
+  const bookWorkspaceAssets = useEditorWorkspaceStore(
+    (s) => s.assetsByBook[bookId] ?? EMPTY_WORKSPACE_ASSETS,
+  )
+  const pendingInbox = useMemo(
+    () => bookWorkspaceAssets.filter((e) => !e.synced),
+    [bookWorkspaceAssets],
+  )
 
   useEffect(() => {
     setSentenceIndex(0)
