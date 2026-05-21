@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "dict:placeholders": "node scripts/generate-visual-dictionary-placeholders.mjs",
+    "dict:process": "node scripts/process-visual-dictionary-images.mjs scripts/_gen_vdict",
     "verify:proverbs": "node scripts/verify-proverbs-pack.mjs",
     "outpaint:proverbs": "node scripts/batch-outpaint-proverbs.mjs",
     "prebuild": "node scripts/verify-proverbs-pack.mjs"

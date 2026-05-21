@@ -14,7 +14,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 0,
     tags: ['배경', '토끼와거북이'],
     chunk_hints: ['숲', '숲에서', '숲길'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_bg_meadow',
@@ -26,7 +26,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 0,
     tags: ['배경', '경주'],
     chunk_hints: ['들판', '들에서'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_n_rabbit',
@@ -38,7 +38,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 20,
     tags: ['동물', '주인공'],
     chunk_hints: ['토끼'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_n_turtle',
@@ -50,7 +50,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 20,
     tags: ['동물', '주인공'],
     chunk_hints: ['거북이', '거북'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_n_race',
@@ -62,7 +62,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 15,
     tags: ['사건'],
     chunk_hints: ['경주', '시합'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_n_finish',
@@ -74,7 +74,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 18,
     tags: ['경주'],
     chunk_hints: ['결승', '골인', '끝', '도착'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_run',
@@ -86,7 +86,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 30,
     tags: ['동작'],
     chunk_hints: ['달리', '뛰'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_sleep',
@@ -98,7 +98,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 30,
     tags: ['동작'],
     chunk_hints: ['자', '잠'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_crawl',
@@ -110,7 +110,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 30,
     tags: ['동작'],
     chunk_hints: ['기어', '천천히'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_start',
@@ -122,7 +122,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 28,
     tags: ['경주'],
     chunk_hints: ['출발', '시작'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_win',
@@ -134,7 +134,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 32,
     tags: ['결말'],
     chunk_hints: ['이기', '이겼', '승리'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_lose',
@@ -146,7 +146,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 32,
     tags: ['결말'],
     chunk_hints: ['지', '졌', '패배'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_a_fast',
@@ -158,7 +158,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 35,
     tags: ['속도'],
     chunk_hints: ['빠르', '빨리'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_a_slow',
@@ -170,7 +170,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 35,
     tags: ['속도'],
     chunk_hints: ['느리', '천천히'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_a_proud',
@@ -182,7 +182,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 35,
     tags: ['감정', '토끼'],
     chunk_hints: ['자만', '거만'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_e_happy',
@@ -194,7 +194,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 40,
     tags: ['감정'],
     chunk_hints: ['기쁘', '기뻐', '즐겁'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_e_sad',
@@ -206,7 +206,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 40,
     tags: ['감정'],
     chunk_hints: ['슬프', '슬퍼'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_e_surprise',
@@ -218,7 +218,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 40,
     tags: ['감정'],
     chunk_hints: ['놀라', '깜짝'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_fx_dust',
@@ -230,7 +230,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 25,
     tags: ['이펙트'],
     chunk_hints: ['먼지'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_n_tree',
@@ -242,7 +242,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 12,
     tags: ['배경요소'],
     chunk_hints: ['나무', '그늘'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_mock',
@@ -254,7 +254,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 30,
     tags: ['대화'],
     chunk_hints: ['놀리', '비웃'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_v_say',
@@ -266,7 +266,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 30,
     tags: ['대화'],
     chunk_hints: ['말하', '말했', '외치'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_n_friend',
@@ -278,7 +278,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 20,
     tags: ['관계'],
     chunk_hints: ['친구'],
-    status: 'draft',
+    status: 'ready',
   },
   {
     word_id: 'w_a_steady',
@@ -290,6 +290,6 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     z_index: 35,
     tags: ['거북이', '교훈'],
     chunk_hints: ['성실', '꾸준', '묵묵'],
-    status: 'draft',
+    status: 'ready',
   },
 ]
