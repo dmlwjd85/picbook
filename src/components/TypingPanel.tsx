@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { syncTypingFromRaw } from '../lib/typingMatch'
+import { playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
 
 type Props = {
   target: string
@@ -26,8 +26,14 @@ export function TypingPanel({
   const composingRef = useRef(false)
 
   useEffect(() => {
-    if (!composingRef.current) setDraft(typed)
-  }, [typed])
+    if (composingRef.current) return
+    setDraft((prev) => {
+      if (typed.length >= prev.length) return typed
+      if (prev.startsWith(typed)) return typed
+      if (playbackTypedPrefix(prev, target) === typed && typed.length > 0) return typed
+      return prev
+    })
+  }, [typed, target])
 
   const setDraftAndNotify = (raw: string) => {
     setDraft(raw)
@@ -36,6 +42,12 @@ export function TypingPanel({
 
   const commitRaw = (raw: string) => {
     syncTypingFromRaw(raw, target, typed, onTypedChange)
+  }
+
+  const flushCommit = (el: HTMLTextAreaElement) => {
+    const apply = () => commitRaw(el.value)
+    apply()
+    requestAnimationFrame(apply)
   }
 
   return (
@@ -60,13 +72,16 @@ export function TypingPanel({
           composingRef.current = false
           const raw = e.currentTarget.value
           setDraftAndNotify(raw)
-          commitRaw(raw)
+          flushCommit(e.currentTarget)
         }}
         onChange={(e) => {
           if (disabled) return
           const raw = e.target.value
           setDraftAndNotify(raw)
-          if (!composingRef.current) commitRaw(raw)
+          const isComposing =
+            composingRef.current ||
+            (e.nativeEvent as InputEvent).isComposing === true
+          if (!isComposing) commitRaw(raw)
         }}
       />
       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-500">

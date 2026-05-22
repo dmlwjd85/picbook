@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { longestMatchingPrefix } from '../lib/typingMatch'
+import { playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
 
 type Props = {
   target: string
@@ -45,9 +45,16 @@ export function TypingInline({
     if (hasTypo) setTypoPulse((n) => n + 1)
   }, [hasTypo, draft])
 
+  /** typed가 playback으로 앞서갈 때만 draft 맞춤 — 초성만 있을 때 typed가 비어 draft가 지워지지 않게 */
   useEffect(() => {
-    if (!composingRef.current) setDraft(typed)
-  }, [typed])
+    if (composingRef.current) return
+    setDraft((prev) => {
+      if (typed.length >= prev.length) return typed
+      if (prev.startsWith(typed)) return typed
+      if (playbackTypedPrefix(prev, target) === typed && typed.length > 0) return typed
+      return prev
+    })
+  }, [typed, target])
 
   useEffect(() => {
     onDraftChange?.(draft)
@@ -61,8 +68,13 @@ export function TypingInline({
 
   const commit = (raw: string) => {
     if (disabled) return
-    const matched = longestMatchingPrefix(raw, target)
-    if (matched !== typed) onTypedChange(matched)
+    syncTypingFromRaw(raw, target, typed, onTypedChange)
+  }
+
+  const flushCommit = (el: HTMLTextAreaElement) => {
+    const apply = () => commit(el.value)
+    apply()
+    requestAnimationFrame(apply)
   }
 
   const setDraftAndNotify = (raw: string) => {
@@ -101,12 +113,15 @@ export function TypingInline({
             composingRef.current = false
             const raw = e.currentTarget.value
             setDraftAndNotify(raw)
-            commit(raw)
+            flushCommit(e.currentTarget)
           }}
           onChange={(e) => {
             const raw = e.target.value
             setDraftAndNotify(raw)
-            if (!composingRef.current) commit(raw)
+            const isComposing =
+              composingRef.current ||
+              (e.nativeEvent as InputEvent).isComposing === true
+            if (!isComposing) commit(raw)
           }}
         />
       </div>
@@ -167,12 +182,15 @@ export function TypingInline({
             composingRef.current = false
             const raw = e.currentTarget.value
             setDraftAndNotify(raw)
-            commit(raw)
+            flushCommit(e.currentTarget)
           }}
           onChange={(e) => {
             const raw = e.target.value
             setDraftAndNotify(raw)
-            if (!composingRef.current) commit(raw)
+            const isComposing =
+              composingRef.current ||
+              (e.nativeEvent as InputEvent).isComposing === true
+            if (!isComposing) commit(raw)
           }}
         />
       </div>

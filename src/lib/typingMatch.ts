@@ -6,14 +6,14 @@ export function longestMatchingPrefix(input: string, target: string): string {
   return target.slice(0, i)
 }
 
-/** 조합이 끝난 뒤(또는 영문 직접 입력) 선두 일치 길이만 부모 typed에 반영 */
+/** 조합이 끝난 뒤(또는 영문 직접 입력) — 초성 선행 일치까지 typed에 반영 */
 export function syncTypingFromRaw(
   raw: string,
   target: string,
   typed: string,
   onTypedChange: (next: string) => void,
 ): string {
-  const matched = longestMatchingPrefix(raw, target)
+  const matched = playbackTypedPrefix(raw, target)
   if (matched !== typed) onTypedChange(matched)
   return matched
 }
@@ -50,11 +50,28 @@ function choseongOfSyllable(ch: string): string | null {
   return JAMO_CHO[ch] ?? null
 }
 
+/** 조합 중인 꼬리(자음·모음·미완성 음절)만 검사 — 앞쪽 완성 글자는 건너뜀 */
 function tailHasMatchingChoseong(tail: string, targetCho: string): boolean {
-  for (let i = tail.length - 1; i >= 0; i--) {
-    const cho = choseongOfSyllable(tail[i]!)
+  if (!tail.length) return false
+
+  let i = tail.length - 1
+  while (i >= 0) {
+    const code = tail.charCodeAt(i)
+    const isHangulSyllable = code >= 0xac00 && code <= 0xd7a3
+    if (isHangulSyllable) {
+      const cho = choseongOfSyllable(tail[i]!)
+      return cho === targetCho
+    }
+    i -= 1
+  }
+
+  for (let j = tail.length - 1; j >= 0; j--) {
+    const code = tail.charCodeAt(j)
+    if (code >= 0xac00 && code <= 0xd7a3) break
+    const cho = choseongOfSyllable(tail[j]!)
     if (cho === targetCho) return true
   }
+
   return false
 }
 

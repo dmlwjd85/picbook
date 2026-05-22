@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { syncTypingFromRaw } from '../lib/typingMatch'
+import { playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
 
 type Props = {
   target: string
@@ -28,8 +28,14 @@ export function OverlayTypingPanel({
   const [draft, setDraft] = useState(typed)
   const composingRef = useRef(false)
   useEffect(() => {
-    if (!composingRef.current) setDraft(typed)
-  }, [typed])
+    if (composingRef.current) return
+    setDraft((prev) => {
+      if (typed.length >= prev.length) return typed
+      if (prev.startsWith(typed)) return typed
+      if (playbackTypedPrefix(prev, target) === typed && typed.length > 0) return typed
+      return prev
+    })
+  }, [typed, target])
 
   const setDraftAndNotify = (raw: string) => {
     setDraft(raw)
@@ -39,6 +45,12 @@ export function OverlayTypingPanel({
   const commitRaw = (raw: string) => {
     if (disabled) return
     syncTypingFromRaw(raw, target, typed, onTypedChange)
+  }
+
+  const flushCommit = (el: HTMLTextAreaElement) => {
+    const apply = () => commitRaw(el.value)
+    apply()
+    requestAnimationFrame(apply)
   }
 
   return (
@@ -69,12 +81,15 @@ export function OverlayTypingPanel({
             composingRef.current = false
             const raw = e.currentTarget.value
             setDraftAndNotify(raw)
-            commitRaw(raw)
+            flushCommit(e.currentTarget)
           }}
           onChange={(e) => {
             const raw = e.target.value
             setDraftAndNotify(raw)
-            if (!composingRef.current) commitRaw(raw)
+            const isComposing =
+              composingRef.current ||
+              (e.nativeEvent as InputEvent).isComposing === true
+            if (!isComposing) commitRaw(raw)
           }}
         />
       </div>
