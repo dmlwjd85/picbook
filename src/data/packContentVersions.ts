@@ -5,8 +5,8 @@ import { useCustomPicbookStore } from '../state/customPicbookStore'
  * 이미 구매(잠금 해제)한 사용자에게도 재생 시 최신 팩이 자동 적용된다.
  */
 export const PACK_CONTENT_VERSIONS: Record<string, string> = {
-  'demo-separation-three-powers': '19',
-  'elementary-proverbs': '35',
+  'demo-separation-three-powers': '20',
+  'elementary-proverbs': '36',
   'tortoise-and-hare': '4',
 }
 

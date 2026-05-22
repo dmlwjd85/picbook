@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { syncTypingFromRaw } from '../lib/typingMatch'
-import { PlayTargetSentence } from './PlayTargetSentence'
 
 type Props = {
   target: string
@@ -44,13 +43,6 @@ export function OverlayTypingPanel({
 
   return (
     <div className="flex flex-col gap-2">
-      <PlayTargetSentence
-        target={target}
-        draft={draft}
-        committed={typed}
-        variant="panel"
-        className="shrink-0"
-      />
       <div
         className={`relative overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-inner ${
           minimal ? 'min-h-[4.5rem]' : 'min-h-[7.5rem]'

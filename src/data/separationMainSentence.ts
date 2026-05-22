@@ -105,6 +105,11 @@ export function createSeparationMainSentence(): SentenceBlock {
       effects: [
         { kind: 'layerShow', layerId: layerJustice },
         { kind: 'layerImage', layerId: layerJustice, imageUrl: urlJustice },
+        {
+          kind: 'layerAnchorLabels',
+          layerId: layerJustice,
+          labels: [{ text: '사법부', leftPct: 24, topPct: 54 }],
+        },
         { kind: 'layerShow', layerId: layerLegis },
         { kind: 'layerImage', layerId: layerLegis, imageUrl: urlLegis },
         { kind: 'layerShow', layerId: layerExec },
@@ -116,6 +121,7 @@ export function createSeparationMainSentence(): SentenceBlock {
       id: createId(),
       charIndex: W(25),
       effects: [
+        { kind: 'layerAnchorLabels', layerId: layerJustice, labels: null },
         { kind: 'layerHide', layerId: layerLegis },
         { kind: 'layerHide', layerId: layerExec },
         { kind: 'layerHide', layerId: layerJustice },

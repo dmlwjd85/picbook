@@ -126,6 +126,11 @@ html.play-active #root {
   isolation: isolate;
 }
 
+.play-target-sentence--stage {
+  background: transparent;
+  box-shadow: none;
+}
+
 /* 마스터 연출 — 무대 효과 */
 @keyframes picbook-ken-burns {
   from {

@@ -33,6 +33,7 @@ import { createId } from '../lib/ids'
 import { urlToPublicRelative } from '../lib/editorWorkspacePaths'
 import { EMPTY_WORKSPACE_ASSETS, useEditorWorkspaceStore } from '../state/editorWorkspaceStore'
 import { SEPARATION_CHUNK_VISUAL_DICTIONARY } from '../data/separationChunkVisualDictionary'
+import { applyPackSentenceOverrides, usePackSentenceOverrideStore } from '../state/packSentenceOverrideStore'
 
 /** Zustand 셀렉터에서 매번 새 {}를 만들면 무한 리렌더(React #185) 발생 */
 const EMPTY_BOOK_TIMELINES: Record<string, import('../types/timeline').SentenceTimeline> = {}
@@ -56,7 +57,16 @@ export function PicbookSceneEditor() {
 
   const book = availableBooks.find((b) => b.id === bookId)
   const isCustomBook = customBooks.some((b) => b.id === bookId)
-  const pack: ReadingPack | null = useMemo(() => (book ? book.loadPack() : null), [book])
+  const sentenceOverrides = usePackSentenceOverrideStore((s) => s.byBook[bookId])
+  const setSentenceOverride = usePackSentenceOverrideStore((s) => s.setSentenceText)
+  const clearSentenceOverride = usePackSentenceOverrideStore((s) => s.clearSentence)
+  const updateCustomBook = useCustomPicbookStore((s) => s.updateBook)
+
+  const pack: ReadingPack | null = useMemo(() => {
+    if (!book) return null
+    return applyPackSentenceOverrides(book.loadPack(), bookId)
+  }, [book, bookId, sentenceOverrides])
+
   const sentence = pack?.sentences[sentenceIndex]
 
   const timelineRaw = usePicbookTimelineStore((s) =>
@@ -384,6 +394,43 @@ export function PicbookSceneEditor() {
             ))}
             </div>
           </div>
+        ) : null}
+        {sentence ? (
+          <label className="mt-3 block">
+            <span className="text-xs font-semibold text-slate-700">타이핑할 문장</span>
+            <textarea
+              className="mt-1 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              rows={3}
+              value={sentence.text}
+              spellCheck={false}
+              onChange={(e) => {
+                const text = e.target.value
+                if (isCustomBook) {
+                  const rec = customBooks.find((b) => b.id === bookId)
+                  if (!rec) return
+                  const sentences = [...rec.sentences]
+                  sentences[sentenceIndex] = text
+                  updateCustomBook(bookId, { sentences })
+                } else {
+                  setSentenceOverride(bookId, sentenceIndex, text)
+                }
+              }}
+            />
+            <p className="mt-1 text-[10px] text-slate-500">
+              {isCustomBook
+                ? '커스텀 팩 — 문장 길이가 바뀌면 아래 타임라인 프레임을 다시 맞춰 주세요.'
+                : '이 기기·브라우저에 저장됩니다. 소스 코드에 반영하려면 개발자에게 JSON/TS 수정을 요청하세요.'}
+              {!isCustomBook && sentenceOverrides?.[sentenceIndex] ? (
+                <button
+                  type="button"
+                  className="ml-2 font-semibold text-indigo-600 hover:underline"
+                  onClick={() => clearSentenceOverride(bookId, sentenceIndex)}
+                >
+                  원문 되돌리기
+                </button>
+              ) : null}
+            </p>
+          </label>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-3">
           <button

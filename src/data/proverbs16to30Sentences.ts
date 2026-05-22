@@ -115,7 +115,7 @@ export function createCrowFlyBellyProverbSentence() {
       PROVERBS_IMAGES.crowFlyBelly05,
       PROVERBS_IMAGES.crowFlyBelly06,
     ],
-    ['날자', '배', '떨어', '진', '다'],
+    ['까마귀', '날자', '배', '떨어진다', '다'],
     undefined,
     '관계없는 일이 겹치면 억울하게 의심받을 수 있어요.',
   )

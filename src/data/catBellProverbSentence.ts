@@ -14,7 +14,7 @@ export function createCatBellProverbSentence() {
       PROVERBS_IMAGES.catBell05,
       PROVERBS_IMAGES.catBell06,
     ],
-    ['목에', '방울', '을', '달', '기'],
+    ['고양이', '목에', '방울', '달기', '기'],
     undefined,
     '실행할 수 없는 계획은 쓸모가 없어요.',
   )

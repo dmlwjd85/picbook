@@ -37,7 +37,7 @@ export function separationChunkHidesTimeline(
   if (bookId !== 'demo-separation-three-powers') return false
   if (sentenceIndex === 0) {
     if (visualTypedLen <= 5) return true
-    if (visualTypedLen >= 6 && visualTypedLen <= 10) return true
+    if (visualTypedLen >= 6 && visualTypedLen <= 7) return true
     return false
   }
   if (sentenceIndex === 1) return visualTypedLen <= 6

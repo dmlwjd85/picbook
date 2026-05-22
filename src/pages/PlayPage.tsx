@@ -17,14 +17,11 @@ import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
 import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
-import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGlosses'
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
 import { mergePlayLayers, separationChunkHidesTimeline } from '../lib/mergePlayLayers'
 import { usePlaybackTyping } from '../hooks/usePlaybackTyping'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
-import { getChunkEntryForFocus } from '../lib/buildChunkVisualLayers'
-import { getVisualDictionaryForBook, getVisualDictionaryForStory } from '../lib/storyVisualDictionary'
 import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { fetchPublishedBookTimelines } from '../lib/publishedTimelineFirebase'
@@ -264,15 +261,6 @@ export default function PlayPage() {
   }, [timelineLayers, chunkLayers, hideTimelineForChunk])
 
   const useChunkMode = bookUsesChunkVisuals(bookId, pack?.visualDictionaryStoryId)
-  const chunkMatchPreview = useMemo(() => {
-    if (!useChunkMode || !sentence || !visualTyped.length) return []
-    const entries = getVisualDictionaryForStory(pack?.visualDictionaryStoryId)
-    const byBook = entries.length ? entries : getVisualDictionaryForBook(bookId)
-    const entry = getChunkEntryForFocus(visualTyped, byBook)
-    if (!entry) return []
-    const i = visualTyped.length - 1
-    return [{ entry, start: i, end: i + 1 }]
-  }, [useChunkMode, visualTyped, bookId, pack?.visualDictionaryStoryId, sentence])
   const playTimeline = usePicbookTimelineStore((s) =>
     bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
   )
@@ -371,13 +359,7 @@ export default function PlayPage() {
     ? { target, draft: typingDraft, committed: typed }
     : null
 
-  const vocabLen =
-    sentence && target ? vocabTypedLength(target, typed, typingDraft) : 0
-
-  const activeVocab =
-    isStacked && sentence && !epilogueShown
-      ? getActiveVocabGlosses(sentence, vocabLen)
-      : []
+  const activeVocab: import('../types/pack').VocabGloss[] = []
 
   return (
     <div
@@ -540,7 +522,7 @@ export default function PlayPage() {
           </div>
           <div
             key={sentence.id}
-            className="play-sentence-in z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain rounded-xl border border-stone-200 bg-white px-2.5 py-1.5 shadow-sm sm:px-3"
+            className="play-sentence-in z-10 flex min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain rounded-xl border border-stone-200 bg-white px-2 py-1 shadow-sm sm:px-2.5"
             style={{
               paddingBottom: keyboardInset > 0 ? `${keyboardInset + 8}px` : undefined,
             }}
@@ -554,21 +536,6 @@ export default function PlayPage() {
               karaokeOnly
               focusToken={focusToken}
             />
-            {useChunkMode && chunkMatchPreview.length > 0 ? (
-              <div className="mt-2 rounded-lg border border-lime-200 bg-lime-50/90 px-2 py-1.5">
-                <p className="text-[10px] font-bold text-lime-900">지금 그려진 의미</p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {chunkMatchPreview.map((m) => (
-                    <span
-                      key={`${m.entry.word_id}-${m.start}`}
-                      className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-lime-900 ring-1 ring-lime-300"
-                    >
-                      {m.entry.word}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
             <div className="mt-1">
               <PlayActions
                 complete={complete}

@@ -4,7 +4,7 @@ import { POWERS_INTRO_IMAGES } from './separationPowersAssets'
 import { W3, idxAfter } from './separationPackShared'
 
 const INTRO_TEXT =
-  '권력분립은 국가권력을 국회, 행정부, 법원이 나눠 맡도록 헌법으로 정해 놓은 것이다.'
+  '권력분립은 국가권력을 국회 행정부 법원이 나눠 맡도록 헌법으로 정해 놓은 것이다.'
 
 export function createSeparationIntroSentence(): SentenceBlock {
   const layerStage = createId()

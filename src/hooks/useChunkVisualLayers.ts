@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { buildChunkVisualLayers } from '../lib/buildChunkVisualLayers'
+import { buildChunkVisualLayers, getChunkEntryForFocus } from '../lib/buildChunkVisualLayers'
+import { chunkHoldThroughIndex } from '../lib/chunkLayerHold'
 import { resolveVisualDictionaryEntries } from '../lib/visualDictionaryRegistry'
 import { useVisualDictionaryStore } from '../state/visualDictionaryStore'
 import type { LayerState } from '../types/pack'
@@ -14,9 +15,11 @@ export function useChunkVisualLayers(
   const editorStoryId = useVisualDictionaryStore((s) => s.storyId)
   const editorEntries = useVisualDictionaryStore((s) => s.entries)
   const lastRef = useRef<LayerState[]>([])
+  const holdThroughRef = useRef(0)
 
   useEffect(() => {
     lastRef.current = []
+    holdThroughRef.current = 0
   }, [resetKey, bookId, storyId])
 
   const entries = useMemo(() => {
@@ -29,15 +32,24 @@ export function useChunkVisualLayers(
   return useMemo(() => {
     if (!typed.trim()) {
       lastRef.current = []
+      holdThroughRef.current = 0
       return []
     }
 
     const next = buildChunkVisualLayers(typed, entries)
     if (next.length > 0) {
       lastRef.current = next
+      const entry = getChunkEntryForFocus(typed, entries)
+      if (entry) holdThroughRef.current = chunkHoldThroughIndex(entry, typed)
       return next
     }
 
-    return lastRef.current
+    if (typed.length <= holdThroughRef.current && lastRef.current.length > 0) {
+      return lastRef.current
+    }
+
+    lastRef.current = []
+    holdThroughRef.current = 0
+    return []
   }, [typed, entries])
 }
