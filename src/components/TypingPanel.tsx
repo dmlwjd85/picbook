@@ -5,6 +5,7 @@ type Props = {
   target: string
   typed: string
   onTypedChange: (next: string) => void
+  onDraftChange?: (draft: string) => void
   disabled?: boolean
   minimal?: boolean
 }
@@ -13,13 +14,25 @@ type Props = {
  * 목표 문장의 앞부분과 일치하는 입력만 반영합니다.
  * 한글 IME 조합 중에는 글자만 보여 주고, 조합이 끝나면 올바른 앞부분으로 맞춥니다.
  */
-export function TypingPanel({ target, typed, onTypedChange, disabled, minimal = false }: Props) {
+export function TypingPanel({
+  target,
+  typed,
+  onTypedChange,
+  onDraftChange,
+  disabled,
+  minimal = false,
+}: Props) {
   const [draft, setDraft] = useState(typed)
   const composingRef = useRef(false)
 
   useEffect(() => {
     if (!composingRef.current) setDraft(typed)
   }, [typed])
+
+  const setDraftAndNotify = (raw: string) => {
+    setDraft(raw)
+    onDraftChange?.(raw)
+  }
 
   const commitRaw = (raw: string) => {
     syncTypingFromRaw(raw, target, typed, onTypedChange)
@@ -46,13 +59,13 @@ export function TypingPanel({ target, typed, onTypedChange, disabled, minimal = 
         onCompositionEnd={(e) => {
           composingRef.current = false
           const raw = e.currentTarget.value
-          setDraft(raw)
+          setDraftAndNotify(raw)
           commitRaw(raw)
         }}
         onChange={(e) => {
           if (disabled) return
           const raw = e.target.value
-          setDraft(raw)
+          setDraftAndNotify(raw)
           if (!composingRef.current) commitRaw(raw)
         }}
       />

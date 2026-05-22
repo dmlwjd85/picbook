@@ -5,6 +5,7 @@ type Props = {
   target: string
   typed: string
   onTypedChange: (next: string) => void
+  onDraftChange?: (draft: string) => void
   disabled?: boolean
   /** 짧은 한글만 — 흐릿한 안내 문장 숨김 */
   minimal?: boolean
@@ -16,12 +17,24 @@ const TEXT =
 /**
  * 모바일: 흐릿한 목표 문장 위에 타이핑 입력을 겹쳐 표시.
  */
-export function OverlayTypingPanel({ target, typed, onTypedChange, disabled, minimal = false }: Props) {
+export function OverlayTypingPanel({
+  target,
+  typed,
+  onTypedChange,
+  onDraftChange,
+  disabled,
+  minimal = false,
+}: Props) {
   const [draft, setDraft] = useState(typed)
   const composingRef = useRef(false)
   useEffect(() => {
     if (!composingRef.current) setDraft(typed)
   }, [typed])
+
+  const setDraftAndNotify = (raw: string) => {
+    setDraft(raw)
+    onDraftChange?.(raw)
+  }
 
   const commitRaw = (raw: string) => {
     if (disabled) return
@@ -65,12 +78,12 @@ export function OverlayTypingPanel({ target, typed, onTypedChange, disabled, min
           onCompositionEnd={(e) => {
             composingRef.current = false
             const raw = e.currentTarget.value
-            setDraft(raw)
+            setDraftAndNotify(raw)
             commitRaw(raw)
           }}
           onChange={(e) => {
             const raw = e.target.value
-            setDraft(raw)
+            setDraftAndNotify(raw)
             if (!composingRef.current) commitRaw(raw)
           }}
         />

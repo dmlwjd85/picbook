@@ -21,7 +21,7 @@ import { getActiveVocabGlosses, vocabTypedLength } from '../lib/getActiveVocabGl
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
 import { mergePlayLayers, separationChunkHidesTimeline } from '../lib/mergePlayLayers'
-import { playbackTypedLength, playbackTypedPrefix } from '../lib/typingMatch'
+import { usePlaybackTyping } from '../hooks/usePlaybackTyping'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
 import { findVisualMatchesInText } from '../lib/matchVisualChunks'
 import { getVisualDictionaryForBook, getVisualDictionaryForStory } from '../lib/storyVisualDictionary'
@@ -235,14 +235,7 @@ export default function PlayPage() {
   }, [safeSentenceIndex, sentence?.id])
 
   const target = sentence?.text ?? ''
-  const visualTypedLen = useMemo(
-    () => playbackTypedLength(target, typed, typingDraft),
-    [target, typed, typingDraft],
-  )
-  const visualTyped = useMemo(
-    () => playbackTypedPrefix(typingDraft.length > typed.length ? typingDraft : typed, target),
-    [target, typed, typingDraft],
-  )
+  const { visualTyped, visualTypedLen } = usePlaybackTyping(target, typed, typingDraft)
 
   const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, visualTypedLen)
   const chunkLayers = useChunkVisualLayers(visualTyped, bookId, pack?.visualDictionaryStoryId)
@@ -608,6 +601,7 @@ export default function PlayPage() {
               target={target}
               typed={typed}
               onTypedChange={setTyped}
+              onDraftChange={setTypingDraft}
               minimal={minimalTyping}
             />
             <PlayActions
@@ -636,6 +630,7 @@ export default function PlayPage() {
                 target={target}
                 typed={typed}
                 onTypedChange={setTyped}
+                onDraftChange={setTypingDraft}
                 minimal={minimalTyping}
               />
               <PlayActions

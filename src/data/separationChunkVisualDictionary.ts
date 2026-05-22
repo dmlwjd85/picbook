@@ -95,7 +95,7 @@ export const SEPARATION_CHUNK_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     synonyms: ['국가 권력', '국가의 권력'],
     part_of_speech: 'noun',
     file_name: 'sep_nation_king_01.png',
-    image_direction: '조선시대 느낌 중년 왕, 국가권력 상징',
+    image_direction: '왕이 신하들에게 지시하는 모습, 국가권력',
     z_index: 38,
     tags: ['도입'],
     chunk_hints: ['국가권력'],

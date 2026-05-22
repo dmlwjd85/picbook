@@ -6,6 +6,7 @@ import {
   SEPARATION_DEMO_VISUAL_MILESTONES,
 } from '../data/separationThreePowersDemoPack'
 import { computeLayerSnapshot } from '../lib/cueEngine'
+import { usePlaybackTyping } from '../hooks/usePlaybackTyping'
 import { getActiveCaption } from '../lib/getActiveCaption'
 import { parsePackJson } from '../lib/parsePack'
 import type { ReadingPack } from '../types/pack'
@@ -16,18 +17,22 @@ export default function PlayerPage() {
   const [pack, setPack] = useState<ReadingPack | null>(null)
   const [sentenceIndex, setSentenceIndex] = useState(0)
   const [typed, setTyped] = useState('')
+  const [typingDraft, setTypingDraft] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const sentence = pack?.sentences[sentenceIndex]
+  const target = sentence?.text ?? ''
+  const { visualTypedLen } = usePlaybackTyping(target, typed, typingDraft)
 
   useEffect(() => {
     setTyped('')
+    setTypingDraft('')
   }, [sentenceIndex, sentence?.id])
 
   const layers = useMemo(() => {
     if (!sentence) return []
-    return computeLayerSnapshot(sentence, typed.length)
-  }, [sentence, typed])
+    return computeLayerSnapshot(sentence, visualTypedLen)
+  }, [sentence, visualTypedLen])
 
   const onLoadFile = useCallback((file: File | null) => {
     if (!file) return
@@ -60,12 +65,10 @@ export default function PlayerPage() {
     const milestones = SEPARATION_DEMO_VISUAL_MILESTONES
     let slide = 0
     for (let i = 0; i < milestones.length; i++) {
-      if (typed.length >= milestones[i]) slide = i + 1
+      if (visualTypedLen >= milestones[i]) slide = i + 1
     }
     return slide
-  }, [pack?.id, sentence, typed.length])
-
-  const target = sentence?.text ?? ''
+  }, [pack?.id, sentence, visualTypedLen])
   const complete = target.length > 0 && typed === target
   const lastSentence = pack ? sentenceIndex >= pack.sentences.length - 1 : true
 
@@ -125,7 +128,10 @@ export default function PlayerPage() {
               {pack.description ? <p className="mt-2 text-sm text-slate-600">{pack.description}</p> : null}
             </div>
 
-            <VisualStage layers={layers} overlayCaption={getActiveCaption(sentence?.captions, typed.length)} />
+            <VisualStage
+              layers={layers}
+              overlayCaption={getActiveCaption(sentence?.captions, visualTypedLen)}
+            />
             {demoSlideLabel !== null ? (
               <p className="text-center text-xs font-medium text-indigo-700">
                 지금 보이는 그림: <span className="font-mono">{demoSlideLabel}</span> /{' '}
@@ -136,7 +142,12 @@ export default function PlayerPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="mb-3 text-sm font-medium text-slate-700">이번 문장</p>
               <p className="mb-4 rounded-lg bg-slate-100 px-3 py-2 font-mono text-base leading-relaxed text-slate-800">{target}</p>
-              <TypingPanel target={target} typed={typed} onTypedChange={setTyped} />
+              <TypingPanel
+                target={target}
+                typed={typed}
+                onTypedChange={setTyped}
+                onDraftChange={setTypingDraft}
+              />
               <div className="mt-4 flex flex-wrap gap-2">
                 {complete ? (
                   <button

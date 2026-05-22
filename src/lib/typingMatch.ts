@@ -40,27 +40,7 @@ const CHOSEONG = [
   'ㅎ',
 ] as const
 
-const JAMO_CHO: Record<string, string> = {
-  'ㄱ': 'ㄱ',
-  'ㄲ': 'ㄲ',
-  'ㄴ': 'ㄴ',
-  'ㄷ': 'ㄷ',
-  'ㄸ': 'ㄸ',
-  'ㄹ': 'ㄹ',
-  'ㅁ': 'ㅁ',
-  'ㅂ': 'ㅂ',
-  'ㅃ': 'ㅃ',
-  'ㅅ': 'ㅅ',
-  'ㅆ': 'ㅆ',
-  'ㅇ': 'ㅇ',
-  'ㅈ': 'ㅈ',
-  'ㅉ': 'ㅉ',
-  'ㅊ': 'ㅊ',
-  'ㅋ': 'ㅋ',
-  'ㅌ': 'ㅌ',
-  'ㅍ': 'ㅍ',
-  'ㅎ': 'ㅎ',
-}
+const JAMO_CHO: Record<string, string> = Object.fromEntries(CHOSEONG.map((c) => [c, c]))
 
 function choseongOfSyllable(ch: string): string | null {
   const c = ch.charCodeAt(0)
@@ -70,9 +50,17 @@ function choseongOfSyllable(ch: string): string | null {
   return JAMO_CHO[ch] ?? null
 }
 
+function tailHasMatchingChoseong(tail: string, targetCho: string): boolean {
+  for (let i = tail.length - 1; i >= 0; i--) {
+    const cho = choseongOfSyllable(tail[i]!)
+    if (cho === targetCho) return true
+  }
+  return false
+}
+
 /**
  * 연출·청크 매칭용 — 조합 중에도 다음 글자 초성이 맞으면 한 글자 앞당겨 반영
- * (완성형이 아니어도 이미지가 늦게 뜨지 않게)
+ * (완성형이 아니어도 이미지가 늦게 뜨지 않게, ㄹ·ㅅ 등 자모만 있어도 동작)
  */
 export function playbackTypedPrefix(raw: string, target: string): string {
   const matched = longestMatchingPrefix(raw, target)
@@ -88,9 +76,7 @@ export function playbackTypedPrefix(raw: string, target: string): string {
   const targetCho = choseongOfSyllable(targetCh)
   if (!targetCho) return matched
 
-  const last = tail[tail.length - 1]!
-  const typedCho = choseongOfSyllable(last)
-  if (typedCho === targetCho) {
+  if (tailHasMatchingChoseong(tail, targetCho)) {
     return target.slice(0, nextIdx + 1)
   }
   return matched
