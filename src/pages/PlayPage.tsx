@@ -367,10 +367,9 @@ export default function PlayPage() {
     isStacked && epilogueShown ? sentence.closingLine?.trim() || null : null
   const showMobileEpilogueFullscreen =
     isStacked && epilogueShown && Boolean(closingCaption)
-  const karaokeProps =
-    isStacked && !epilogueShown
-      ? { target, draft: typingDraft, committed: typed }
-      : null
+  const karaokeProps = !epilogueShown
+    ? { target, draft: typingDraft, committed: typed }
+    : null
 
   const vocabLen =
     sentence && target ? vocabTypedLength(target, typed, typingDraft) : 0
@@ -493,7 +492,7 @@ export default function PlayPage() {
         <div
           className="play-stage-mobile play-stage-overlay relative z-10 shrink-0 overflow-hidden bg-stone-900 lg:hidden"
         >
-          <VisualStage layers={layers} embedded {...stageFx} />
+          <VisualStage layers={layers} embedded karaoke={karaokeProps} {...stageFx} />
           <SentenceNavPrevOverlay
             canPrev={safeSentenceIndex > 0}
             onPrev={goPrevSentence}
@@ -598,7 +597,7 @@ export default function PlayPage() {
             </div>
           ) : null}
           <div className="relative flex min-h-[min(50vh,420px)] flex-1 items-center overflow-hidden rounded-lg bg-stone-900">
-            <VisualStage layers={layers} {...stageFx} />
+            <VisualStage layers={layers} karaoke={karaokeProps} {...stageFx} />
             <SentenceNavPrevOverlay
               canPrev={safeSentenceIndex > 0}
               onPrev={goPrevSentence}

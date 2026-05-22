@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { longestMatchingPrefix } from '../lib/typingMatch'
+import { PlayTargetSentence } from './PlayTargetSentence'
 
 type Props = {
   target: string
@@ -56,7 +57,8 @@ export function TypingInline({
 
   if (karaokeOnly) {
     return (
-      <div className={`relative ${className}`}>
+      <div className={`relative flex flex-col gap-2 ${className}`}>
+        <PlayTargetSentence target={target} draft={draft} committed={typed} variant="panel" />
         <textarea
           ref={inputRef}
           rows={1}

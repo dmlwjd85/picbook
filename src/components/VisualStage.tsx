@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { isChunkLayerId } from '../lib/mergePlayLayers'
+import { clampPlayImageZIndex, PLAY_STAGE_TEXT_Z } from '../lib/playStageZ'
 import { StageInlays } from './StageTopOverlays'
 import type { LayerState, VocabGloss } from '../types/pack'
 import type { SceneStaging, SceneTransition, TextOverlayPosition } from '../types/sceneEdit'
@@ -350,7 +351,7 @@ export function VisualStage({
             style={{
               left: `${l.x}%`,
               width: `${l.width}%`,
-              zIndex: l.zIndex,
+              zIndex: clampPlayImageZIndex(l.zIndex),
               ...(fill
                 ? { top: 0, height: '100%' }
                 : {
@@ -444,10 +445,11 @@ export function VisualStage({
       {overlayCaption ? (
         <>
           <div
-            className={`pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col items-center justify-end px-3 ${
+            className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center justify-end px-3 ${
               epilogueFullscreen ? 'pb-2 pt-16' : 'pb-2 pt-12'
             }`}
             style={{
+              zIndex: PLAY_STAGE_TEXT_Z,
               background:
                 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.45) 55%, transparent 100%)',
             }}

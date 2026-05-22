@@ -1,7 +1,6 @@
 import type { VocabGloss } from '../types/pack'
-
-import { KaraokeLyrics } from './KaraokeLyrics'
-
+import { PLAY_STAGE_TEXT_Z } from '../lib/playStageZ'
+import { PlayTargetSentence } from './PlayTargetSentence'
 import { VocabGlossBottom } from './VocabGlossBottom'
 
 
@@ -40,22 +39,17 @@ export function StageInlays({ glosses, karaoke, showKaraoke }: Props) {
 
   return (
 
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-[32] flex flex-col gap-0.5 px-2 pt-1.5 sm:px-3 lg:pt-2">
-
+    <div
+      className="pointer-events-none absolute inset-x-0 top-0 flex flex-col gap-1 px-2 pt-1.5 sm:px-3 lg:pt-2"
+      style={{ zIndex: PLAY_STAGE_TEXT_Z }}
+    >
       {showKaraoke && karaoke ? (
-
-        <KaraokeLyrics
-
+        <PlayTargetSentence
           target={karaoke.target}
-
           draft={karaoke.draft}
-
           committed={karaoke.committed}
-
-          embedded
-
+          variant="stage"
         />
-
       ) : null}
 
       <VocabGlossBottom glosses={glosses} embedded />

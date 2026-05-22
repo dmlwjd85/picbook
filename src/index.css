@@ -119,6 +119,13 @@ html.play-active #root {
   animation: play-sentence-in 0.22s ease-out;
 }
 
+/* 따라 쓸 문장 — 연출 이미지·입력보다 항상 앞 */
+.play-target-sentence {
+  position: relative;
+  z-index: 20;
+  isolation: isolate;
+}
+
 /* 마스터 연출 — 무대 효과 */
 @keyframes picbook-ken-burns {
   from {
