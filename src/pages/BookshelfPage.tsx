@@ -53,6 +53,7 @@ export default function BookshelfPage() {
                   ? `${profileName}님의 책장`
                   : '책장'}
             </h1>
+            <p className="mt-1 text-sm text-amber-200/75">타자를 치면 그림책이 완성됩니다</p>
             {masterPreview ? (
               <p className="mt-1 text-xs text-amber-300/80">마스터 로그인 — 모든 PicBook을 열어볼 수 있어요</p>
             ) : null}

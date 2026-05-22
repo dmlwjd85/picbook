@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { longestMatchingPrefix } from '../lib/typingMatch'
 
 type Props = {
@@ -10,6 +10,8 @@ type Props = {
   className?: string
   /** 문장은 그림 하단 자막만 — 입력창만 표시 */
   karaokeOnly?: boolean
+  /** 연출 위 투명 입력(몰입 모드) */
+  immersive?: boolean
   /** 바뀔 때마다 입력창에 포커스 */
   focusToken?: number
 }
@@ -23,11 +25,25 @@ export function TypingInline({
   disabled,
   className = '',
   karaokeOnly = false,
+  immersive = false,
   focusToken = 0,
 }: Props) {
   const [draft, setDraft] = useState(typed)
+  const [typoPulse, setTypoPulse] = useState(0)
   const composingRef = useRef(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const hasTypo = useMemo(() => {
+    if (!draft.length) return false
+    for (let i = 0; i < draft.length; i++) {
+      if (draft[i] !== target[i]) return true
+    }
+    return false
+  }, [draft, target])
+
+  useEffect(() => {
+    if (hasTypo) setTypoPulse((n) => n + 1)
+  }, [hasTypo, draft])
 
   useEffect(() => {
     if (!composingRef.current) setDraft(typed)
@@ -55,11 +71,18 @@ export function TypingInline({
   }
 
   if (karaokeOnly) {
+    const wrapCls = immersive
+      ? `play-typing-immersive relative ${hasTypo ? 'play-typing-typo' : ''} ${className}`
+      : `relative ${hasTypo ? 'play-typing-typo' : ''} ${className}`
+    const fieldCls = immersive
+      ? 'play-typing-field-immersive w-full resize-none border-0 bg-transparent px-2 py-3 text-center font-display text-[clamp(1.15rem,5vw,1.65rem)] font-bold leading-snug text-white/95 caret-amber-300 placeholder:text-white/40 focus:outline-none focus:ring-0 disabled:opacity-50'
+      : 'w-full resize-none rounded-xl border border-stone-200/80 bg-stone-50/90 px-3 py-2.5 text-center font-display text-base font-semibold text-stone-800 caret-amber-700 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50'
+
     return (
-      <div className={`relative ${className}`}>
+      <div key={typoPulse} className={wrapCls}>
         <textarea
           ref={inputRef}
-          rows={1}
+          rows={immersive ? 2 : 1}
           disabled={disabled}
           value={draft}
           spellCheck={false}
@@ -68,9 +91,9 @@ export function TypingInline({
           autoCapitalize="off"
           inputMode="text"
           lang="ko"
-          placeholder="따라 써보세요."
+          placeholder={immersive ? '여기에 따라 써 보세요' : '따라 써보세요.'}
           aria-label="따라 쓰기"
-          className="w-full resize-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-center text-base font-semibold text-stone-800 caret-amber-700 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50"
+          className={fieldCls}
           onCompositionStart={() => {
             composingRef.current = true
           }}
@@ -93,7 +116,7 @@ export function TypingInline({
   const displayLen = Math.max(target.length, draft.length)
 
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div key={typoPulse} className={`flex flex-col ${hasTypo ? 'play-typing-typo' : ''} ${className}`}>
       <div className="relative min-h-[3.5rem] shrink-0">
         <div
           aria-hidden
@@ -104,14 +127,14 @@ export function TypingInline({
             const typedCh = draft[i]
             if (targetCh === undefined) {
               return (
-                <span key={`extra-${i}`} className="text-red-600">
+                <span key={`extra-${i}`} className="text-amber-700">
                   {typedCh}
                 </span>
               )
             }
             let cls = 'text-stone-300'
             if (typedCh !== undefined) {
-              cls = typedCh === targetCh ? 'text-stone-900' : 'text-red-600'
+              cls = typedCh === targetCh ? 'text-stone-900' : 'text-amber-700'
             } else if (i === draft.length) {
               cls =
                 'text-stone-400 underline decoration-amber-600 decoration-2 underline-offset-4'

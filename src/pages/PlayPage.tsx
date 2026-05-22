@@ -15,6 +15,7 @@ import { VisualStage } from '../components/VisualStage'
 import { useSwipeSentences } from '../hooks/useSwipeSentences'
 import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
+import { preloadPlayImages } from '../lib/preloadPlayImages'
 import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
 import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
@@ -39,6 +40,7 @@ function PlayActions({
   minimal = false,
   epilogueShown = false,
   onShowEpilogue,
+  onDarkStage = false,
 }: {
   complete: boolean
   lastSentence: boolean
@@ -47,16 +49,21 @@ function PlayActions({
   minimal?: boolean
   epilogueShown?: boolean
   onShowEpilogue?: () => void
+  onDarkStage?: boolean
 }) {
   return (
     <>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-100">
+      {minimal && onDarkStage ? null : (
         <div
-          className="h-full rounded-full bg-amber-700 transition-[width] duration-300 ease-out"
-          style={{ width: `${progressPct}%` }}
-        />
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-4">
+          className={`mt-2 h-1 overflow-hidden rounded-full ${onDarkStage ? 'bg-white/25' : 'bg-stone-100'}`}
+        >
+          <div
+            className="h-full rounded-full bg-amber-500 transition-[width] duration-300 ease-out"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      )}
+      <div className={`flex flex-wrap items-center justify-center gap-2 ${minimal ? 'mt-1' : 'mt-3 sm:mt-4'}`}>
         {complete ? (
           epilogueShown ? (
             <button
@@ -135,7 +142,10 @@ export default function PlayPage() {
 
   useEffect(() => {
     document.documentElement.classList.add('play-active')
-    return () => document.documentElement.classList.remove('play-active')
+    return () => {
+      document.documentElement.classList.remove('play-active')
+      document.documentElement.classList.remove('play-immersive')
+    }
   }, [])
 
   /** 모바일 연출 높이 — CSS 변수로만 적용(lg 이상 레이아웃 유지) */
@@ -324,6 +334,19 @@ export default function PlayPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [complete, lastSentence, goNextSentence, epilogueShown, pack?.typingStyle])
 
+  const playImmersive =
+    pack?.typingStyle === 'stacked' || pack?.typingStyle === 'minimal'
+
+  useEffect(() => {
+    if (playImmersive) document.documentElement.classList.add('play-immersive')
+    else document.documentElement.classList.remove('play-immersive')
+  }, [playImmersive])
+
+  useEffect(() => {
+    if (!pack || !bookId) return
+    void preloadPlayImages(pack, bookId)
+  }, [pack, bookId])
+
   if (loadError) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-stone-100 px-6 text-center">
@@ -366,7 +389,13 @@ export default function PlayPage() {
       className="play-shell flex h-[100dvh] flex-col overflow-hidden bg-stone-100 lg:min-h-full lg:h-auto lg:overflow-visible"
       {...swipeHandlers}
     >
-      <header className="z-20 shrink-0 border-b border-stone-200 bg-white px-3 py-2 shadow-sm sm:px-5 sm:py-2.5">
+      <header
+        className={`z-20 shrink-0 border-b px-3 py-2 shadow-sm sm:px-5 sm:py-2.5 ${
+          playImmersive
+            ? 'play-header-minimal border-white/10'
+            : 'border-stone-200 bg-white'
+        }`}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Link
@@ -453,7 +482,9 @@ export default function PlayPage() {
         </div>
       ) : null}
 
-      <div className="z-20 hidden shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 lg:block">
+      <div
+        className={`z-20 hidden shrink-0 border-b border-stone-200 bg-stone-50 px-5 py-2 lg:block${playImmersive ? ' lg:hidden' : ''}`}
+      >
         <div className="mx-auto max-w-6xl">
           <SentenceNavBar
             total={pack.sentences.length}
@@ -488,66 +519,68 @@ export default function PlayPage() {
 
       {isStacked ? (
         <main
-          className={`mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-1 overflow-hidden px-2 py-1 sm:px-4 sm:py-2 lg:flex-row lg:items-stretch lg:gap-3${showMobileEpilogueFullscreen ? ' max-lg:hidden' : ''}`}
+          className={`play-immersive-main mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden px-1 py-0 sm:px-2 lg:flex-row lg:items-stretch lg:gap-2 lg:px-3${showMobileEpilogueFullscreen ? ' max-lg:hidden' : ''}`}
         >
           <SentenceNavPrevDesktop
             canPrev={safeSentenceIndex > 0}
             onPrev={goPrevSentence}
           />
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
-          <div
-            className={`play-stage-mobile play-stage-stacked relative z-10 w-full shrink-0 overflow-hidden lg:min-h-[min(56vh,560px)] lg:flex-1 lg:rounded-lg ${
-              centerImages ? 'bg-white' : 'bg-stone-900'
-            }`}
-          >
-            <VisualStage
-              layers={layers}
-              overlayCaption={closingCaption}
-              karaoke={karaokeProps}
-              vocabGlosses={activeVocab}
-              centerImages={centerImages}
-              compact
-              large
-              holdBackdrop
-              {...stageFx}
-            />
-            <SentenceNavPrevOverlay
-              canPrev={safeSentenceIndex > 0}
-              onPrev={goPrevSentence}
-            />
-            <SentenceNavNextOverlay
-              canNext={safeSentenceIndex < pack.sentences.length - 1}
-              onNext={goNextSentence}
-            />
-          </div>
-          <div
-            key={sentence.id}
-            className="play-sentence-in z-10 flex min-h-0 shrink-0 flex-col overflow-y-auto overscroll-contain rounded-xl border border-stone-200 bg-white px-2 py-1 shadow-sm sm:px-2.5"
-            style={{
-              paddingBottom: keyboardInset > 0 ? `${keyboardInset + 8}px` : undefined,
-            }}
-          >
-            <TypingInline
-              target={target}
-              typed={typed}
-              onTypedChange={setTyped}
-              onDraftChange={setTypingDraft}
-              disabled={epilogueShown}
-              karaokeOnly
-              focusToken={focusToken}
-            />
-            <div className="mt-1">
-              <PlayActions
-                complete={complete}
-                lastSentence={lastSentence}
-                progressPct={progressPct}
-                onNext={goNextSentence}
-                onShowEpilogue={() => setEpilogueShown(true)}
-                epilogueShown={epilogueShown}
-                minimal
+          <div className="play-canvas-shell relative flex min-h-0 min-w-0 flex-1 flex-col">
+            <div
+              className={`play-stage-mobile play-stage-stacked relative z-10 min-h-0 w-full flex-1 overflow-hidden lg:rounded-lg ${
+                centerImages ? 'bg-white' : 'bg-stone-900'
+              }`}
+            >
+              <VisualStage
+                layers={layers}
+                overlayCaption={closingCaption}
+                karaoke={karaokeProps}
+                vocabGlosses={activeVocab}
+                centerImages={centerImages}
+                compact
+                large
+                holdBackdrop
+                {...stageFx}
               />
+              <SentenceNavPrevOverlay
+                canPrev={safeSentenceIndex > 0}
+                onPrev={goPrevSentence}
+              />
+              <SentenceNavNextOverlay
+                canNext={safeSentenceIndex < pack.sentences.length - 1}
+                onNext={goNextSentence}
+              />
+              <div
+                className="play-typing-overlay absolute inset-x-0 bottom-0 z-[80] px-2 pt-8 sm:px-4"
+                style={{
+                  paddingBottom: keyboardInset > 0 ? `${keyboardInset + 10}px` : 'max(0.5rem, env(safe-area-inset-bottom))',
+                }}
+              >
+                <TypingInline
+                  key={sentence.id}
+                  target={target}
+                  typed={typed}
+                  onTypedChange={setTyped}
+                  onDraftChange={setTypingDraft}
+                  disabled={epilogueShown}
+                  karaokeOnly
+                  immersive
+                  focusToken={focusToken}
+                />
+                <div className="mt-0.5 flex justify-center">
+                  <PlayActions
+                    complete={complete}
+                    lastSentence={lastSentence}
+                    progressPct={progressPct}
+                    onNext={goNextSentence}
+                    onShowEpilogue={() => setEpilogueShown(true)}
+                    epilogueShown={epilogueShown}
+                    minimal
+                    onDarkStage
+                  />
+                </div>
+              </div>
             </div>
-          </div>
           </div>
           <SentenceNavNextDesktop
             canNext={safeSentenceIndex < pack.sentences.length - 1}
@@ -636,7 +669,7 @@ export default function PlayPage() {
 
       {/* 모바일: 문장 넘김 — 하단 고정 */}
       <footer
-        className={`z-30 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${isStacked ? (showMobileEpilogueFullscreen ? 'max-lg:hidden' : 'lg:hidden') : 'lg:hidden'}`}
+        className={`z-30 shrink-0 border-t border-stone-200 bg-stone-50 px-3 py-1.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] ${playImmersive ? 'hidden' : 'lg:hidden'}`}
       >
         <SentenceNavBar
           total={pack.sentences.length}

@@ -12,6 +12,17 @@ body,
 body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
+  font-family:
+    'Pretendard Variable',
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+}
+
+.font-display {
+  font-family: 'Jua', 'Pretendard Variable', Pretendard, sans-serif;
 }
 
 /* 실행 화면: 모바일에서 스크롤·키보드로 연출창이 밀리지 않게 */
@@ -129,6 +140,91 @@ html.play-active #root {
 .play-target-sentence--stage {
   background: transparent;
   box-shadow: none;
+}
+
+/* 몰입 타자 — 캔버스 크게, 입력은 하단 투명 */
+html.play-immersive.play-active .play-shell {
+  background: #0c0a09;
+}
+
+html.play-immersive .play-header-minimal {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(12, 10, 9, 0.92);
+  color: #fafaf9;
+}
+
+html.play-immersive .play-header-minimal a,
+html.play-immersive .play-header-minimal button {
+  color: #fde68a;
+}
+
+html.play-immersive .play-immersive-main {
+  min-height: 0;
+  flex: 1;
+}
+
+html.play-immersive .play-canvas-shell {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1023px) {
+  html.play-immersive .play-stage-stacked {
+    flex: 1 !important;
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: unset;
+    min-height: 0;
+  }
+}
+
+.play-typing-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+}
+
+.play-typing-field-immersive {
+  text-shadow:
+    0 0 12px rgba(0, 0, 0, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.85);
+}
+
+@keyframes play-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes play-typo-glow {
+  from {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.35);
+  }
+  to {
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.55);
+  }
+}
+
+.play-typing-typo {
+  animation: play-shake 0.42s ease-out;
+}
+
+.play-typing-typo .play-typing-field-immersive,
+.play-typing-typo textarea {
+  border-radius: 0.75rem;
+  outline: 1px solid rgba(251, 146, 60, 0.65);
+  animation: play-typo-glow 0.75s ease-in-out infinite alternate;
 }
 
 /* 마스터 연출 — 무대 효과 */

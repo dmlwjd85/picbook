@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { SixDigitPasswordFields } from '../components/SixDigitPasswordFields'
+import { TypingDemoShowcase } from '../components/TypingDemoShowcase'
 import { isCloudSyncEnabled, isFirebaseSyncEnabled } from '../lib/accountCloudSync'
 import { isValidSixDigitPassword } from '../lib/password'
 import { useUserAccountStore } from '../state/userAccountStore'
@@ -48,8 +49,9 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-gradient-to-b from-amber-100 via-amber-50 to-stone-100 px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-amber-100 via-amber-50 to-stone-100 px-4 py-10">
+      <div className="mx-auto w-full max-w-md">
+        <TypingDemoShowcase className="mb-6" />
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-amber-900/70">PicBook</p>
         <h1 className="mt-2 text-center text-2xl font-bold text-stone-900">처음 오신 걸 환영해요</h1>
         <p className="mt-2 text-center text-sm text-stone-600">
