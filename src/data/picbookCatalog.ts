@@ -70,7 +70,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     blurb:
       '타이핑한 단어·어절마다 투명 PNG가 겹쳐집니다. 숲·토끼·거북이·달리다·느리다·기쁘다 등 레고 블록 연출.',
     author: 'PicBook',
-    coverImage: `${base}visual-dictionary/nouns/n_rabbit_01.png`,
+    coverImage: `${base}demo/tortoise-hare-cover.png`,
     magazineTone: 'from-lime-600 via-emerald-500 to-teal-600',
     productKey: normalizeProductKey('PICBOOK-TORTOISE-2026'),
     productKeyDisplay: 'PICBOOK-TORTOISE-2026',
