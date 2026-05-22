@@ -105,3 +105,25 @@ export function playbackTypedLength(target: string, typed: string, draft: string
   const raw = draft.length > typed.length ? draft : typed
   return playbackTypedPrefix(raw, target).length
 }
+
+/**
+ * 조합 중 초성(ㄱ 등)만 있는 꼬리는 오타로 보지 않음 — 입력창 리마운트·IME 끊김 방지
+ */
+export function draftHasBlockingTypo(draft: string, target: string): boolean {
+  if (!draft.length) return false
+
+  const literalLen = longestMatchingPrefix(draft, target).length
+  for (let i = 0; i < literalLen; i++) {
+    if (draft[i] !== target[i]) return true
+  }
+
+  if (draft.length > target.length) return true
+
+  const tail = draft.slice(literalLen)
+  if (!tail.length || literalLen >= target.length) return false
+
+  const targetCho = choseongOfSyllable(target[literalLen]!)
+  if (!targetCho) return true
+
+  return !tailHasMatchingChoseong(tail, targetCho)
+}

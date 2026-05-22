@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
+import { draftHasBlockingTypo, playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
 
 type Props = {
   target: string
@@ -29,29 +29,20 @@ export function TypingInline({
   focusToken = 0,
 }: Props) {
   const [draft, setDraft] = useState(typed)
-  const [typoPulse, setTypoPulse] = useState(0)
   const composingRef = useRef(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const hasTypo = useMemo(() => {
-    if (!draft.length) return false
-    for (let i = 0; i < draft.length; i++) {
-      if (draft[i] !== target[i]) return true
-    }
-    return false
-  }, [draft, target])
+  const hasTypo = useMemo(() => draftHasBlockingTypo(draft, target), [draft, target])
 
-  useEffect(() => {
-    if (hasTypo) setTypoPulse((n) => n + 1)
-  }, [hasTypo, draft])
-
-  /** typed가 playback으로 앞서갈 때만 draft 맞춤 — 초성만 있을 때 typed가 비어 draft가 지워지지 않게 */
+  /** typed 동기화 — 조합 꼬리(고ㄹ)를 typed가 따라잡기 전에 지우지 않음 */
   useEffect(() => {
     if (composingRef.current) return
     setDraft((prev) => {
+      if (prev.length > typed.length && playbackTypedPrefix(prev, target).length > typed.length) {
+        return prev
+      }
       if (typed.length >= prev.length) return typed
-      if (prev.startsWith(typed)) return typed
-      if (playbackTypedPrefix(prev, target) === typed && typed.length > 0) return typed
+      if (playbackTypedPrefix(prev, target) === typed) return typed
       return prev
     })
   }, [typed, target])
@@ -67,7 +58,7 @@ export function TypingInline({
   }, [focusToken, disabled, target])
 
   const commit = (raw: string) => {
-    if (disabled) return
+    if (disabled || composingRef.current) return
     syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
@@ -91,7 +82,7 @@ export function TypingInline({
       : 'w-full resize-none rounded-xl border border-stone-200/80 bg-stone-50/90 px-3 py-2.5 text-center font-display text-base font-semibold text-stone-800 caret-amber-700 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50'
 
     return (
-      <div key={typoPulse} className={wrapCls}>
+      <div className={wrapCls}>
         <textarea
           ref={inputRef}
           rows={immersive ? 2 : 1}
@@ -107,6 +98,9 @@ export function TypingInline({
           aria-label="따라 쓰기"
           className={fieldCls}
           onCompositionStart={() => {
+            composingRef.current = true
+          }}
+          onCompositionUpdate={() => {
             composingRef.current = true
           }}
           onCompositionEnd={(e) => {
@@ -131,7 +125,7 @@ export function TypingInline({
   const displayLen = Math.max(target.length, draft.length)
 
   return (
-    <div key={typoPulse} className={`flex flex-col ${hasTypo ? 'play-typing-typo' : ''} ${className}`}>
+    <div className={`flex flex-col ${hasTypo ? 'play-typing-typo' : ''} ${className}`}>
       <div className="relative min-h-[3.5rem] shrink-0">
         <div
           aria-hidden
@@ -176,6 +170,9 @@ export function TypingInline({
           aria-label="따라 쓰기"
           className="absolute inset-0 z-[1] h-full w-full resize-none border-0 bg-transparent text-transparent caret-amber-700 focus:outline-none focus:ring-0 disabled:opacity-50"
           onCompositionStart={() => {
+            composingRef.current = true
+          }}
+          onCompositionUpdate={() => {
             composingRef.current = true
           }}
           onCompositionEnd={(e) => {

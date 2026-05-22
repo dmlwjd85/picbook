@@ -28,9 +28,11 @@ export function TypingPanel({
   useEffect(() => {
     if (composingRef.current) return
     setDraft((prev) => {
+      if (prev.length > typed.length && playbackTypedPrefix(prev, target).length > typed.length) {
+        return prev
+      }
       if (typed.length >= prev.length) return typed
-      if (prev.startsWith(typed)) return typed
-      if (playbackTypedPrefix(prev, target) === typed && typed.length > 0) return typed
+      if (playbackTypedPrefix(prev, target) === typed) return typed
       return prev
     })
   }, [typed, target])
@@ -41,6 +43,7 @@ export function TypingPanel({
   }
 
   const commitRaw = (raw: string) => {
+    if (composingRef.current) return
     syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
@@ -66,6 +69,9 @@ export function TypingPanel({
           minimal ? 'text-center text-2xl font-bold' : 'text-lg'
         }`}
         onCompositionStart={() => {
+          composingRef.current = true
+        }}
+        onCompositionUpdate={() => {
           composingRef.current = true
         }}
         onCompositionEnd={(e) => {

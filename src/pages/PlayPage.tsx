@@ -22,6 +22,7 @@ import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
 import { mergePlayLayers, separationChunkHidesTimeline } from '../lib/mergePlayLayers'
 import { usePlaybackTyping } from '../hooks/usePlaybackTyping'
+import { playbackTypedPrefix } from '../lib/typingMatch'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
 import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
@@ -275,7 +276,10 @@ export default function PlayPage() {
     bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
   )
   useTimelineFrameAudio(playTimeline ?? null, visualTypedLen, Boolean(sentence && !epilogueShown))
-  const complete = target.length > 0 && typed === target
+  const playbackRaw = typingDraft.length >= typed.length ? typingDraft : typed
+  const complete =
+    target.length > 0 &&
+    (typed === target || playbackTypedPrefix(playbackRaw, target) === target)
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0
   const sentenceCount = pack?.sentences.length ?? 0

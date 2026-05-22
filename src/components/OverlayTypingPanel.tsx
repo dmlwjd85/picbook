@@ -30,9 +30,11 @@ export function OverlayTypingPanel({
   useEffect(() => {
     if (composingRef.current) return
     setDraft((prev) => {
+      if (prev.length > typed.length && playbackTypedPrefix(prev, target).length > typed.length) {
+        return prev
+      }
       if (typed.length >= prev.length) return typed
-      if (prev.startsWith(typed)) return typed
-      if (playbackTypedPrefix(prev, target) === typed && typed.length > 0) return typed
+      if (playbackTypedPrefix(prev, target) === typed) return typed
       return prev
     })
   }, [typed, target])
@@ -43,7 +45,7 @@ export function OverlayTypingPanel({
   }
 
   const commitRaw = (raw: string) => {
-    if (disabled) return
+    if (disabled || composingRef.current) return
     syncTypingFromRaw(raw, target, typed, onTypedChange)
   }
 
@@ -75,6 +77,9 @@ export function OverlayTypingPanel({
             minimal ? 'min-h-[4.5rem] text-center text-2xl font-bold tracking-wide' : 'min-h-[7.5rem]'
           }`}
           onCompositionStart={() => {
+            composingRef.current = true
+          }}
+          onCompositionUpdate={() => {
             composingRef.current = true
           }}
           onCompositionEnd={(e) => {
