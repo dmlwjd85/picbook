@@ -1,4 +1,4 @@
-import { findVisualMatchesInText } from './matchVisualChunks'
+import { expandEntryNeedles } from './visualDictionaryNeedles'
 import { resolveVisualImageUrl } from './visualDictionaryPaths'
 import type { LayerState } from '../types/pack'
 import type { VisualDictionaryEntry } from '../types/visualDictionary'
@@ -9,31 +9,6 @@ type BoxLayout = { x: number; y: number; width: number; height: number }
 
 /** 한 글자 청크 — 연출창 전체(3:2 스테이지) */
 const SINGLE_BOX: BoxLayout = { x: 0, y: 0, width: 100, height: 100 }
-
-/** 합쳐 표시할 때만 — 왼쪽부터 겹치지 않게 */
-function overlayBoxLayouts(count: number): BoxLayout[] {
-  if (count <= 0) return []
-  if (count === 1) return [SINGLE_BOX]
-  if (count === 2) {
-    return [
-      { x: 2, y: 10, width: 47, height: 80 },
-      { x: 51, y: 10, width: 47, height: 80 },
-    ]
-  }
-  if (count === 3) {
-    return [
-      { x: 2, y: 10, width: 31, height: 80 },
-      { x: 34, y: 10, width: 31, height: 80 },
-      { x: 66, y: 10, width: 31, height: 80 },
-    ]
-  }
-  return [
-    { x: 2, y: 5, width: 47, height: 44 },
-    { x: 51, y: 5, width: 47, height: 44 },
-    { x: 2, y: 51, width: 47, height: 44 },
-    { x: 51, y: 51, width: 47, height: 44 },
-  ].slice(0, count)
-}
 
 function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState {
   const plate = entry.plate_caption?.trim() || null
@@ -58,58 +33,79 @@ function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState 
   }
 }
 
-/** combine_group가 같으면 한 화면에 여러 장, 아니면 가장 최근 매칭 1장만 */
-function pickVisibleEntries(
-  matches: ReturnType<typeof findVisualMatchesInText>,
-  tailLen: number,
-): VisualDictionaryEntry[] {
-  if (matches.length === 0) return []
-
-  const sorted = [...matches].sort((a, b) => a.start - b.start || a.end - b.end)
-
-  /** 립(ㄹ) 등 한 글자 청크가 분립(2글자)보다 우선 — 권력분립·삼권분립 공통 */
-  const singleAtTail = sorted.filter((m) => m.end === tailLen && m.end - m.start === 1)
-  if (singleAtTail.length > 0) {
-    const best = singleAtTail.reduce((a, b) => (a.start >= b.start ? a : b))
-    return [best.entry]
-  }
-
-  const seen = new Set<string>()
-  const ordered: VisualDictionaryEntry[] = []
-  for (const m of sorted) {
-    if (seen.has(m.entry.word_id)) continue
-    seen.add(m.entry.word_id)
-    ordered.push(m.entry)
-  }
-
-  const latest = sorted[sorted.length - 1]!
-  const group = latest.entry.combine_group?.trim()
-  if (group) {
-    const grouped = ordered.filter((e) => e.combine_group?.trim() === group)
-    if (grouped.length > 0) return grouped
-  }
-
-  return [latest.entry]
+function allowsIndex(entry: VisualDictionaryEntry, index: number): boolean {
+  const allowed = entry.match_start_indices
+  if (!allowed?.length) return true
+  return allowed.includes(index)
 }
 
-/** 타자 문자열 → 스테이지 레이어 (기본 1장, combine_group 시에만 다중) */
+/** 지금 치고 있는 글자(초성 선행 포함) 한 글자에 맞는 청크 1개 */
+function entryForFocusIndex(
+  visualPrefix: string,
+  entries: VisualDictionaryEntry[],
+): VisualDictionaryEntry | null {
+  if (!visualPrefix.length) return null
+  const focusIdx = visualPrefix.length - 1
+  const focusCh = visualPrefix[focusIdx]
+  if (!focusCh) return null
+
+  for (const entry of entries) {
+    if (entry.status === 'deprecated') continue
+    if (!allowsIndex(entry, focusIdx)) continue
+
+    if (entry.word.length === 1 && entry.word === focusCh) {
+      return entry
+    }
+
+    for (const hint of entry.chunk_hints) {
+      if (hint.length === 1 && hint === focusCh) {
+        return entry
+      }
+    }
+  }
+
+  const multi = [...entries]
+    .filter((e) => e.status !== 'deprecated' && e.word.length > 1)
+    .sort((a, b) => b.word.length - a.word.length)
+
+  for (const entry of multi) {
+    const starts = entry.match_start_indices?.length
+      ? entry.match_start_indices
+      : [visualPrefix.indexOf(entry.word)].filter((i) => i >= 0)
+
+    for (const start of starts) {
+      if (!allowsIndex(entry, start)) continue
+      for (const needle of expandEntryNeedles(entry)) {
+        if (needle.length <= 1) continue
+        const end = start + needle.length
+        if (end - 1 !== focusIdx) continue
+        if (visualPrefix.slice(start, end) === needle) {
+          return entry
+        }
+      }
+    }
+  }
+
+  return null
+}
+
+/** 미리보기·디버그용 */
+export function getChunkEntryForFocus(
+  visualPrefix: string,
+  entries: VisualDictionaryEntry[],
+): VisualDictionaryEntry | null {
+  return entryForFocusIndex(visualPrefix, entries)
+}
+
+/** 타자 문자열(초성 선행 반영) → 스테이지 레이어 — 한 글자씩 1장 */
 export function buildChunkVisualLayers(
-  typed: string,
+  visualPrefix: string,
   entries: VisualDictionaryEntry[],
 ): LayerState[] {
-  if (!typed.trim() || entries.length === 0) return []
+  if (!visualPrefix.trim() || entries.length === 0) return []
 
-  const matches = findVisualMatchesInText(typed, entries)
-  if (matches.length === 0) return []
+  const entry = entryForFocusIndex(visualPrefix, entries)
+  if (!entry) return []
 
-  const tailLen = typed.length
-  const tailMatches = matches.filter((m) => m.end === tailLen)
-  if (tailMatches.length === 0) return []
-
-  const visible = pickVisibleEntries(tailMatches, tailLen)
-  const boxes = overlayBoxLayouts(visible.length)
-
-  return visible
-    .map((entry, i) => entryToLayer(entry, boxes[i] ?? SINGLE_BOX))
-    .sort((a, b) => a.zIndex - b.zIndex)
+  return [entryToLayer(entry, SINGLE_BOX)]
 }

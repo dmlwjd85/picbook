@@ -328,13 +328,13 @@ export function VisualStage({
         const chunkFullBleed =
           isChunk && !hasPlate && (l.width ?? 0) >= 96 && (fill || (l.height ?? 0) >= 96)
         const proverbFill = centerImages && fill && !hasPlate && !isChunk
-        /** 청크 — 3:2 스테이지에 맞춰 전체 보이기(contain) */
+        /** 속담 3:2 패널은 cover로 스테이지 가득 채움 */
         const imgFit = isChunk
           ? 'object-contain'
-          : chunkFullBleed
+          : proverbFill
             ? 'object-cover'
-            : proverbFill
-              ? 'object-contain'
+            : chunkFullBleed
+              ? 'object-cover'
               : 'object-cover'
         const layoutMotion = hasPlate ? 'transition-[left,width] duration-[480ms] ease-out' : ''
         const chunkFade = isChunkLayerId(l.id) ? ' layer-fade-in' : ''
@@ -384,13 +384,7 @@ export function VisualStage({
                   <div
                     className={`relative h-full w-full ${isChunk ? 'bg-white' : 'bg-stone-900'} ${stagingWrapClass(stagingEffect)}`}
                   >
-                    <div
-                      className={
-                        proverbFill
-                          ? 'absolute inset-0 flex items-center justify-center'
-                          : 'absolute inset-0'
-                      }
-                    >
+                    <div className="absolute inset-0">
                       <LayerPicture
                         imageUrl={imageUrl}
                         label={l.label}

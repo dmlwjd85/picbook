@@ -23,7 +23,7 @@ import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
 import { mergePlayLayers, separationChunkHidesTimeline } from '../lib/mergePlayLayers'
 import { usePlaybackTyping } from '../hooks/usePlaybackTyping'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
-import { findVisualMatchesInText } from '../lib/matchVisualChunks'
+import { getChunkEntryForFocus } from '../lib/buildChunkVisualLayers'
 import { getVisualDictionaryForBook, getVisualDictionaryForStory } from '../lib/storyVisualDictionary'
 import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
@@ -251,10 +251,13 @@ export default function PlayPage() {
 
   const useChunkMode = bookUsesChunkVisuals(bookId, pack?.visualDictionaryStoryId)
   const chunkMatchPreview = useMemo(() => {
-    if (!useChunkMode || !sentence) return []
+    if (!useChunkMode || !sentence || !visualTyped.length) return []
     const entries = getVisualDictionaryForStory(pack?.visualDictionaryStoryId)
     const byBook = entries.length ? entries : getVisualDictionaryForBook(bookId)
-    return findVisualMatchesInText(visualTyped, byBook).slice(-6)
+    const entry = getChunkEntryForFocus(visualTyped, byBook)
+    if (!entry) return []
+    const i = visualTyped.length - 1
+    return [{ entry, start: i, end: i + 1 }]
   }, [useChunkMode, visualTyped, bookId, pack?.visualDictionaryStoryId, sentence])
   const playTimeline = usePicbookTimelineStore((s) =>
     bookId && sentence ? s.byBook[bookId]?.[sentence.id] : undefined,
@@ -497,7 +500,11 @@ export default function PlayPage() {
             onPrev={goPrevSentence}
           />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
-          <div className="play-stage-mobile play-stage-stacked relative z-10 w-full shrink-0 overflow-hidden bg-stone-900 lg:min-h-[min(56vh,560px)] lg:flex-1 lg:rounded-lg">
+          <div
+            className={`play-stage-mobile play-stage-stacked relative z-10 w-full shrink-0 overflow-hidden lg:min-h-[min(56vh,560px)] lg:flex-1 lg:rounded-lg ${
+              centerImages ? 'bg-white' : 'bg-stone-900'
+            }`}
+          >
             <VisualStage
               layers={layers}
               overlayCaption={closingCaption}
@@ -506,6 +513,7 @@ export default function PlayPage() {
               centerImages={centerImages}
               compact
               large
+              holdBackdrop={!useChunkMode}
               {...stageFx}
             />
             <SentenceNavPrevOverlay

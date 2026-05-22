@@ -36,7 +36,11 @@ export function separationChunkHidesTimeline(
   chunkCount: number,
 ): boolean {
   if (bookId !== 'demo-separation-three-powers' || chunkCount === 0) return false
-  if (sentenceIndex === 0) return visualTypedLen <= 4
+  if (sentenceIndex === 0) {
+    if (visualTypedLen <= 4) return true
+    if (visualTypedLen >= 6 && visualTypedLen <= 10) return true
+    return false
+  }
   if (sentenceIndex === 1) return visualTypedLen <= 6
   return false
 }

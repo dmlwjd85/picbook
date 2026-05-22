@@ -1,5 +1,5 @@
 /**
- * 속담 12·16·21·29번(1-based) 패널 — 1536×1024(3:2)로 통일
+ * 속담 11·12·16·21·29번(1-based) 패널 — 1536×1024(3:2)로 통일
  * node scripts/fix-proverb-panels-3x2.mjs
  */
 import fs from 'fs'
@@ -11,7 +11,7 @@ import { PANEL_H, PANEL_W } from './outpaint-panel-3x2.mjs'
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dir = path.join(root, 'public', 'demo', 'proverbs')
 
-const SLUGS = ['cat-bell', 'earring-nose', 'crow-fly-belly', 'lie-spit']
+const SLUGS = ['whale-shrimp', 'cat-bell', 'earring-nose', 'crow-fly-belly', 'lie-spit']
 const FORCE = process.argv.includes('--force')
 
 async function fixFile(filePath) {
