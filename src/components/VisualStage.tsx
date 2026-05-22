@@ -291,17 +291,20 @@ export function VisualStage({
   const holdUrl =
     holdBackdrop && !splitPanels && visibleLayers.length === 0 ? holdUrlRef.current : null
 
+  const stageEmpty = !hasImage && !holdUrl
+  const shellBg = stageEmpty ? 'bg-white' : 'bg-stone-900'
+
   const shellClass = embedded
-    ? 'relative h-full w-full overflow-hidden bg-stone-900'
+    ? `relative h-full w-full overflow-hidden ${shellBg}`
     : compact
-      ? `relative h-full min-h-[inherit] w-full overflow-hidden bg-stone-900${
+      ? `relative h-full min-h-[inherit] w-full overflow-hidden ${shellBg}${
           large
             ? ' lg:mx-auto lg:aspect-[3/2] lg:h-full lg:max-h-full lg:max-w-none lg:w-full'
             : ''
         }`
       : large
-        ? 'relative mx-auto aspect-[3/2] h-full w-full max-h-full max-w-none overflow-hidden bg-stone-900'
-        : 'relative mx-auto aspect-[16/9] w-full max-w-none overflow-hidden bg-stone-900'
+        ? `relative mx-auto aspect-[3/2] h-full w-full max-h-full max-w-none overflow-hidden ${shellBg}`
+        : `relative mx-auto aspect-[16/9] w-full max-w-none overflow-hidden ${shellBg}`
 
   return (
     <div className={shellClass}>
@@ -325,11 +328,11 @@ export function VisualStage({
         const chunkFullBleed =
           isChunk && !hasPlate && (l.width ?? 0) >= 96 && (fill || (l.height ?? 0) >= 96)
         const proverbFill = centerImages && fill && !hasPlate && !isChunk
-        /** 청크 — 전체 박스면 여백 없이 채움, 작은 타일은 contain */
-        const imgFit = chunkFullBleed
-          ? 'object-cover'
-          : isChunk
-            ? 'object-contain'
+        /** 청크 — 3:2 스테이지에 맞춰 전체 보이기(contain) */
+        const imgFit = isChunk
+          ? 'object-contain'
+          : chunkFullBleed
+            ? 'object-cover'
             : proverbFill
               ? 'object-contain'
               : 'object-cover'
@@ -379,7 +382,7 @@ export function VisualStage({
                   </div>
                 ) : fill ? (
                   <div
-                    className={`relative h-full w-full bg-stone-900 ${stagingWrapClass(stagingEffect)}`}
+                    className={`relative h-full w-full ${isChunk ? 'bg-white' : 'bg-stone-900'} ${stagingWrapClass(stagingEffect)}`}
                   >
                     <div
                       className={
@@ -409,7 +412,7 @@ export function VisualStage({
                   <div
                     className={
                       isChunk
-                        ? 'relative flex h-full w-full items-center justify-center bg-stone-900'
+                        ? 'relative flex h-full w-full items-center justify-center bg-white'
                         : 'relative w-full'
                     }
                   >
@@ -431,10 +434,10 @@ export function VisualStage({
           </div>
         )
       })}
-      {!hasImage && !holdUrl ? (
-        <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-slate-400">
+      {stageEmpty ? (
+        <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-1 px-6 text-center text-sm text-stone-400">
           <span>아직 연출 이미지가 없습니다.</span>
-          <span className="text-xs text-slate-500">따라 쓰면 장면이 바뀝니다.</span>
+          <span className="text-xs text-stone-500">따라 쓰면 장면이 바뀝니다.</span>
         </div>
       ) : null}
 

@@ -32,7 +32,7 @@ async function processJob(job) {
   }
   fs.mkdirSync(path.dirname(destPath), { recursive: true })
   let pipeline = sharp(srcPath)
-  if (job.resize === '3x2' || job.dest.includes('proverbs/')) {
+  if (job.resize === '3x2' || job.dest.includes('proverbs/') || job.dest.includes('/sep_')) {
     pipeline = pipeline.resize(1536, 1024, { fit: 'cover', position: 'centre' })
   } else if (job.resize === '512') {
     pipeline = pipeline.resize(512, 512, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })

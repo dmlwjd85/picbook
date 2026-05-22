@@ -7,10 +7,13 @@ export const CHUNK_LAYER_PREFIX = 'vd-chunk-'
 
 type BoxLayout = { x: number; y: number; width: number; height: number }
 
+/** 한 글자 청크 — 연출창 전체(3:2 스테이지) */
+const SINGLE_BOX: BoxLayout = { x: 0, y: 0, width: 100, height: 100 }
+
 /** 합쳐 표시할 때만 — 왼쪽부터 겹치지 않게 */
 function overlayBoxLayouts(count: number): BoxLayout[] {
   if (count <= 0) return []
-  if (count === 1) return [{ x: 6, y: 8, width: 88, height: 84 }]
+  if (count === 1) return [SINGLE_BOX]
   if (count === 2) {
     return [
       { x: 2, y: 10, width: 47, height: 80 },
@@ -31,9 +34,6 @@ function overlayBoxLayouts(count: number): BoxLayout[] {
     { x: 51, y: 51, width: 47, height: 44 },
   ].slice(0, count)
 }
-
-/** 한 글자 청크 — 연출창 여백 최소 */
-const SINGLE_BOX: BoxLayout = { x: 0, y: 0, width: 100, height: 100 }
 
 function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState {
   const plate = entry.plate_caption?.trim() || null
