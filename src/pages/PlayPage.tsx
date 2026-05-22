@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { OverlayTypingPanel } from '../components/OverlayTypingPanel'
 import { TypingInline } from '../components/TypingInline'
@@ -32,7 +32,7 @@ import { usePlaySessionStore } from '../state/playSessionStore'
 import { canOpenBook, useMasterPreviewMode } from '../lib/bookAccess'
 import { useFullscreen } from '../hooks/useFullscreen'
 import { useUserAccountStore } from '../state/userAccountStore'
-import type { ReadingPack } from '../types/pack'
+import type { LayerState, ReadingPack } from '../types/pack'
 
 function PlayActions({
   complete,
@@ -124,6 +124,7 @@ export default function PlayPage() {
   const [focusToken, setFocusToken] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const lastPlayLayersRef = useRef<LayerState[]>([])
 
   const overlayStageRatio = pack?.typingStyle === 'minimal' ? 0.4 : 0.34
   const stackedRatio = fullscreenActive ? 0.52 : 0.38
@@ -232,22 +233,35 @@ export default function PlayPage() {
     setTypingDraft('')
     setEpilogueShown(false)
     setFocusToken((t) => t + 1)
+    lastPlayLayersRef.current = []
   }, [safeSentenceIndex, sentence?.id])
 
   const target = sentence?.text ?? ''
   const { visualTyped, visualTypedLen } = usePlaybackTyping(target, typed, typingDraft)
 
   const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, visualTypedLen)
-  const chunkLayers = useChunkVisualLayers(visualTyped, bookId, pack?.visualDictionaryStoryId)
+  const chunkLayers = useChunkVisualLayers(
+    visualTyped,
+    bookId,
+    pack?.visualDictionaryStoryId,
+    sentence?.id,
+  )
   const hideTimelineForChunk = useMemo(
-    () =>
-      separationChunkHidesTimeline(bookId, safeSentenceIndex, visualTypedLen, chunkLayers.length),
-    [bookId, safeSentenceIndex, visualTypedLen, chunkLayers.length],
+    () => separationChunkHidesTimeline(bookId, safeSentenceIndex, visualTypedLen),
+    [bookId, safeSentenceIndex, visualTypedLen],
   )
-  const layers = useMemo(
-    () => mergePlayLayers(timelineLayers, chunkLayers, { hideTimelineForChunk }),
-    [timelineLayers, chunkLayers, hideTimelineForChunk],
-  )
+  const layers = useMemo(() => {
+    const merged = mergePlayLayers(timelineLayers, chunkLayers, { hideTimelineForChunk })
+    const hasImage = merged.some((l) => l.visible && l.imageUrl)
+    if (hasImage) {
+      lastPlayLayersRef.current = merged
+      return merged
+    }
+    if (lastPlayLayersRef.current.length > 0) {
+      return lastPlayLayersRef.current
+    }
+    return merged
+  }, [timelineLayers, chunkLayers, hideTimelineForChunk])
 
   const useChunkMode = bookUsesChunkVisuals(bookId, pack?.visualDictionaryStoryId)
   const chunkMatchPreview = useMemo(() => {
@@ -513,7 +527,7 @@ export default function PlayPage() {
               centerImages={centerImages}
               compact
               large
-              holdBackdrop={!useChunkMode}
+              holdBackdrop
               {...stageFx}
             />
             <SentenceNavPrevOverlay
