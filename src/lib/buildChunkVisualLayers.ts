@@ -61,10 +61,19 @@ function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState 
 /** combine_group가 같으면 한 화면에 여러 장, 아니면 가장 최근 매칭 1장만 */
 function pickVisibleEntries(
   matches: ReturnType<typeof findVisualMatchesInText>,
+  tailLen: number,
 ): VisualDictionaryEntry[] {
   if (matches.length === 0) return []
 
   const sorted = [...matches].sort((a, b) => a.start - b.start || a.end - b.end)
+
+  /** 립(ㄹ) 등 한 글자 청크가 분립(2글자)보다 우선 — 권력분립·삼권분립 공통 */
+  const singleAtTail = sorted.filter((m) => m.end === tailLen && m.end - m.start === 1)
+  if (singleAtTail.length > 0) {
+    const best = singleAtTail.reduce((a, b) => (a.start >= b.start ? a : b))
+    return [best.entry]
+  }
+
   const seen = new Set<string>()
   const ordered: VisualDictionaryEntry[] = []
   for (const m of sorted) {
@@ -97,7 +106,7 @@ export function buildChunkVisualLayers(
   const tailMatches = matches.filter((m) => m.end === tailLen)
   if (tailMatches.length === 0) return []
 
-  const visible = pickVisibleEntries(tailMatches)
+  const visible = pickVisibleEntries(tailMatches, tailLen)
   const boxes = overlayBoxLayouts(visible.length)
 
   return visible

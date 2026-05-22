@@ -59,27 +59,28 @@ function tailHasMatchingChoseong(tail: string, targetCho: string): boolean {
 }
 
 /**
- * 연출·청크 매칭용 — 조합 중에도 다음 글자 초성이 맞으면 한 글자 앞당겨 반영
- * (완성형이 아니어도 이미지가 늦게 뜨지 않게, ㄹ·ㅅ 등 자모만 있어도 동작)
+ * 연출·청크용 — 글자마다 초성만 맞아도 해당 글자까지 선행 반영(모든 픽북 공통)
  */
 export function playbackTypedPrefix(raw: string, target: string): string {
-  const matched = longestMatchingPrefix(raw, target)
-  if (matched.length >= target.length) return matched
+  let len = longestMatchingPrefix(raw, target).length
 
-  const nextIdx = matched.length
-  const targetCh = target[nextIdx]
-  if (!targetCh) return matched
+  while (len < target.length) {
+    const targetCh = target[len]
+    if (!targetCh) break
+    const targetCho = choseongOfSyllable(targetCh)
+    if (!targetCho) break
 
-  const tail = raw.slice(matched.length)
-  if (!tail) return matched
+    const tail = raw.slice(len)
+    if (!tail) break
 
-  const targetCho = choseongOfSyllable(targetCh)
-  if (!targetCho) return matched
-
-  if (tailHasMatchingChoseong(tail, targetCho)) {
-    return target.slice(0, nextIdx + 1)
+    if (tailHasMatchingChoseong(tail, targetCho)) {
+      len += 1
+      continue
+    }
+    break
   }
-  return matched
+
+  return target.slice(0, len)
 }
 
 /** 타이핑·조합 중 글자 수(연출 큐·청크와 동일하게 draft 반영) */
