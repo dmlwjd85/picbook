@@ -63,6 +63,8 @@ html.play-active #root {
     height: var(--play-stacked-stage-h, min(42dvh, calc(100vw * 2 / 3)));
     max-height: var(--play-stacked-stage-h, min(42dvh, calc(100vw * 2 / 3)));
     aspect-ratio: 3 / 2;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .play-stage-overlay {
@@ -73,8 +75,8 @@ html.play-active #root {
   /* 전체화면 — 태블릿·모바일 주소창 영역까지 연출에 사용 */
   html.play-fullscreen.play-active .play-shell {
     top: 0;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: var(--vv-height, 100dvh);
+    max-height: var(--vv-height, 100dvh);
   }
 
   html.play-fullscreen .play-stage-stacked {
@@ -203,12 +205,17 @@ html.play-immersive .play-canvas-shell {
 }
 
 @media (max-width: 1023px) {
+  html.play-immersive .play-canvas-shell {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
   html.play-immersive .play-stage-stacked {
-    flex: 1 !important;
-    height: auto !important;
-    max-height: none !important;
-    aspect-ratio: unset;
-    min-height: 0;
+    width: min(100%, var(--play-stacked-stage-w, 100%));
+    max-width: min(100vw, var(--play-stacked-stage-w, 100%));
+    height: var(--play-stacked-stage-h, min(42dvh, calc(100vw * 2 / 3))) !important;
+    max-height: var(--play-stacked-stage-h, min(42dvh, calc(100vw * 2 / 3))) !important;
+    aspect-ratio: 3 / 2;
   }
 }
 

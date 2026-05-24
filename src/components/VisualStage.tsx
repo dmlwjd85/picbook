@@ -330,9 +330,11 @@ export function VisualStage({
           isChunk && !hasPlate && (l.width ?? 0) >= 96 && (fill || (l.height ?? 0) >= 96)
         const proverbFill = centerImages && fill && !hasPlate && !isChunk
         /** 속담 3:2 패널은 cover로 스테이지 가득 채움 */
-        const imgFit = isChunk
-          ? 'object-contain'
-          : proverbFill
+        const imgFit = l.imageFit === 'cover'
+          ? 'object-cover'
+          : isChunk
+            ? 'object-contain'
+            : proverbFill
             ? 'object-cover'
             : chunkFullBleed
               ? 'object-cover'

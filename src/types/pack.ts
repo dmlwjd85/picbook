@@ -49,6 +49,8 @@ export type LayerState = {
   anchorLabels?: LayerAnchorLabel[] | null
   /** 이미지 위 스탬프(예: 빨간 X). */
   stampOverlay?: 'red-x' | null
+  /** 장면형 이미지는 3:2 무대를 꽉 채우고, 낱말 그림은 전체가 보이게 둔다. */
+  imageFit?: 'cover' | 'contain'
 }
 
 export type CueEffect =

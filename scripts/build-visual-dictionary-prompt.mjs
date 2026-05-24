@@ -3,7 +3,7 @@
  * 사용: node scripts/build-visual-dictionary-prompt.mjs 토끼
  */
 const STYLE =
-  "children's storybook watercolor style, cute and soft, isolated on pure white background, flat lighting, no text"
+  "3:2 landscape composition, fill the entire frame, children's storybook watercolor style, cute and soft, isolated on pure white background, flat lighting, no text"
 
 const subject = process.argv.slice(2).join(' ').trim()
 if (!subject) {

@@ -135,7 +135,7 @@ export default function PlayPage() {
 
   const overlayStageRatio = pack?.typingStyle === 'minimal' ? 0.4 : 0.34
   const keyboardOpen = keyboardInset > 48
-  const stackedRatio = keyboardOpen ? 0.34 : fullscreenActive ? 0.5 : 0.38
+  const stackedRatio = fullscreenActive ? 0.46 : 0.38
   const mobileStackedStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, stackedRatio)
   const mobileOverlayStagePx = useMobileStageHeight(
     vvHeight,
@@ -157,8 +157,10 @@ export default function PlayPage() {
     const root = document.documentElement
     if (mobileStackedStagePx != null) {
       root.style.setProperty('--play-stacked-stage-h', `${mobileStackedStagePx}px`)
+      root.style.setProperty('--play-stacked-stage-w', `${Math.round(mobileStackedStagePx * 1.5)}px`)
     } else {
       root.style.removeProperty('--play-stacked-stage-h')
+      root.style.removeProperty('--play-stacked-stage-w')
     }
     if (mobileOverlayStagePx != null) {
       root.style.setProperty('--play-overlay-stage-h', `${mobileOverlayStagePx}px`)
@@ -167,6 +169,7 @@ export default function PlayPage() {
     }
     return () => {
       root.style.removeProperty('--play-stacked-stage-h')
+      root.style.removeProperty('--play-stacked-stage-w')
       root.style.removeProperty('--play-overlay-stage-h')
     }
   }, [mobileStackedStagePx, mobileOverlayStagePx])
@@ -568,10 +571,7 @@ export default function PlayPage() {
                 <div
                   className="play-epilogue-bar absolute inset-x-0 bottom-0 z-[82] flex max-h-[46%] flex-col gap-3 bg-gradient-to-t from-black/95 via-black/88 to-transparent px-3 pb-3 pt-12 sm:gap-4 sm:px-4"
                   style={{
-                    paddingBottom:
-                      keyboardInset > 0
-                        ? `${keyboardInset + 12}px`
-                        : 'max(0.75rem, env(safe-area-inset-bottom))',
+                    paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
                   }}
                 >
                   {closingCaption ? (
@@ -595,8 +595,7 @@ export default function PlayPage() {
                 <div
                   className="play-typing-overlay absolute inset-x-0 bottom-0 z-[80] px-2 pt-8 sm:px-4"
                   style={{
-                    paddingBottom:
-                      keyboardInset > 0 ? `${keyboardInset + 10}px` : 'max(0.5rem, env(safe-area-inset-bottom))',
+                    paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
                   }}
                 >
                   <TypingInline

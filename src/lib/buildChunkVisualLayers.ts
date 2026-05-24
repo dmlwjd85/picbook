@@ -13,6 +13,7 @@ const SINGLE_BOX: BoxLayout = { x: 0, y: 0, width: 100, height: 100 }
 function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState {
   const plate = entry.plate_caption?.trim() || null
   const anchors = entry.anchor_labels?.length ? entry.anchor_labels : null
+  const imageFit = entry.word_id.startsWith('sep_') || entry.tags.includes('삼권분립') ? 'cover' : undefined
   return {
     id: `${CHUNK_LAYER_PREFIX}${entry.word_id}`,
     label: entry.word,
@@ -30,6 +31,7 @@ function entryToLayer(entry: VisualDictionaryEntry, box: BoxLayout): LayerState 
     panY: 0,
     plateCaption: plate,
     anchorLabels: anchors,
+    imageFit,
   }
 }
 
