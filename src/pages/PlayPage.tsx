@@ -5,6 +5,7 @@ import { TypingInline } from '../components/TypingInline'
 import { TypingPanel } from '../components/TypingPanel'
 import { UserLogoutButton } from '../components/UserLogoutButton'
 import { SentenceNavBar } from '../components/SentenceNavBar'
+import { SentencePickerModal } from '../components/SentencePickerModal'
 import {
   SentenceNavNextDesktop,
   SentenceNavNextOverlay,
@@ -131,6 +132,7 @@ export default function PlayPage() {
   const [focusToken, setFocusToken] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sentencePickerOpen, setSentencePickerOpen] = useState(false)
   const lastPlayLayersRef = useRef<LayerState[]>([])
 
   const overlayStageRatio = pack?.typingStyle === 'minimal' ? 0.4 : 0.34
@@ -331,12 +333,13 @@ export default function PlayPage() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.repeat) return
+      const submitKey = e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'
+      if (!submitKey || e.repeat) return
       if (!complete) return
+      e.preventDefault()
 
       const stacked = pack?.typingStyle === 'stacked'
       if (stacked) {
-        e.preventDefault()
         if (!epilogueShown) {
           setEpilogueShown(true)
           return
@@ -346,7 +349,6 @@ export default function PlayPage() {
       }
 
       if (lastSentence) return
-      e.preventDefault()
       goNextSentence()
     }
     window.addEventListener('keydown', onKeyDown)
@@ -444,6 +446,15 @@ export default function PlayPage() {
                 className="shrink-0 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-700 hover:bg-white sm:px-2.5 sm:text-xs"
               >
                 {fullscreenActive ? '축소' : '전체화면'}
+              </button>
+            ) : null}
+            {isStacked ? (
+              <button
+                type="button"
+                onClick={() => setSentencePickerOpen(true)}
+                className="shrink-0 rounded-lg border border-amber-300 bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-950 shadow-sm hover:bg-amber-200 sm:px-2.5 sm:text-xs"
+              >
+                속담 고르기
               </button>
             ) : null}
             <UserLogoutButton className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600 hover:bg-white sm:inline-flex" />
@@ -735,6 +746,14 @@ export default function PlayPage() {
           </p>
         ) : null}
       </footer>
+      <SentencePickerModal
+        open={sentencePickerOpen}
+        total={pack.sentences.length}
+        current={safeSentenceIndex}
+        labels={sentenceLabels}
+        onSelect={goToSentence}
+        onClose={() => setSentencePickerOpen(false)}
+      />
     </div>
   )
 }
