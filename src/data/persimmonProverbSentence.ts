@@ -2,7 +2,7 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { glossAt } from './proverbVocab'
 
-export const PERSIMMON_TEXT = '감나무 밑에서 감 떨어지기를 바란다.'
+export const PERSIMMON_TEXT = '감나무 밑에서 감 떨어지기를 바란다'
 
 export function createPersimmonProverbSentence() {
   return createSixPanelProverbSentence(

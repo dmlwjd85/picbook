@@ -1,7 +1,7 @@
 import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 
-export const ROLLING_STONE_TEXT = '굴러온 돌이 박힌 돌 뺀다.'
+export const ROLLING_STONE_TEXT = '굴러온 돌이 박힌 돌 뺀다'
 
 export function createRollingStoneProverbSentence() {
   return createSixPanelProverbSentence(

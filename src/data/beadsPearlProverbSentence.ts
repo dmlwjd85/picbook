@@ -2,7 +2,7 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { glossAt } from './proverbVocab'
 
-export const BEADS_PEARL_TEXT = '구슬이 서 말이라도 꿰어야 보배.'
+export const BEADS_PEARL_TEXT = '구슬이 서 말이라도 꿰어야 보배'
 
 export function createBeadsPearlProverbSentence() {
   return createSixPanelProverbSentence(

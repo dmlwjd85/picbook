@@ -2,7 +2,7 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { glossAt } from './proverbVocab'
 
-export const LIVER_GALL_TEXT = '간에 붙었다 쓸개에 붙었다 한다.'
+export const LIVER_GALL_TEXT = '간에 붙었다 쓸개에 붙었다 한다'
 
 export function createLiverGallProverbSentence() {
   return createSixPanelProverbSentence(

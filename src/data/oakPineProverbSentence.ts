@@ -2,7 +2,7 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { GLOSS_GARANGIP, glossAt } from './proverbVocab'
 
-export const OAK_PINE_TEXT = '가랑잎이 솔잎더러 바스락거린다고 한다.'
+export const OAK_PINE_TEXT = '가랑잎이 솔잎더러 바스락거린다고 한다'
 
 export function createOakPineProverbSentence() {
   return createSixPanelProverbSentence(

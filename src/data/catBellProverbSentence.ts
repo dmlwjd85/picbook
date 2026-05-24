@@ -1,7 +1,7 @@
 import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 
-export const CAT_BELL_TEXT = '고양이 목에 방울을 달기.'
+export const CAT_BELL_TEXT = '고양이 목에 방울 달기'
 
 export function createCatBellProverbSentence() {
   return createSixPanelProverbSentence(
@@ -16,6 +16,6 @@ export function createCatBellProverbSentence() {
     ],
     ['고양이', '목에', '방울', '달기', '기'],
     undefined,
-    '실행할 수 없는 계획은 쓸모가 없어요.',
+    '아무리 좋은 생각도 실천하지 못하면 쓸모 없어요',
   )
 }

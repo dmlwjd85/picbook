@@ -2,21 +2,21 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { glossAt } from './proverbVocab'
 
-export const EARRING_NOSE_TEXT = '귀에 걸면 귀걸이 코에 걸면 코걸이.'
-export const RICE_CAKE_PICTURE_TEXT = '그림의 떡.'
-export const DIAMOND_FOOD_TEXT = '금강산도 식후경.'
-export const RUN_BEFORE_CRAWL_TEXT = '기지도 못하면서 뛰려고 한다.'
-export const LONG_TAIL_TEXT = '꼬리가 길면 밟힌다.'
-export const CROW_FLY_BELLY_TEXT = '까마귀 날자 배 떨어진다.'
-export const PHEASANT_CHICKEN_TEXT = '꿩 대신 닭.'
-export const PHEASANT_EGG_TEXT = '꿩 먹고 알 먹는다.'
-export const OTHERS_CAKE_TEXT = '남의 떡이 더 커 보인다.'
-export const SICKLE_GIYEOK_TEXT = '낫 놓고 기역 자도 모른다.'
-export const DAY_BIRD_NIGHT_MOUSE_TEXT = '낮말은 새가 듣고 밤말은 쥐가 듣는다.'
-export const NOSE_THREE_FEET_TEXT = '내 코가 석 자.'
-export const LIE_RICE_CAKE_TEXT = '누워서 떡 먹기.'
-export const LIE_SPIT_TEXT = '누워서 침 뱉기.'
-export const SWEET_BITTER_TEXT = '달면 삼키고 쓰면 뱉는다.'
+export const EARRING_NOSE_TEXT = '귀에 걸면 귀걸이 코에 걸면 코걸이'
+export const RICE_CAKE_PICTURE_TEXT = '그림의 떡'
+export const DIAMOND_FOOD_TEXT = '금강산도 식후경'
+export const RUN_BEFORE_CRAWL_TEXT = '기지도 못하면서 뛰려고 한다'
+export const LONG_TAIL_TEXT = '꼬리가 길면 밟힌다'
+export const CROW_FLY_BELLY_TEXT = '까마귀 날자 배 떨어진다'
+export const PHEASANT_CHICKEN_TEXT = '꿩 대신 닭'
+export const PHEASANT_EGG_TEXT = '꿩 먹고 알 먹는다'
+export const OTHERS_CAKE_TEXT = '남의 떡이 더 커 보인다'
+export const SICKLE_GIYEOK_TEXT = '낫 놓고 기역 자도 모른다'
+export const DAY_BIRD_NIGHT_MOUSE_TEXT = '낮말은 새가 듣고 밤말은 쥐가 듣는다'
+export const NOSE_THREE_FEET_TEXT = '내 코가 석 자'
+export const LIE_RICE_CAKE_TEXT = '누워서 떡 먹기'
+export const LIE_SPIT_TEXT = '누워서 침 뱉기'
+export const SWEET_BITTER_TEXT = '달면 삼키고 쓰면 뱉는다'
 
 export function createEarringNoseProverbSentence() {
   return createSixPanelProverbSentence(
@@ -29,7 +29,7 @@ export function createEarringNoseProverbSentence() {
       PROVERBS_IMAGES.earringNose05,
       PROVERBS_IMAGES.earringNose06,
     ],
-    ['걸면', '귀걸이', '코에', '코걸이', '.'],
+    ['걸면', '귀걸이', '코에', '코걸이', '이'],
     undefined,
     '같은 사실도 자기에게 유리하게만 해석하기 쉬워요.',
   )
@@ -46,7 +46,7 @@ export function createRiceCakePictureProverbSentence() {
       PROVERBS_IMAGES.riceCakePicture05,
       PROVERBS_IMAGES.riceCakePicture06,
     ],
-    ['그', '림', '의', '떡', '.'],
+    ['그', '림', '의', '떡', '그림'],
     undefined,
     '그림으로만 보면 먹을 수 없어요. 갖고 싶어도 손에 안 잡혀요.',
   )
@@ -63,7 +63,7 @@ export function createDiamondFoodProverbSentence() {
       PROVERBS_IMAGES.diamondFood05,
       PROVERBS_IMAGES.diamondFood06,
     ],
-    ['금강산', '도', '식후', '경', '.'],
+    ['금강산', '도', '식후', '경', '식후경'],
     undefined,
     '아무리 좋은 구경도 배가 부른 뒤에야 즐거워요.',
     [glossAt(DIAMOND_FOOD_TEXT, '식후경', { term: '식후경', definition: '밥 먹고 나서 보는 경치' })],
@@ -117,7 +117,13 @@ export function createCrowFlyBellyProverbSentence() {
     ],
     ['까마귀', '날자', '배', '떨어진다', '다'],
     undefined,
-    '관계없는 일이 겹치면 억울하게 의심받을 수 있어요.',
+    '관계없는 일이 겹치면 억울하게 의심받을 수 있어요',
+    [
+      glossAt(CROW_FLY_BELLY_TEXT, '배', {
+        term: '배',
+        definition: '배나무에 맺힌 배 과일(열매). 배(船)가 아님',
+      }),
+    ],
   )
 }
 
@@ -132,7 +138,7 @@ export function createPheasantChickenProverbSentence() {
       PROVERBS_IMAGES.pheasantChicken05,
       PROVERBS_IMAGES.pheasantChicken06,
     ],
-    ['꿩', '대', '신', '닭', '.'],
+    ['꿩', '대', '신', '닭', '대신'],
     undefined,
     '딱 맞는 게 없을 땐 비슷한 것으로 대신해요.',
   )
@@ -218,7 +224,7 @@ export function createNoseThreeFeetProverbSentence() {
       PROVERBS_IMAGES.noseThreeFeet05,
       PROVERBS_IMAGES.noseThreeFeet06,
     ],
-    ['내', '코가', '석', '자', '.'],
+    ['내', '코가', '석', '자', '석'],
     undefined,
     '내 일도 버거울 때는 남 일까지 돌보기 어려워요.',
   )

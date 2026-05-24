@@ -64,7 +64,9 @@ function PlayActions({
           />
         </div>
       )}
-      <div className={`flex flex-wrap items-center justify-center gap-2 ${minimal ? 'mt-1' : 'mt-3 sm:mt-4'}`}>
+      <div
+        className={`flex flex-wrap items-center justify-center gap-2 ${minimal ? (epilogueShown ? 'mt-0' : 'mt-1') : 'mt-3 sm:mt-4'}`}
+      >
         {complete ? (
           epilogueShown ? (
             <button
@@ -73,7 +75,7 @@ function PlayActions({
               disabled={lastSentence}
               onClick={onNext}
             >
-              {lastSentence ? (minimal ? '끝' : '마지막 속담') : minimal ? '다음 속담 →' : '다음 속담 →'}
+              {lastSentence ? (minimal ? '끝' : '마지막 속담') : '다음 속담 →'}
             </button>
           ) : onShowEpilogue ? (
             <button
@@ -132,7 +134,8 @@ export default function PlayPage() {
   const lastPlayLayersRef = useRef<LayerState[]>([])
 
   const overlayStageRatio = pack?.typingStyle === 'minimal' ? 0.4 : 0.34
-  const stackedRatio = fullscreenActive ? 0.52 : 0.38
+  const keyboardOpen = keyboardInset > 48
+  const stackedRatio = keyboardOpen ? 0.34 : fullscreenActive ? 0.5 : 0.38
   const mobileStackedStagePx = useMobileStageHeight(vvHeight, keyboardInset, true, stackedRatio)
   const mobileOverlayStagePx = useMobileStageHeight(
     vvHeight,
@@ -285,29 +288,38 @@ export default function PlayPage() {
   const sentenceCount = pack?.sentences.length ?? 0
   const sentenceLabels = useMemo(() => pack?.sentences.map((s) => s.text) ?? [], [pack?.sentences])
 
+  const resetTypingForNavigation = useCallback(() => {
+    setTyped('')
+    setTypingDraft('')
+    setEpilogueShown(false)
+    lastPlayLayersRef.current = []
+    setFocusToken((t) => t + 1)
+  }, [])
+
   const goToSentence = useCallback(
     (index: number) => {
       if (sentenceCount === 0) return
+      resetTypingForNavigation()
       startTransition(() => {
         setSentenceIndex(Math.min(Math.max(0, index), sentenceCount - 1))
-        setFocusToken((t) => t + 1)
       })
     },
-    [sentenceCount],
+    [sentenceCount, resetTypingForNavigation],
   )
 
   const goPrevSentence = useCallback(() => {
+    resetTypingForNavigation()
     startTransition(() => {
       setSentenceIndex((i) => Math.max(0, i - 1))
     })
-  }, [])
+  }, [resetTypingForNavigation])
 
   const goNextSentence = useCallback(() => {
+    resetTypingForNavigation()
     startTransition(() => {
       setSentenceIndex((i) => Math.min(i + 1, Math.max(0, sentenceCount - 1)))
-      setFocusToken((t) => t + 1)
     })
-  }, [sentenceCount])
+  }, [sentenceCount, resetTypingForNavigation])
 
   const swipeHandlers = useSwipeSentences({
     onPrev: goPrevSentence,
@@ -345,6 +357,11 @@ export default function PlayPage() {
     if (playImmersive) document.documentElement.classList.add('play-immersive')
     else document.documentElement.classList.remove('play-immersive')
   }, [playImmersive])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('play-keyboard-open', keyboardOpen)
+    return () => document.documentElement.classList.remove('play-keyboard-open')
+  }, [keyboardOpen])
 
   useEffect(() => {
     if (!pack || !bookId) return
@@ -421,26 +438,16 @@ export default function PlayPage() {
               <button
                 type="button"
                 onClick={() => void toggleFullscreen()}
-                className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-700 hover:bg-white lg:hidden"
+                className="shrink-0 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-700 hover:bg-white sm:px-2.5 sm:text-xs"
               >
-                {fullscreenActive ? '축소' : '전체'}
+                {fullscreenActive ? '축소' : '전체화면'}
               </button>
             ) : null}
-            <UserLogoutButton className="rounded-lg border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] font-semibold text-stone-600 hover:bg-white lg:hidden" />
-            <div className="hidden text-right text-xs text-stone-500 lg:block">
+            <UserLogoutButton className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600 hover:bg-white sm:inline-flex" />
+            <div className="hidden text-right text-xs text-stone-500 md:block">
               <span className="font-mono text-stone-700">{progressPct}%</span>
               <span className="ml-1">입력</span>
             </div>
-            {fullscreenSupported ? (
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-700 hover:bg-white lg:inline-flex"
-              >
-                {fullscreenActive ? '전체화면 끄기' : '전체화면'}
-              </button>
-            ) : null}
-            <UserLogoutButton className="hidden rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-600 hover:bg-white lg:inline-flex" />
           </div>
         </div>
       </header>
@@ -454,10 +461,9 @@ export default function PlayPage() {
           }}
         >
           <div className="relative flex min-h-0 flex-1 items-center justify-center px-1">
-            <div className="relative aspect-[3/2] w-full max-h-full max-w-[min(100vw,calc((100dvh-10rem)*1.5))]">
+            <div className="relative aspect-[3/2] w-full max-h-full max-w-[min(100vw,calc((100dvh-14rem)*1.5))]">
               <VisualStage
                 layers={layers}
-                overlayCaption={closingCaption}
                 centerImages={centerImages}
                 embedded
                 epilogueFullscreen
@@ -465,7 +471,12 @@ export default function PlayPage() {
               />
             </div>
           </div>
-          <div className="shrink-0 border-t border-white/10 bg-black/90 px-4 py-3">
+          <div className="play-epilogue-footer flex shrink-0 flex-col gap-4 border-t border-white/10 bg-black/95 px-4 py-4">
+            {closingCaption ? (
+              <p className="max-h-[28vh] shrink overflow-y-auto text-center text-[clamp(1rem,4.2vw,1.25rem)] font-bold leading-relaxed text-amber-50">
+                {closingCaption}
+              </p>
+            ) : null}
             {lastSentence ? (
               <Link
                 to="/bookshelf"
@@ -537,7 +548,6 @@ export default function PlayPage() {
             >
               <VisualStage
                 layers={layers}
-                overlayCaption={closingCaption}
                 karaoke={karaokeProps}
                 vocabGlosses={activeVocab}
                 centerImages={centerImages}
@@ -554,36 +564,66 @@ export default function PlayPage() {
                 canNext={safeSentenceIndex < pack.sentences.length - 1}
                 onNext={goNextSentence}
               />
-              <div
-                className="play-typing-overlay absolute inset-x-0 bottom-0 z-[80] px-2 pt-8 sm:px-4"
-                style={{
-                  paddingBottom: keyboardInset > 0 ? `${keyboardInset + 10}px` : 'max(0.5rem, env(safe-area-inset-bottom))',
-                }}
-              >
-                <TypingInline
-                  key={sentence.id}
-                  target={target}
-                  typed={typed}
-                  onTypedChange={setTyped}
-                  onDraftChange={setTypingDraft}
-                  disabled={epilogueShown}
-                  karaokeOnly
-                  immersive
-                  focusToken={focusToken}
-                />
-                <div className="mt-0.5 flex justify-center">
-                  <PlayActions
-                    complete={complete}
-                    lastSentence={lastSentence}
-                    progressPct={progressPct}
-                    onNext={goNextSentence}
-                    onShowEpilogue={() => setEpilogueShown(true)}
-                    epilogueShown={epilogueShown}
-                    minimal
-                    onDarkStage
-                  />
+              {epilogueShown ? (
+                <div
+                  className="play-epilogue-bar absolute inset-x-0 bottom-0 z-[82] flex max-h-[46%] flex-col gap-3 bg-gradient-to-t from-black/95 via-black/88 to-transparent px-3 pb-3 pt-12 sm:gap-4 sm:px-4"
+                  style={{
+                    paddingBottom:
+                      keyboardInset > 0
+                        ? `${keyboardInset + 12}px`
+                        : 'max(0.75rem, env(safe-area-inset-bottom))',
+                  }}
+                >
+                  {closingCaption ? (
+                    <p className="min-h-0 shrink overflow-y-auto text-center text-[clamp(0.95rem,3.5vw,1.2rem)] font-bold leading-relaxed text-amber-50">
+                      {closingCaption}
+                    </p>
+                  ) : null}
+                  <div className="mt-auto flex shrink-0 justify-center pb-0.5">
+                    <PlayActions
+                      complete={complete}
+                      lastSentence={lastSentence}
+                      progressPct={progressPct}
+                      onNext={goNextSentence}
+                      epilogueShown
+                      minimal
+                      onDarkStage
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  className="play-typing-overlay absolute inset-x-0 bottom-0 z-[80] px-2 pt-8 sm:px-4"
+                  style={{
+                    paddingBottom:
+                      keyboardInset > 0 ? `${keyboardInset + 10}px` : 'max(0.5rem, env(safe-area-inset-bottom))',
+                  }}
+                >
+                  <TypingInline
+                    key={sentence.id}
+                    target={target}
+                    typed={typed}
+                    onTypedChange={setTyped}
+                    onDraftChange={setTypingDraft}
+                    disabled={epilogueShown}
+                    karaokeOnly
+                    immersive
+                    focusToken={focusToken}
+                  />
+                  <div className="mt-0.5 flex justify-center">
+                    <PlayActions
+                      complete={complete}
+                      lastSentence={lastSentence}
+                      progressPct={progressPct}
+                      onNext={goNextSentence}
+                      onShowEpilogue={() => setEpilogueShown(true)}
+                      epilogueShown={epilogueShown}
+                      minimal
+                      onDarkStage
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <SentenceNavNextDesktop

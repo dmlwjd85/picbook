@@ -4,7 +4,7 @@ import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { idxAfter } from './proverbsPackShared'
 
 /** 가는 말이 고와야 오는 말이 곱다 — 6컷 연출 (연출 이미지 위 텍스트 없음) */
-export const KIND_WORDS_TEXT = '가는 말이 고와야 오는 말이 곱다.'
+export const KIND_WORDS_TEXT = '가는 말이 고와야 오는 말이 곱다'
 
 export function createKindWordsProverbSentence(): SentenceBlock {
   const layer = createId()

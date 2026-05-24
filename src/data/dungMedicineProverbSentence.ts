@@ -2,7 +2,7 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { glossAt } from './proverbVocab'
 
-export const DUNG_MEDICINE_TEXT = '개똥도 약에 쓰려면 없다.'
+export const DUNG_MEDICINE_TEXT = '개똥도 약에 쓰려면 없다'
 
 export function createDungMedicineProverbSentence() {
   return createSixPanelProverbSentence(

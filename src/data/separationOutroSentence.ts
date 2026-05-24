@@ -3,7 +3,7 @@ import type { Cue, SentenceBlock } from '../types/pack'
 import { POWERS_OUTRO_IMAGES } from './separationPowersAssets'
 import { idxAfter } from './separationPackShared'
 
-const OUTRO_TEXT = '이는 국민의 자유와 권리를 보장하기 위한 것이다.'
+const OUTRO_TEXT = '이는 국민의 자유와 권리를 보장하기 위한 것이다'
 
 export function createSeparationOutroSentence(): SentenceBlock {
   const layerScene = createId()

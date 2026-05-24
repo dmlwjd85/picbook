@@ -5,7 +5,7 @@ import { GLOSS_GARANGBI } from './proverbVocab'
 import { idxAfter } from './proverbsPackShared'
 
 /** 가랑비에 옷 젖는 줄 모른다 — 6컷 연출 */
-export const DRIZZLE_RAIN_TEXT = '가랑비에 옷 젖는 줄 모른다.'
+export const DRIZZLE_RAIN_TEXT = '가랑비에 옷 젖는 줄 모른다'
 
 export function createDrizzleRainProverbSentence(): SentenceBlock {
   const layer = createId()

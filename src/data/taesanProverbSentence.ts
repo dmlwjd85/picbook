@@ -2,7 +2,7 @@ import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 import { glossAt } from './proverbVocab'
 
-export const TAESAN_TEXT = '일이 갈 수록 태산이다.'
+export const TAESAN_TEXT = '일이 갈 수록 태산이다'
 
 export function createTaesanProverbSentence() {
   return createSixPanelProverbSentence(

@@ -1,7 +1,7 @@
 import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 
-export const WHALE_SHRIMP_TEXT = '고래 싸움에 새우 등 터진다.'
+export const WHALE_SHRIMP_TEXT = '고래 싸움에 새우 등 터진다'
 
 export function createWhaleShrimpProverbSentence() {
   return createSixPanelProverbSentence(

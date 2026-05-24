@@ -1,7 +1,7 @@
 import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 
-export const STEADY_TOWER_TEXT = '공든 탑이 무너지랴.'
+export const STEADY_TOWER_TEXT = '공든 탑이 무너지랴'
 
 export function createSteadyTowerProverbSentence() {
   return createSixPanelProverbSentence(

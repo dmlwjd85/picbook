@@ -1,7 +1,7 @@
 import { createSixPanelProverbSentence } from '../lib/proverbSentence'
 import { PROVERBS_IMAGES } from './elementaryProverbsAssets'
 
-export const RIVER_FIRE_TEXT = '강 건너 불 구경하듯 한다.'
+export const RIVER_FIRE_TEXT = '강 건너 불 구경하듯 한다'
 
 export function createRiverFireProverbSentence() {
   return createSixPanelProverbSentence(

@@ -91,6 +91,40 @@ html.play-active #root {
     object-fit: contain;
     object-position: center top;
   }
+
+  /* 가상 키보드 — 보이는 화면 상단 절반에 연출·문장·입력 배치 */
+  html.play-keyboard-open.play-active .play-immersive-main {
+    flex: 0 1 auto;
+    max-height: calc(var(--vv-height, 100dvh) * 0.5);
+    overflow: hidden;
+  }
+
+  html.play-keyboard-open .play-canvas-shell {
+    max-height: calc(var(--vv-height, 100dvh) * 0.46);
+  }
+
+  html.play-keyboard-open .play-stage-stacked {
+    height: min(var(--play-stacked-stage-h), calc(var(--vv-height, 100dvh) * 0.34));
+    max-height: min(var(--play-stacked-stage-h), calc(var(--vv-height, 100dvh) * 0.34));
+  }
+
+  html.play-keyboard-open .play-typing-overlay {
+    max-height: 42%;
+  }
+
+  html.play-keyboard-open .play-epilogue-bar {
+    max-height: min(46%, calc(var(--vv-height, 100dvh) * 0.42));
+  }
+}
+
+/* 전체화면 — 따라 쓸 문장 크게 */
+html.play-fullscreen .play-target-sentence--stage p {
+  font-size: clamp(1.05rem, 5.8vw, 1.55rem);
+  line-height: 1.15;
+}
+
+html.play-fullscreen.play-immersive .play-target-sentence--stage p {
+  font-size: clamp(1.1rem, 6.2vw, 1.65rem);
 }
 
 @keyframes stamp-in {

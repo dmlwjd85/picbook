@@ -10,7 +10,7 @@ import type { SentenceBlock } from '../types/pack'
 
 
 
-export const FROG_TADPOLE_TEXT = '개구리 올챙이 적 생각 못 한다.'
+export const FROG_TADPOLE_TEXT = '개구리 올챙이 적 생각 못 한다'
 
 
 
