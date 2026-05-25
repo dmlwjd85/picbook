@@ -6,7 +6,7 @@ import { useCustomPicbookStore } from '../state/customPicbookStore'
  */
 export const PACK_CONTENT_VERSIONS: Record<string, string> = {
   'demo-separation-three-powers': '20',
-  'elementary-proverbs': '39',
+  'elementary-proverbs': '40',
   'tortoise-and-hare': '5',
 }
 
