@@ -74,7 +74,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     magazineTone: 'from-lime-600 via-emerald-500 to-teal-600',
     productKey: normalizeProductKey('PICBOOK-TORTOISE-2026'),
     productKeyDisplay: 'PICBOOK-TORTOISE-2026',
-    listPrice: '₩0 (데모)',
+    listPrice: '₩1,000,000',
     contentVersion: getPackContentVersion('tortoise-and-hare'),
     loadPack: createTortoiseHarePack,
   },
