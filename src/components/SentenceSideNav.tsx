@@ -15,7 +15,7 @@ export function SentenceNavPrevOverlay({ canPrev, onPrev }: Pick<BtnProps, 'canP
       type="button"
       disabled={!canPrev}
       onClick={onPrev}
-      aria-label="이전 속담"
+      aria-label="이전 문장"
       className={`absolute left-1 top-1/2 z-40 -translate-y-1/2 lg:hidden ${base} border-white/30 bg-black/45 px-2 py-3 text-xs text-white enabled:hover:bg-black/60 sm:left-2 sm:px-2.5 sm:text-sm`}
     >
       ◀
@@ -30,7 +30,7 @@ export function SentenceNavNextOverlay({ canNext, onNext }: Pick<BtnProps, 'canN
       type="button"
       disabled={!canNext}
       onClick={onNext}
-      aria-label="다음 속담"
+      aria-label="다음 문장으로"
       className={`absolute right-1 top-1/2 z-40 -translate-y-1/2 lg:hidden ${base} border-white/30 bg-black/45 px-2 py-3 text-xs text-white enabled:hover:bg-black/60 sm:right-2 sm:px-2.5 sm:text-sm`}
     >
       ▶
@@ -45,7 +45,7 @@ export function SentenceNavPrevDesktop({ canPrev, onPrev }: Pick<BtnProps, 'canP
       type="button"
       disabled={!canPrev}
       onClick={onPrev}
-      aria-label="이전 속담"
+      aria-label="이전 문장"
       className={`hidden shrink-0 self-center lg:inline-flex ${base} border-stone-300 bg-white px-3 py-4 text-sm text-stone-800 enabled:hover:bg-stone-50`}
     >
       ◀ 이전
@@ -59,7 +59,7 @@ export function SentenceNavNextDesktop({ canNext, onNext }: Pick<BtnProps, 'canN
       type="button"
       disabled={!canNext}
       onClick={onNext}
-      aria-label="다음 속담"
+      aria-label="다음 문장으로"
       className={`hidden shrink-0 self-center lg:inline-flex ${base} border-stone-300 bg-white px-3 py-4 text-sm text-stone-800 enabled:hover:bg-stone-50`}
     >
       다음 ▶

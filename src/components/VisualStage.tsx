@@ -274,7 +274,7 @@ export function VisualStage({
   vocabGlosses = [],
   epilogueFullscreen = false,
   onOverlayTap,
-  overlayTapLabel = '다음 속담 →',
+  overlayTapLabel = '다음 문장으로 →',
   sceneTransition = 'crossfade',
   stagingEffect = 'none',
   masterTextOverlay = null,
@@ -467,7 +467,7 @@ export function VisualStage({
               {overlayCaption}
             </p>
             {!epilogueFullscreen ? (
-              <p className="mt-1.5 text-[11px] font-medium text-white/50">Enter → 다음 속담</p>
+              <p className="mt-1.5 text-[11px] font-medium text-white/50">Enter → 다음 문장으로</p>
             ) : null}
           </div>
           {epilogueFullscreen && onOverlayTap ? (

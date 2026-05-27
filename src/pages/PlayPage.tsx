@@ -76,7 +76,7 @@ function PlayActions({
               disabled={lastSentence}
               onClick={onNext}
             >
-              {lastSentence ? (minimal ? '끝' : '마지막 속담') : '다음 속담 →'}
+              {lastSentence ? (minimal ? '끝' : '마지막 문장입니다') : minimal ? '다음 →' : '다음 문장으로 →'}
             </button>
           ) : onShowEpilogue ? (
             <button
@@ -504,7 +504,7 @@ export default function PlayPage() {
                 className="w-full rounded-2xl bg-amber-700 py-3.5 text-base font-bold text-white shadow-lg active:scale-[0.98] hover:bg-amber-800"
                 onClick={goNextSentence}
               >
-                다음 속담 →
+                다음 문장으로 →
               </button>
             )}
           </div>
