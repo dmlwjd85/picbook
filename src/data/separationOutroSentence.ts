@@ -38,7 +38,7 @@ export function createSeparationOutroSentence(): SentenceBlock {
     },
     {
       id: createId(),
-      charIndex: idxAfter(OUTRO_TEXT, '자유'),
+      charIndex: idxAfter(OUTRO_TEXT, '자'),
       effects: showScene(POWERS_OUTRO_IMAGES.citizensActive),
     },
     {

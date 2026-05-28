@@ -99,7 +99,7 @@ export const TORTOISE_HARE_VISUAL_DICTIONARY: VisualDictionaryEntry[] = [
     image_direction: 'Zzz 구름 + 눈 감은 표정 기호',
     z_index: 30,
     tags: ['동작'],
-    chunk_hints: ['자', '잠'],
+    chunk_hints: ['잠'],
     status: 'ready',
   },
   {

@@ -169,8 +169,10 @@ export function PicbookSceneEditor() {
     if (bookId === 'tortoise-and-hare' && !isCustomBook) {
       useVisualDictionaryStore.getState().resetToTortoiseHareSeed()
     } else if (bookId === 'demo-separation-three-powers') {
-      useVisualDictionaryStore.getState().setStoryId(storyId)
-      useVisualDictionaryStore.getState().mergeEntries(SEPARATION_CHUNK_VISUAL_DICTIONARY)
+      useVisualDictionaryStore.setState({
+        storyId,
+        entries: [...SEPARATION_CHUNK_VISUAL_DICTIONARY],
+      })
     } else {
       useVisualDictionaryStore.getState().setStoryId(storyId)
     }

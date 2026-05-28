@@ -22,15 +22,15 @@ export function resolveVisualDictionaryEntries(
   const sid = storyId?.trim() || bookId?.trim()
   if (!sid) return []
 
+  if (STATIC_BY_STORY[sid]) return STATIC_BY_STORY[sid]!
+
   const editorStoryId = useVisualDictionaryStore.getState().storyId
   const editorEntries = useVisualDictionaryStore.getState().entries
   if (editorStoryId === sid && editorEntries.length > 0) {
     return editorEntries
   }
 
-  if (STATIC_BY_STORY[sid]) return STATIC_BY_STORY[sid]!
-
-  return editorEntries.length > 0 && editorStoryId === sid ? editorEntries : []
+  return []
 }
 
 export function storyHasChunkDictionary(storyId: string | undefined, bookId: string | undefined): boolean {

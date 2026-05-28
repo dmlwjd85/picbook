@@ -24,6 +24,15 @@ export function mergePlayLayers(
   return [...filteredBase, ...chunkLayers].sort((a, b) => a.zIndex - b.zIndex)
 }
 
+export function separationUsesChunkLayers(
+  bookId: string | undefined,
+  sentenceIndex: number,
+): boolean {
+  if (bookId !== 'demo-separation-three-powers') return true
+  /** 3번째 문장 — 청크(자→자다) 오매칭 방지, 타임라인만 */
+  return sentenceIndex !== 2
+}
+
 export function isChunkLayerId(id: string): boolean {
   return id.startsWith(CHUNK_LAYER_PREFIX)
 }
@@ -35,6 +44,8 @@ export function separationChunkHidesTimeline(
   visualTypedLen: number,
 ): boolean {
   if (bookId !== 'demo-separation-three-powers') return false
+  /** 3번째 문장(국민·자유)은 타임라인 연출만 사용 */
+  if (sentenceIndex === 2) return false
   if (sentenceIndex === 0) {
     if (visualTypedLen <= 5) return true
     if (visualTypedLen >= 6 && visualTypedLen <= 7) return true

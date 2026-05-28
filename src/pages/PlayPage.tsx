@@ -21,7 +21,7 @@ import { useVisualViewportLayout } from '../hooks/useKeyboardInset'
 import { useMobileStageHeight } from '../hooks/useMobileStageHeight'
 import { useTimelinePlayback } from '../hooks/useTimelinePlayback'
 import { useChunkVisualLayers } from '../hooks/useChunkVisualLayers'
-import { mergePlayLayers, separationChunkHidesTimeline } from '../lib/mergePlayLayers'
+import { mergePlayLayers, separationChunkHidesTimeline, separationUsesChunkLayers } from '../lib/mergePlayLayers'
 import { usePlaybackTyping } from '../hooks/usePlaybackTyping'
 import { playbackTypedPrefix } from '../lib/typingMatch'
 import { bookUsesChunkVisuals } from '../lib/storyVisualDictionary'
@@ -256,11 +256,16 @@ export default function PlayPage() {
   const { visualTyped, visualTypedLen } = usePlaybackTyping(target, typed, typingDraft)
 
   const { layers: timelineLayers, stageFx } = useTimelinePlayback(bookId, sentence, visualTypedLen)
-  const chunkLayers = useChunkVisualLayers(
+  const chunkLayersRaw = useChunkVisualLayers(
     visualTyped,
     bookId,
     pack?.visualDictionaryStoryId,
     sentence?.id,
+  )
+  const chunkLayers = useMemo(
+    () =>
+      separationUsesChunkLayers(bookId, safeSentenceIndex) ? chunkLayersRaw : [],
+    [bookId, safeSentenceIndex, chunkLayersRaw],
   )
   const hideTimelineForChunk = useMemo(
     () => separationChunkHidesTimeline(bookId, safeSentenceIndex, visualTypedLen),
