@@ -25,6 +25,8 @@ export type PicbookCatalogItem = {
   /** 마스터·배포용 표시 키 */
   productKeyDisplay: string
   listPrice: string
+  /** 제품키 없이 무료로 바로 서재에 추가 */
+  free?: boolean
   /** 출판 예정 — 키 입력 불가 */
   comingSoon?: boolean
   /** 팩 수정 시 올리면 구매자 재생에 자동 반영 */
@@ -44,7 +46,8 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     magazineTone: 'from-amber-600 via-orange-500 to-rose-600',
     productKey: normalizeProductKey('PICBOOK-3POWERS-2026'),
     productKeyDisplay: 'PICBOOK-3POWERS-2026',
-    listPrice: '₩12,000',
+    listPrice: '₩0',
+    free: true,
     contentVersion: getPackContentVersion('demo-separation-three-powers'),
     loadPack: createSeparationThreePowersDemoPack,
   },

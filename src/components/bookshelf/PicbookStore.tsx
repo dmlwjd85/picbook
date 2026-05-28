@@ -13,10 +13,12 @@ function StoreCard({
   book,
   owned,
   onUnlock,
+  onFreeClaim,
 }: {
   book: PicbookCatalogItem
   owned: boolean
   onUnlock: (key: string) => string | null
+  onFreeClaim: (bookId: string) => string | null
 }) {
   const [keyInput, setKeyInput] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +37,16 @@ function StoreCard({
     setKeyInput('')
   }
 
+  const onClaimFree = () => {
+    setError(null)
+    const err = onFreeClaim(book.id)
+    if (err) {
+      setError(err)
+      return
+    }
+    setSuccess(true)
+  }
+
   return (
     <article
       className={`flex flex-col overflow-hidden rounded-2xl border bg-slate-900/80 shadow-xl backdrop-blur-sm ${
@@ -51,6 +63,10 @@ function StoreCard({
         ) : owned ? (
           <span className="absolute left-3 top-3 rounded-md bg-emerald-800/90 px-2 py-1 text-[10px] font-bold text-emerald-100">
             보유 중
+          </span>
+        ) : book.free ? (
+          <span className="absolute left-3 top-3 rounded-md bg-sky-800/90 px-2 py-1 text-[10px] font-bold text-sky-100">
+            무료
           </span>
         ) : (
           <span className="absolute left-3 top-3 rounded-md bg-slate-950/80 px-2 py-1 text-[10px] font-bold text-amber-200">
@@ -75,6 +91,21 @@ function StoreCard({
           <p className="mt-4 rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-3 py-2.5 text-center text-xs font-medium text-emerald-200">
             내 서재에 진열되어 있어요
           </p>
+        ) : book.free ? (
+          <div className="mt-4 space-y-2">
+            {error ? <p className="text-xs font-medium text-red-400">{error}</p> : null}
+            {success ? (
+              <p className="text-xs font-medium text-emerald-400">내 서재에 추가되었습니다.</p>
+            ) : (
+              <button
+                type="button"
+                onClick={onClaimFree}
+                className="w-full rounded-lg bg-sky-600 py-2.5 text-sm font-bold text-white hover:bg-sky-500"
+              >
+                무료로 받기
+              </button>
+            )}
+          </div>
         ) : (
           <form onSubmit={onSubmit} className="mt-4 space-y-2">
             <label className="block text-[11px] font-medium text-slate-400">
@@ -129,6 +160,15 @@ export function PicbookStore({ onUnlocked }: Props) {
     return null
   }
 
+  const handleFreeClaim = (bookId: string): string | null => {
+    const book = catalog.find((b) => b.id === bookId)
+    if (!book?.free) return '무료로 받을 수 없는 PicBook입니다.'
+    if (isUnlocked(bookId)) return '이미 등록된 PicBook입니다.'
+    unlock(bookId)
+    onUnlocked?.(bookId)
+    return null
+  }
+
   return (
     <section>
       <div className="mb-5">
@@ -140,7 +180,13 @@ export function PicbookStore({ onUnlocked }: Props) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         {catalog.map((book) => (
-          <StoreCard key={book.id} book={book} owned={isUnlocked(book.id)} onUnlock={handleUnlock} />
+          <StoreCard
+            key={book.id}
+            book={book}
+            owned={isUnlocked(book.id)}
+            onUnlock={handleUnlock}
+            onFreeClaim={handleFreeClaim}
+          />
         ))}
       </div>
 
