@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { TypingStatsBar } from './TypingStatsBar'
-import { useTypingStats } from '../hooks/useTypingStats'
 import { playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
+import type { TypingStatsSnapshot } from '../lib/typingStats'
 
 type Props = {
   target: string
@@ -11,7 +11,7 @@ type Props = {
   disabled?: boolean
   /** 짧은 한글만 — 흐릿한 안내 문장 숨김 */
   minimal?: boolean
-  statsResetKey?: string
+  typingStats?: TypingStatsSnapshot | null
 }
 
 const TEXT =
@@ -27,17 +27,10 @@ export function OverlayTypingPanel({
   onDraftChange,
   disabled,
   minimal = false,
-  statsResetKey,
+  typingStats = null,
 }: Props) {
   const [draft, setDraft] = useState(typed)
   const composingRef = useRef(false)
-  const typingStats = useTypingStats({
-    target,
-    draft,
-    typed,
-    resetKey: statsResetKey ?? target,
-    active: !disabled && target.length > 0,
-  })
   useEffect(() => {
     if (composingRef.current) return
     setDraft((prev) => {
@@ -68,7 +61,7 @@ export function OverlayTypingPanel({
 
   return (
     <div className="flex flex-col gap-2">
-      <TypingStatsBar stats={typingStats} variant="light" />
+      {typingStats ? <TypingStatsBar stats={typingStats} variant="light" /> : null}
       <div
         className={`relative overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-inner ${
           minimal ? 'min-h-[4.5rem]' : 'min-h-[7.5rem]'

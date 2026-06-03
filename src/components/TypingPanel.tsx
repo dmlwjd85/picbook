@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { TypingStatsBar } from './TypingStatsBar'
-import { useTypingStats } from '../hooks/useTypingStats'
 import { playbackTypedPrefix, syncTypingFromRaw } from '../lib/typingMatch'
+import type { TypingStatsSnapshot } from '../lib/typingStats'
 
 type Props = {
   target: string
@@ -10,8 +10,8 @@ type Props = {
   onDraftChange?: (draft: string) => void
   disabled?: boolean
   minimal?: boolean
-  /** 문장 전환 시 통계 초기화 */
-  statsResetKey?: string
+  /** PlayPage에서 넘긴 통계(정확도는 제출 후) */
+  typingStats?: TypingStatsSnapshot | null
 }
 
 /**
@@ -25,17 +25,10 @@ export function TypingPanel({
   onDraftChange,
   disabled,
   minimal = false,
-  statsResetKey,
+  typingStats = null,
 }: Props) {
   const [draft, setDraft] = useState(typed)
   const composingRef = useRef(false)
-  const typingStats = useTypingStats({
-    target,
-    draft,
-    typed,
-    resetKey: statsResetKey ?? target,
-    active: !disabled && target.length > 0,
-  })
 
   useEffect(() => {
     if (composingRef.current) return
@@ -102,7 +95,7 @@ export function TypingPanel({
           if (!isComposing) commitRaw(raw)
         }}
       />
-      <TypingStatsBar stats={typingStats} className="mt-1" />
+      {typingStats ? <TypingStatsBar stats={typingStats} className="mt-1" /> : null}
       <div className="flex flex-wrap justify-center gap-2 text-xs text-slate-500">
         {minimal ? (
           typed === target && target.length > 0 ? (

@@ -297,13 +297,14 @@ export default function PlayPage() {
     (typed === target || playbackTypedPrefix(playbackRaw, target) === target)
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0
-  const typingStats = useTypingStats({
+  const typingStatsResult = useTypingStats({
     target,
     draft: typingDraft,
     typed,
     resetKey: sentence?.id,
     active: !epilogueShown && target.length > 0,
   })
+  const { submitSentence: submitTypingStats, ...typingStats } = typingStatsResult
   const sentenceCount = pack?.sentences.length ?? 0
   const sentenceLabels = useMemo(() => pack?.sentences.map((s) => s.text) ?? [], [pack?.sentences])
 
@@ -351,6 +352,7 @@ export default function PlayPage() {
       if (!submitKey || e.repeat) return
       if (!complete) return
       e.preventDefault()
+      submitTypingStats(playbackRaw)
 
       const stacked = pack?.typingStyle === 'stacked'
       if (stacked) {
@@ -367,7 +369,7 @@ export default function PlayPage() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [complete, lastSentence, goNextSentence, epilogueShown, pack?.typingStyle])
+  }, [complete, lastSentence, goNextSentence, epilogueShown, pack?.typingStyle, submitTypingStats, playbackRaw])
 
   const playImmersive =
     pack?.typingStyle === 'stacked' || pack?.typingStyle === 'minimal'
@@ -451,7 +453,8 @@ export default function PlayPage() {
                 <span className="ml-1.5 font-mono text-stone-600 lg:hidden">{progressPct}%</span>
                 {typingStats.keystrokes > 0 ? (
                   <span className="ml-1.5 hidden font-mono text-emerald-700 sm:inline">
-                    {typingStats.cpm}타/분 · 정확도 {typingStats.accuracy}%
+                    {typingStats.cpm}타/분
+                    {typingStats.accuracySubmitted ? ` · 정확도 ${typingStats.accuracy}%` : null}
                   </span>
                 ) : null}
               </p>
@@ -482,7 +485,8 @@ export default function PlayPage() {
               <span className="ml-1">입력</span>
               {typingStats.keystrokes > 0 ? (
                 <p className="mt-0.5 font-mono text-[10px] text-emerald-700">
-                  {typingStats.cpm}타/분 · 정확도 {typingStats.accuracy}%
+                  {typingStats.cpm}타/분
+                  {typingStats.accuracySubmitted ? ` · 정확도 ${typingStats.accuracy}%` : null}
                 </p>
               ) : null}
             </div>
@@ -703,7 +707,7 @@ export default function PlayPage() {
               onTypedChange={setTyped}
               onDraftChange={setTypingDraft}
               minimal={minimalTyping}
-              statsResetKey={sentence.id}
+              typingStats={typingStats}
             />
             <PlayActions
               complete={complete}
@@ -733,7 +737,7 @@ export default function PlayPage() {
                 onTypedChange={setTyped}
                 onDraftChange={setTypingDraft}
                 minimal={minimalTyping}
-                statsResetKey={sentence.id}
+                typingStats={typingStats}
               />
               <PlayActions
                 complete={complete}

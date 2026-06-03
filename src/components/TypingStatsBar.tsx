@@ -7,12 +7,14 @@ type Props = {
   className?: string
 }
 
-/** 타이핑 속도·정확도 표시 */
+/** 타이핑 속도(실시간)·정확도(문장 제출 후) 표시 */
 export function TypingStatsBar({ stats, variant = 'light', className = '' }: Props) {
   if (stats.keystrokes === 0) return null
 
   const line = formatTypingStatsLine(stats)
-  const detail = `${stats.elapsedSec}초 · ${stats.typedChars}/${stats.targetChars}자`
+  const detail = stats.accuracySubmitted
+    ? `${stats.elapsedSec}초 · ${stats.typedChars}/${stats.targetChars}자`
+    : `${stats.elapsedSec}초 · 입력 중`
 
   const isDark = variant === 'dark'
 

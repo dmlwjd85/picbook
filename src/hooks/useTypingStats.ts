@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   computeTypingStats,
   createTypingStatsAccumulator,
   recordDraftDelta,
+  recordSentenceSubmit,
   type TypingStatsAccumulator,
   type TypingStatsSnapshot,
 } from '../lib/typingStats'
@@ -17,21 +18,28 @@ type Options = {
   active?: boolean
 }
 
-/** 따라 쓰기 중 타수·정확도 실시간 측정 */
+export type TypingStatsResult = TypingStatsSnapshot & {
+  /** 문장 완료 후 엔터·스페이스 — 이때 정확도 확정 */
+  submitSentence: (raw: string) => void
+}
+
+/** 따라 쓰기 중 타수 실시간, 정확도는 제출 시에만 표시 */
 export function useTypingStats({
   target,
   draft,
   typed,
   resetKey,
   active = true,
-}: Options): TypingStatsSnapshot {
+}: Options): TypingStatsResult {
   const [acc, setAcc] = useState<TypingStatsAccumulator>(() => createTypingStatsAccumulator())
+  const [submittedAccuracy, setSubmittedAccuracy] = useState<number | null>(null)
   const prevDraftRef = useRef('')
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
     const fresh = createTypingStatsAccumulator()
     setAcc(fresh)
+    setSubmittedAccuracy(null)
     prevDraftRef.current = ''
     setNow(Date.now())
   }, [resetKey, target])
@@ -51,8 +59,35 @@ export function useTypingStats({
     }
   }, [draft, target, active])
 
+  const submitSentence = useCallback(
+    (raw: string) => {
+      if (!target.length) return
+      setAcc((current) => {
+        const { acc: next, accuracy } = recordSentenceSubmit(
+          current,
+          prevDraftRef.current,
+          raw,
+          target,
+        )
+        prevDraftRef.current = raw
+        setSubmittedAccuracy(accuracy)
+        return next
+      })
+      setNow(Date.now())
+    },
+    [target],
+  )
+
+  const snapshot = useMemo(
+    () => computeTypingStats(acc, typed.length, target.length, submittedAccuracy, now),
+    [acc, typed.length, target.length, submittedAccuracy, now],
+  )
+
   return useMemo(
-    () => computeTypingStats(acc, typed.length, target.length, now),
-    [acc, typed.length, target.length, now],
+    () => ({
+      ...snapshot,
+      submitSentence,
+    }),
+    [snapshot, submitSentence],
   )
 }
