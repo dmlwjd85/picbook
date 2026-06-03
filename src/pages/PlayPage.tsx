@@ -13,7 +13,9 @@ import {
   SentenceNavPrevOverlay,
 } from '../components/SentenceSideNav'
 import { VisualStage } from '../components/VisualStage'
+import { TypingStatsBar } from '../components/TypingStatsBar'
 import { useSwipeSentences } from '../hooks/useSwipeSentences'
+import { useTypingStats } from '../hooks/useTypingStats'
 import { getLibraryBook } from '../data/libraryBooks'
 import { loadCatalogPack } from '../lib/loadCatalogPack'
 import { preloadPlayImages } from '../lib/preloadPlayImages'
@@ -295,6 +297,13 @@ export default function PlayPage() {
     (typed === target || playbackTypedPrefix(playbackRaw, target) === target)
   const lastSentence = pack ? safeSentenceIndex >= pack.sentences.length - 1 : true
   const progressPct = target.length > 0 ? Math.round((typed.length / target.length) * 100) : 0
+  const typingStats = useTypingStats({
+    target,
+    draft: typingDraft,
+    typed,
+    resetKey: sentence?.id,
+    active: !epilogueShown && target.length > 0,
+  })
   const sentenceCount = pack?.sentences.length ?? 0
   const sentenceLabels = useMemo(() => pack?.sentences.map((s) => s.text) ?? [], [pack?.sentences])
 
@@ -440,6 +449,11 @@ export default function PlayPage() {
               <p className="text-[11px] text-stone-500 sm:text-xs">
                 {profileName ?? '읽는 중'} · {safeSentenceIndex + 1}/{pack.sentences.length}
                 <span className="ml-1.5 font-mono text-stone-600 lg:hidden">{progressPct}%</span>
+                {typingStats.keystrokes > 0 ? (
+                  <span className="ml-1.5 hidden font-mono text-emerald-700 sm:inline">
+                    {typingStats.cpm}타/분 · 정확도 {typingStats.accuracy}%
+                  </span>
+                ) : null}
               </p>
             </div>
           </div>
@@ -466,6 +480,11 @@ export default function PlayPage() {
             <div className="hidden text-right text-xs text-stone-500 md:block">
               <span className="font-mono text-stone-700">{progressPct}%</span>
               <span className="ml-1">입력</span>
+              {typingStats.keystrokes > 0 ? (
+                <p className="mt-0.5 font-mono text-[10px] text-emerald-700">
+                  {typingStats.cpm}타/분 · 정확도 {typingStats.accuracy}%
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -614,6 +633,7 @@ export default function PlayPage() {
                     paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
                   }}
                 >
+                  <TypingStatsBar stats={typingStats} variant="dark" className="mb-1.5" />
                   <TypingInline
                     key={sentence.id}
                     target={target}
@@ -683,6 +703,7 @@ export default function PlayPage() {
               onTypedChange={setTyped}
               onDraftChange={setTypingDraft}
               minimal={minimalTyping}
+              statsResetKey={sentence.id}
             />
             <PlayActions
               complete={complete}
@@ -712,6 +733,7 @@ export default function PlayPage() {
                 onTypedChange={setTyped}
                 onDraftChange={setTypingDraft}
                 minimal={minimalTyping}
+                statsResetKey={sentence.id}
               />
               <PlayActions
                 complete={complete}
