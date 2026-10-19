@@ -1,10 +1,11 @@
 {
+  "id": "/picbook/",
   "name": "PicBook 그림 독서책",
   "short_name": "PicBook",
   "description": "장면 그림과 함께 읽고 타자로 따라 쓰는 독서 팩",
   "lang": "ko",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/picbook/",
+  "scope": "/picbook/",
   "display": "standalone",
   "background_color": "#FFF7E6",
   "theme_color": "#F0612B",
