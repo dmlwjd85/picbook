@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import type { CustomPicbookRecord } from '../types/customPicbook'
 import { fetchAllCustomPicbooks, publishCustomPicbook } from '../lib/customPicbookFirebase'
 import { normalizeProductKey } from '../lib/productKey'
@@ -117,6 +118,6 @@ export const useCustomPicbookStore = create<CustomPicbookStore>()(
         return publishCustomPicbook(book)
       },
     }),
-    { name: 'picbook.custom-books.v1', storage: createJSONStorage(() => safeLocalStorage) },
+    { name: 'picbook.custom-books.v1', version: PERSIST_V1, migrate: migratePassthrough, storage: createJSONStorage(() => safeLocalStorage) },
   ),
 )

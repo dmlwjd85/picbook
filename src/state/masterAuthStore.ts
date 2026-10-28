@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 
 const PASSWORD_KEY = 'picbook.master.password.v1'
 const SESSION_KEY = 'picbook.master.session'
@@ -58,6 +59,8 @@ export const useMasterAuthStore = create<MasterAuthStore>()(
     }),
     {
       name: PASSWORD_KEY,
+      version: PERSIST_V1,
+      migrate: migratePassthrough,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ masterPassword: s.masterPassword }),
     },

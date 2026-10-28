@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import { saveRecordToCloud, type TypingRecord } from '../lib/typingRecords'
 import { useUserAccountStore } from './userAccountStore'
 
@@ -29,6 +30,6 @@ export const useTypingRecordStore = create<TypingRecordStore>()(
         void saveRecordToCloud(account.uid, account.name, record)
       },
     }),
-    { name: 'picbook.typing-records.v1' },
+    { name: 'picbook.typing-records.v1', version: PERSIST_V1, migrate: migratePassthrough },
   ),
 )

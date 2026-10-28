@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import type { SentenceTimeline } from '../types/timeline'
 import { inboxPathForPublic } from '../lib/editorWorkspacePaths'
 
@@ -71,7 +72,7 @@ export const useEditorWorkspaceStore = create<EditorWorkspaceStore>()(
           return { assetsByBook: next }
         }),
     }),
-    { name: 'picbook.editor.workspace.v1' },
+    { name: 'picbook.editor.workspace.v1', version: PERSIST_V1, migrate: migratePassthrough },
   ),
 )
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import { createSamplePack } from '../data/samplePack'
 import { createId } from '../lib/ids'
 import type { Cue, CueEffect, LayerState, ReadingPack, SentenceBlock } from '../types/pack'
@@ -210,6 +211,8 @@ export const usePackEditorStore = create<EditorStore>()(
     }),
     {
       name: STORAGE_KEY,
+      version: PERSIST_V1,
+      migrate: migratePassthrough,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ pack: s.pack, activeSentenceIndex: s.activeSentenceIndex }),
     },
