@@ -4,6 +4,7 @@ import { useMasterAuthStore } from '../state/masterAuthStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 import { useCustomPicbookStore } from '../state/customPicbookStore'
+import { useBookEditStore } from '../state/bookEditStore'
 
 type PersistStore = {
   persist: {
@@ -25,10 +26,9 @@ function waitForHydration(store: PersistStore): Promise<void> {
   })
 }
 
-/** localStorage 복원 전에 로그인 화면으로 튕기지 않도록 대기 */
+/** localStorage·Firebase 로그인 복원 전에 로그인 화면으로 튕기지 않도록 대기 */
 export function PersistGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
-  const migrateLegacyStorage = useUserAccountStore((s) => s.migrateLegacyStorage)
 
   useEffect(() => {
     let cancelled = false
@@ -37,16 +37,20 @@ export function PersistGate({ children }: { children: ReactNode }) {
       waitForHydration(useMasterAuthStore),
       waitForHydration(usePicbookTimelineStore),
       waitForHydration(useCustomPicbookStore),
+      waitForHydration(useBookEditStore),
     ]).then(async () => {
-      migrateLegacyStorage()
+      await useUserAccountStore.getState().syncAuthSession()
       initCloudSyncSubscriptions()
-      await useCustomPicbookStore.getState().syncFromCloud()
+      await Promise.all([
+        useCustomPicbookStore.getState().syncFromCloud(),
+        useBookEditStore.getState().syncFromCloud(),
+      ])
       if (!cancelled) setReady(true)
     })
     return () => {
       cancelled = true
     }
-  }, [migrateLegacyStorage])
+  }, [])
 
   if (!ready) {
     return (

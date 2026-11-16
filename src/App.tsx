@@ -11,7 +11,12 @@ import { EditorErrorBoundary } from './components/EditorErrorBoundary'
 import { PlayErrorBoundary } from './components/PlayErrorBoundary'
 import PlayPage from './pages/PlayPage'
 import LoginPage from './pages/LoginPage'
-import SetupPage from './pages/SetupPage'
+import SignupPage from './pages/SignupPage'
+import RankingPage from './pages/RankingPage'
+import MyPage from './pages/MyPage'
+import PassesPage from './pages/PassesPage'
+import AdminEditorPage from './pages/AdminEditorPage'
+import { RequireAdmin } from './components/RequireAdmin'
 import { prewarmCatalogPacks } from './lib/prewarmPacks'
 
 prewarmCatalogPacks()
@@ -23,7 +28,28 @@ export default function App() {
         <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/setup" element={<SetupPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/setup" element={<Navigate to="/signup" replace />} />
+        <Route path="/ranking" element={<RankingPage />} />
+        <Route path="/passes" element={<PassesPage />} />
+        <Route
+          path="/mypage"
+          element={
+            <RequireUserOrMaster>
+              <MyPage />
+            </RequireUserOrMaster>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <EditorErrorBoundary>
+                <AdminEditorPage />
+              </EditorErrorBoundary>
+            </RequireAdmin>
+          }
+        />
         <Route
           path="/bookshelf"
           element={
@@ -35,11 +61,10 @@ export default function App() {
         <Route
           path="/play/:bookId"
           element={
-            <RequireUserOrMaster>
-              <PlayErrorBoundary>
-                <PlayPage />
-              </PlayErrorBoundary>
-            </RequireUserOrMaster>
+            // 로그인 없이도 열린다 — 권한이 없으면 PlayPage가 앞의 몇 문장만 체험으로 보여 준다
+            <PlayErrorBoundary>
+              <PlayPage />
+            </PlayErrorBoundary>
           }
         />
         <Route path="/master/setup" element={<MasterSetupPage />} />

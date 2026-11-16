@@ -1,0 +1,21 @@
+{
+  "id": "_example",
+  "title": "예시 픽북 (파일 이름이 _로 시작하면 싣지 않아요)",
+  "subtitle": "형식 안내용",
+  "blurb": "이 파일을 복사해 새 픽북을 만드세요.",
+  "category": "proverb",
+  "free": false,
+  "contentVersion": "1",
+  "sentences": [
+    {
+      "text": "가는 말이 고와야 오는 말이 곱다",
+      "images": [
+        "picbooks/_example/s01-1.webp",
+        "picbooks/_example/s01-2.webp",
+        "picbooks/_example/s01-3.webp",
+        "picbooks/_example/s01-4.webp"
+      ],
+      "closingLine": "내가 먼저 고운 말을 하면 상대도 고운 말로 답해요."
+    }
+  ]
+}

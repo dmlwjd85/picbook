@@ -1,121 +1,40 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { MagazineShelf } from '../components/bookshelf/MagazineShelf'
-import { PicbookStore } from '../components/bookshelf/PicbookStore'
-import { UserLogoutButton } from '../components/UserLogoutButton'
-import { canOpenBook, useMasterPreviewMode } from '../lib/bookAccess'
+import { SiteHeader } from '../components/site/SiteHeader'
+import { useStaffPreview } from '../lib/bookAccess'
 import { useUserAccountStore } from '../state/userAccountStore'
-import { useMasterAuthStore } from '../state/masterAuthStore'
 
-type Tab = 'shelf' | 'store'
-
+/** 내 보관함 — 이용권으로 열린 책과 무료 책 */
 export default function BookshelfPage() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
   const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
-  const masterPreview = useMasterPreviewMode()
-  const masterLoggedIn = useMasterAuthStore((s) => s.isLoggedIn)
-  const unlockedIds = useUserAccountStore((s) => s.getActiveAccount()?.unlockedIds ?? [])
-
-  const tabParam = searchParams.get('tab')
-  const [tab, setTab] = useState<Tab>(tabParam === 'store' ? 'store' : 'shelf')
-
-  useEffect(() => {
-    if (tabParam === 'store') setTab('store')
-    else if (tabParam === 'shelf') setTab('shelf')
-  }, [tabParam])
-
-  const switchTab = (next: Tab) => {
-    setTab(next)
-    setSearchParams(next === 'store' ? { tab: 'store' } : {}, { replace: true })
-  }
-
-  const openBook = (bookId: string) => {
-    if (!canOpenBook(bookId, unlockedIds, masterPreview)) {
-      switchTab('store')
-      return
-    }
-    navigate(`/play/${bookId}`)
-  }
+  const staff = useStaffPreview()
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-amber-950 via-stone-950 to-stone-950 text-amber-50">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,200,120,0.1),_transparent_50%)]" />
-
-      <header className="relative border-b border-amber-900/60 px-4 py-5 sm:px-8">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400/90">PicBook</p>
-            <h1 className="mt-1 text-2xl font-bold sm:text-3xl">
-              {masterPreview && !profileName
-                ? '마스터 미리보기 · 책장'
-                : profileName
-                  ? `${profileName}님의 책장`
-                  : '책장'}
-            </h1>
-            <p className="mt-1 text-sm text-amber-200/75">타자를 치면 그림책이 완성됩니다</p>
-            {masterPreview ? (
-              <p className="mt-1 text-xs text-amber-300/80">마스터 로그인 — 모든 PicBook을 열어볼 수 있어요</p>
-            ) : null}
+    <div className="flex min-h-[100dvh] flex-col">
+      <SiteHeader />
+      <div className="relative flex-1 bg-gradient-to-b from-amber-950 via-stone-950 to-stone-950 text-amber-50">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,200,120,0.1),_transparent_50%)]" />
+        <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="font-display text-3xl">{profileName ? `${profileName}님의 보관함` : '보관함'}</h1>
+              <p className="mt-1 text-sm text-amber-200/75">
+                {staff ? '관리자 미리보기 — 모든 픽북을 열어볼 수 있어요' : '이용권으로 열린 픽북과 무료 픽북이 모여 있어요'}
+              </p>
+            </div>
+            <Link
+              to="/passes"
+              className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow hover:bg-orange-500"
+            >
+              이용권으로 더 열기
+            </Link>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {profileName ? (
-              <UserLogoutButton className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/60" />
-            ) : null}
-            {masterLoggedIn ? (
-              <Link
-                to="/editor"
-                className="rounded-lg border border-violet-700/60 bg-violet-950/50 px-3 py-1.5 text-xs font-medium text-violet-200/90 hover:bg-violet-900/50"
-              >
-                마스터 편집
-              </Link>
-            ) : (
-              <Link
-                to="/master/login"
-                className="rounded-lg border border-amber-800/60 bg-amber-950/50 px-3 py-1.5 text-xs font-medium text-amber-200/90 hover:bg-amber-900/50"
-              >
-                마스터 로그인
-              </Link>
-            )}
+          <div className="mt-6">
+            <MagazineShelf onOpenBook={(id) => navigate(`/play/${id}`)} onGoStore={() => navigate('/passes')} />
           </div>
         </div>
-
-        {/* 탭 */}
-        <div className="mx-auto mt-5 flex max-w-5xl gap-1 rounded-xl bg-amber-950/60 p-1 ring-1 ring-amber-800/40">
-          <button
-            type="button"
-            onClick={() => switchTab('shelf')}
-            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
-              tab === 'shelf'
-                ? 'bg-amber-800 text-amber-50 shadow'
-                : 'text-amber-300/80 hover:bg-amber-900/40'
-            }`}
-          >
-            내 서재
-          </button>
-          <button
-            type="button"
-            onClick={() => switchTab('store')}
-            className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition ${
-              tab === 'store'
-                ? 'bg-indigo-600 text-white shadow'
-                : 'text-amber-300/80 hover:bg-amber-900/40'
-            }`}
-          >
-            픽북 구매하기
-          </button>
-        </div>
-      </header>
-
-      <main className="relative mx-auto max-w-5xl px-4 py-8 sm:px-8">
-        {tab === 'shelf' ? (
-          <MagazineShelf onOpenBook={openBook} onGoStore={() => switchTab('store')} />
-        ) : (
-          <div className="rounded-2xl border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950 p-4 sm:p-6">
-            <PicbookStore onUnlocked={() => switchTab('shelf')} />
-          </div>
-        )}
-      </main>
+      </div>
     </div>
   )
 }

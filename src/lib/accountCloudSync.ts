@@ -1,132 +1,89 @@
-import { accountKeyFromName, type UserAccount } from '../state/userAccountStore'
-import type { SentenceTimeline } from '../types/timeline'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import type { PanelSceneEdit } from '../types/sceneEdit'
-import {
-  fetchFirebaseAccount,
-  firebaseAccountExists,
-  pushFirebaseAccount,
-} from './firebaseAccountSync'
-import { isFirebaseEnabled } from './firebase'
+import type { SentenceTimeline } from '../types/timeline'
+import { getPicbookFirestore, isFirebaseEnabled } from './firebase'
 
-/** (선택) Cloudflare Worker 동기화 — Firebase 미설정 시 대체 */
-export const ACCOUNT_SYNC_URL = (import.meta.env.VITE_ACCOUNT_SYNC_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+/** 회원 문서 — users/{uid}. 본인만 읽고 쓸 수 있다(firestore.rules). */
+export const USERS_COLLECTION = 'users'
 
-export type CloudAccountPayload = {
-  name: string
-  password: string
+export type CloudUserDoc = {
+  loginId: string
+  nickname: string
   unlockedIds: string[]
   timelines: Record<string, Record<string, SentenceTimeline>>
   sceneEditsByBook: Record<string, Record<string, PanelSceneEdit>>
+  createdAt: string
   updatedAt: string
 }
 
-export function isWorkerSyncEnabled(): boolean {
-  return ACCOUNT_SYNC_URL.length > 0
-}
+/** 연출 스토어에 병합할 때 쓰는 부분 */
+export type CloudMasterData = Pick<CloudUserDoc, 'timelines' | 'sceneEditsByBook'>
 
-/** Firebase 또는 Worker 중 하나라도 설정되면 기기 간 연동 가능 */
+/** Firebase가 설정되면 기기 간 연동 */
 export function isCloudSyncEnabled(): boolean {
-  return isFirebaseEnabled() || isWorkerSyncEnabled()
-}
-
-export function isFirebaseSyncEnabled(): boolean {
   return isFirebaseEnabled()
 }
 
-async function cloudAccountId(name: string, password: string): Promise<string> {
-  const raw = `${accountKeyFromName(name)}:${password}`
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw))
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-async function fetchWorkerAccount(name: string, password: string): Promise<CloudAccountPayload | null> {
-  if (!isWorkerSyncEnabled()) return null
-  const id = await cloudAccountId(name, password)
-  try {
-    const res = await fetch(`${ACCOUNT_SYNC_URL}/account/${id}`, { method: 'GET' })
-    if (res.status === 404) return null
-    if (!res.ok) return null
-    const data = (await res.json()) as CloudAccountPayload
-    if (data.password !== password) return null
-    return data
-  } catch {
-    return null
+export async function fetchCloudUser(uid: string): Promise<CloudUserDoc | null> {
+  const db = await getPicbookFirestore()
+  if (!db) return null
+  const snap = await getDoc(doc(db, USERS_COLLECTION, uid))
+  if (!snap.exists()) return null
+  const data = snap.data() as Partial<CloudUserDoc>
+  return {
+    loginId: data.loginId ?? '',
+    nickname: data.nickname ?? '',
+    unlockedIds: data.unlockedIds ?? [],
+    timelines: data.timelines ?? {},
+    sceneEditsByBook: data.sceneEditsByBook ?? {},
+    createdAt: data.createdAt ?? '',
+    updatedAt: data.updatedAt ?? '',
   }
 }
 
-async function pushWorkerAccount(payload: CloudAccountPayload): Promise<boolean> {
-  if (!isWorkerSyncEnabled()) return false
+/** 가입 직후 1회 — 회원 문서 생성. 실패하면 예외를 던진다. */
+export async function createCloudUser(
+  uid: string,
+  data: Pick<CloudUserDoc, 'loginId' | 'nickname' | 'createdAt'>,
+): Promise<void> {
+  const db = await getPicbookFirestore()
+  if (!db) throw new Error('Firebase가 설정되지 않았습니다')
+  await setDoc(doc(db, USERS_COLLECTION, uid), {
+    ...data,
+    unlockedIds: [],
+    timelines: {},
+    sceneEditsByBook: {},
+    updatedAt: data.createdAt,
+  } satisfies CloudUserDoc)
+}
+
+/** 서재·연출 변경 저장 */
+export async function pushCloudUser(
+  uid: string,
+  data: Pick<CloudUserDoc, 'unlockedIds' | 'timelines' | 'sceneEditsByBook'>,
+): Promise<boolean> {
+  const db = await getPicbookFirestore()
+  if (!db) return false
   try {
-    const id = await cloudAccountId(payload.name, payload.password)
-    const res = await fetch(`${ACCOUNT_SYNC_URL}/account/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, updatedAt: new Date().toISOString() }),
-    })
-    return res.ok
-  } catch {
+    await setDoc(
+      doc(db, USERS_COLLECTION, uid),
+      { ...data, updatedAt: new Date().toISOString() },
+      { merge: true },
+    )
+    return true
+  } catch (e) {
+    console.warn('[PicBook] 회원 정보 저장 실패', e)
     return false
   }
 }
 
-/** Firebase 우선, Worker 보조 */
-export async function fetchCloudAccount(
-  name: string,
-  password: string,
-): Promise<CloudAccountPayload | null> {
-  const fromFirebase = await fetchFirebaseAccount(name, password)
-  if (fromFirebase) return fromFirebase
-  return fetchWorkerAccount(name, password)
-}
-
-/** 원격에 같은 이름 계정이 있는지 (가입 중복 방지) */
-export async function remoteAccountExists(name: string): Promise<boolean> {
-  const key = accountKeyFromName(name)
-  if (isFirebaseEnabled()) {
-    if (await firebaseAccountExists(key)) return true
-  }
-  return false
-}
-
-export async function pushCloudAccount(payload: CloudAccountPayload): Promise<boolean> {
-  const account: UserAccount = {
-    name: payload.name,
-    password: payload.password,
-    unlockedIds: payload.unlockedIds,
-    createdAt: payload.updatedAt,
-    lastLoginAt: payload.updatedAt,
-  }
-
-  if (isFirebaseEnabled()) {
-    const ok = await pushFirebaseAccount(account, payload.timelines, payload.sceneEditsByBook)
-    if (ok) return true
-  }
-
-  return pushWorkerAccount(payload)
-}
-
-export function accountToCloudPayload(
-  account: UserAccount,
-  timelines: Record<string, Record<string, SentenceTimeline>>,
-  sceneEditsByBook: Record<string, Record<string, PanelSceneEdit>>,
-): CloudAccountPayload {
-  return {
-    name: account.name,
-    password: account.password,
-    unlockedIds: account.unlockedIds,
-    timelines,
-    sceneEditsByBook,
-    updatedAt: new Date().toISOString(),
-  }
-}
-
-export function mergeCloudIntoLocal(local: UserAccount, cloud: CloudAccountPayload): UserAccount {
-  const mergedUnlocks = [...new Set([...local.unlockedIds, ...cloud.unlockedIds])]
-  return {
-    ...local,
-    unlockedIds: mergedUnlocks,
-    lastLoginAt: new Date().toISOString(),
+/** 관리자 여부 — admins/{uid} 문서가 있으면 관리자. 문서는 Firebase 콘솔에서만 만들 수 있다. */
+export async function fetchIsAdmin(uid: string): Promise<boolean> {
+  const db = await getPicbookFirestore()
+  if (!db) return false
+  try {
+    return (await getDoc(doc(db, 'admins', uid))).exists()
+  } catch {
+    return false
   }
 }

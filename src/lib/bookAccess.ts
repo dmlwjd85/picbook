@@ -1,35 +1,53 @@
-import { PICBOOK_CATALOG } from '../data/picbookCatalog'
+import { useMemo } from 'react'
+import { getEditableCatalogItems, type PicbookCatalogItem } from '../data/picbookCatalog'
+import { PASS_ALL } from '../data/passProducts'
+import { useCustomPicbookStore } from '../state/customPicbookStore'
 import { useMasterAuthStore } from '../state/masterAuthStore'
 import { useUserAccountStore } from '../state/userAccountStore'
 
-/** 일반 구매 또는 마스터 미리보기 시 책 열기 가능 */
-export function useCanOpenBook(bookId: string | undefined): boolean {
-  const masterPreview = useMasterAuthStore((s) => s.isLoggedIn)
-  const unlocked = useUserAccountStore((s) =>
-    bookId ? (s.getActiveAccount()?.unlockedIds.includes(bookId) ?? false) : false,
+export type AccessContext = {
+  loggedIn: boolean
+  /** 보유한 이용권(분류 id 또는 'all') */
+  passes: string[]
+  /** 관리자·마스터 — 모든 책 미리보기 */
+  staff: boolean
+}
+
+/**
+ * 책 전체를 열 수 있는지.
+ * - 관리자·마스터: 모두
+ * - 무료 책: 가입한 회원이면 누구나
+ * - 그 밖: 책의 분류 이용권(또는 전체 이용권)이 있을 때
+ * 열 수 없으면 앞부분 몇 문장만 체험으로 보여 준다.
+ */
+export function canOpenBook(book: Pick<PicbookCatalogItem, 'category' | 'free'>, ctx: AccessContext): boolean {
+  if (ctx.staff) return true
+  if (!ctx.loggedIn) return false
+  if (book.free) return true
+  return ctx.passes.includes(book.category) || ctx.passes.includes(PASS_ALL)
+}
+
+export function useAccessContext(): AccessContext {
+  const loggedIn = useUserAccountStore((s) => Boolean(s.sessionKey))
+  const passes = useUserAccountStore((s) => s.passes)
+  const isAdmin = useUserAccountStore((s) => s.isAdmin)
+  const master = useMasterAuthStore((s) => s.isLoggedIn)
+  return useMemo(() => ({ loggedIn, passes, staff: isAdmin || master }), [loggedIn, passes, isAdmin, master])
+}
+
+/** 관리자·마스터로 모든 책을 미리 보는 중인지 */
+export function useStaffPreview(): boolean {
+  return useAccessContext().staff
+}
+
+/** 내 보관함 — 지금 전체를 열 수 있는 책 */
+export function useShelfBooks(): PicbookCatalogItem[] {
+  const ctx = useAccessContext()
+  const customBooks = useCustomPicbookStore((s) => s.books)
+  return useMemo(
+    () => getEditableCatalogItems().filter((b) => canOpenBook(b, ctx)),
+    // customBooks: 관리자가 책을 추가·수정하면 다시 계산
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ctx, customBooks],
   )
-  return Boolean(bookId && (unlocked || masterPreview))
-}
-
-export function useMasterPreviewMode(): boolean {
-  return useMasterAuthStore((s) => s.isLoggedIn)
-}
-
-/** 훅 없이 책 열기 가능 여부 */
-export function canOpenBook(
-  bookId: string,
-  unlockedIds: string[],
-  masterPreview: boolean,
-): boolean {
-  return unlockedIds.includes(bookId) || masterPreview
-}
-
-/** 마스터 미리보기 시 서재에 모든 출간 팩 표시 */
-export function useShelfBookIds(): string[] {
-  const masterPreview = useMasterAuthStore((s) => s.isLoggedIn)
-  const unlocked = useUserAccountStore((s) => s.getActiveAccount()?.unlockedIds ?? [])
-  if (masterPreview) {
-    return PICBOOK_CATALOG.filter((b) => !b.comingSoon).map((b) => b.id)
-  }
-  return unlocked
 }

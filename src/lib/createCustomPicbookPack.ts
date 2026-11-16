@@ -1,4 +1,5 @@
 import { getPackContentVersion } from '../data/packContentVersions'
+import { createPanelSentenceBlock } from './autoPanelSentence'
 import { createId } from './ids'
 import type { CustomPicbookRecord } from '../types/customPicbook'
 import type { ReadingPack, SentenceBlock } from '../types/pack'
@@ -28,8 +29,22 @@ function chunkSentence(text: string, closingLine?: string): SentenceBlock {
   }
 }
 
-/** 커스텀 픽북 메타 → 청크 연출용 ReadingPack */
+/** 커스텀 픽북 메타 → ReadingPack. 그림 문장이 있으면 그쪽으로, 없으면 청크 연출용으로 만든다 */
 export function createCustomPicbookPack(meta: CustomPicbookRecord): ReadingPack {
+  const panels = (meta.panelSentences ?? []).filter((p) => p.text.trim() && p.images.length > 0)
+  if (panels.length > 0) {
+    return {
+      formatVersion: 1,
+      id: meta.id,
+      title: meta.title,
+      description: meta.blurb,
+      author: meta.author,
+      typingStyle: 'stacked',
+      contentVersion: getPackContentVersion(meta.id),
+      updatedAt: meta.updatedAt,
+      sentences: panels.map(createPanelSentenceBlock),
+    }
+  }
   const texts = meta.sentences.map((t) => t.trim()).filter(Boolean)
   return {
     formatVersion: 1,

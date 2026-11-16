@@ -1,5 +1,4 @@
-import { getUnlockedCatalogItems } from '../../data/picbookCatalog'
-import { useShelfBookIds } from '../../lib/bookAccess'
+import { useShelfBooks } from '../../lib/bookAccess'
 import { MagazineCover } from './MagazineCover'
 
 type Props = {
@@ -9,15 +8,14 @@ type Props = {
 
 /** 개인 서재 — 매거진이 딱 맞게 진열된 선반 */
 export function MagazineShelf({ onOpenBook, onGoStore }: Props) {
-  const shelfIds = useShelfBookIds()
-  const books = getUnlockedCatalogItems(shelfIds)
+  const books = useShelfBooks()
 
   return (
     <section>
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-amber-50">내 서재</h2>
-          <p className="mt-0.5 text-xs text-amber-200/70">구매·등록한 PicBook이 매거진처럼 진열됩니다</p>
+          <h2 className="text-lg font-bold text-amber-50">읽을 수 있는 픽북</h2>
+          <p className="mt-0.5 text-xs text-amber-200/70">표지를 누르면 바로 시작해요</p>
         </div>
         {books.length > 0 ? (
           <span className="rounded-full bg-amber-800/50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-100">
@@ -28,18 +26,18 @@ export function MagazineShelf({ onOpenBook, onGoStore }: Props) {
 
       {books.length === 0 ? (
         <div className="rounded-xl border border-dashed border-amber-700/50 bg-amber-950/30 px-6 py-14 text-center">
-          <p className="text-sm font-medium text-amber-100">아직 서재가 비어 있어요</p>
+          <p className="text-sm font-medium text-amber-100">아직 보관함이 비어 있어요</p>
           <p className="mt-2 text-xs leading-relaxed text-amber-300/80">
-            「픽북 구매하기」에서 제품키를 입력하면
+            이용권을 등록하면 그 분류의 픽북이
             <br />
-            여기에 매거진이 진열됩니다.
+            여기에 모두 열립니다.
           </p>
           <button
             type="button"
             onClick={onGoStore}
             className="mt-5 rounded-xl bg-amber-700 px-5 py-2.5 text-sm font-bold text-amber-50 shadow-md hover:bg-amber-600"
           >
-            픽북 구매하기
+            이용권 보기
           </button>
         </div>
       ) : (

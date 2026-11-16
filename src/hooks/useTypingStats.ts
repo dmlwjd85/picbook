@@ -6,6 +6,8 @@ import {
   recordSentenceSubmit,
   type TypingStatsAccumulator,
   type TypingStatsSnapshot,
+  finalizeAccuracy,
+  recordDraftDelta as applyDraftDelta,
 } from '../lib/typingStats'
 
 type Options = {
@@ -21,6 +23,8 @@ type Options = {
 export type TypingStatsResult = TypingStatsSnapshot & {
   /** 문장 완료 후 엔터·스페이스 — 이때 정확도 확정 */
   submitSentence: (raw: string) => void
+  /** 지금 이 순간 제출한다면 나올 타수·정확도 (상태는 바꾸지 않는다) */
+  peekResult: (raw: string) => { cpm: number; accuracy: number }
 }
 
 /** 따라 쓰기 중 타수 실시간, 정확도는 제출 시에만 표시 */
@@ -59,6 +63,24 @@ export function useTypingStats({
     }
   }, [draft, target, active])
 
+  // 제출 순간의 값을 바로 돌려주려면 최신 누적값과 글자 수를 ref로도 들고 있어야 한다
+  const accRef = useRef(acc)
+  accRef.current = acc
+  const typedLenRef = useRef(typed.length)
+  typedLenRef.current = typed.length
+
+  const peekResult = useCallback(
+    (raw: string) => {
+      if (!target.length) return { cpm: 0, accuracy: 100 }
+      const at = Date.now()
+      const finalAcc = applyDraftDelta(accRef.current, prevDraftRef.current, raw, target, at)
+      const accuracy = finalizeAccuracy(finalAcc)
+      const chars = Math.max(typedLenRef.current, target.length)
+      return { cpm: computeTypingStats(finalAcc, chars, target.length, accuracy, at).cpm, accuracy }
+    },
+    [target],
+  )
+
   const submitSentence = useCallback(
     (raw: string) => {
       if (!target.length) return
@@ -87,7 +109,8 @@ export function useTypingStats({
     () => ({
       ...snapshot,
       submitSentence,
+      peekResult,
     }),
-    [snapshot, submitSentence],
+    [snapshot, submitSentence, peekResult],
   )
 }

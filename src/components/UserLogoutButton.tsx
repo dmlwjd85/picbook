@@ -6,7 +6,7 @@ type Props = {
   className?: string
 }
 
-/** 로그아웃 — 계정·구매 이력은 유지, 로그인 화면으로 */
+/** 로그아웃 — 계정·서재는 유지, 홈으로 */
 export function UserLogoutButton({ className }: Props) {
   const navigate = useNavigate()
   const logout = useUserAccountStore((s) => s.logout)
@@ -20,10 +20,9 @@ export function UserLogoutButton({ className }: Props) {
         'rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-semibold text-stone-700 shadow-sm hover:bg-stone-50'
       }
       onClick={() => {
-        if (!window.confirm('로그아웃하면 다시 이름·비밀번호로 로그인해야 합니다. 구매한 PicBook은 계정에 남습니다.')) return
-        logout()
+        if (!window.confirm('로그아웃할까요? 서재와 기록은 계정에 남아 있어요.')) return
         clearSession()
-        navigate('/login', { replace: true })
+        void logout().then(() => navigate('/', { replace: true }))
       }}
     >
       로그아웃

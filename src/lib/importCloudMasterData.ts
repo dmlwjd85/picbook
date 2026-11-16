@@ -1,9 +1,9 @@
 import { usePicbookSceneEditStore } from '../state/picbookSceneEditStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
-import type { CloudAccountPayload } from './accountCloudSync'
+import type { CloudMasterData } from './accountCloudSync'
 
 /** 클라우드에서 받은 타임라인·연출을 로컬에 병합 */
-export function importCloudMasterData(cloud: CloudAccountPayload): void {
+export function importCloudMasterData(cloud: CloudMasterData): void {
   usePicbookTimelineStore.setState((s) => ({
     byBook: mergeBookRecords(s.byBook, cloud.timelines),
   }))
