@@ -13,9 +13,25 @@ export type FirebaseWebConfig = {
 }
 
 /**
- * PicBook 전용 Firebase 프로젝트 설정.
- * 다른 서비스(삼봉월드 등)와 프로젝트를 공유하지 않는다 — 설정이 없으면 Firebase를 쓰지 않고
- * 이 기기에만 저장하는 체험 모드로 동작한다. (docs/FIREBASE_SETUP.md)
+ * PicBook 전용 Firebase 프로젝트(picbook-app-f0ce0)의 웹 설정.
+ * 웹 설정값은 브라우저에 그대로 내려가는 공개 값이라 코드에 둬도 된다 — 접근 통제는 firestore.rules가 한다.
+ * storageBucket은 Storage를 켠 뒤에 추가한다("picbook-app-f0ce0.firebasestorage.app").
+ * 그 전까지 편집창에서 올린 그림은 올린 기기에만 저장되고 배포되지 않는다.
+ */
+const PICBOOK_FIREBASE_CONFIG: FirebaseWebConfig = {
+  apiKey: 'AIzaSyAmA34l0F5fN4cgEDRfRctYgFK88-geMlE',
+  authDomain: 'picbook-app-f0ce0.firebaseapp.com',
+  projectId: 'picbook-app-f0ce0',
+  messagingSenderId: '147099916012',
+  appId: '1:147099916012:web:7a0070165c4d033c0937c9',
+}
+
+/**
+ * 어떤 Firebase 프로젝트를 쓸지 정한다.
+ * - 환경 변수(VITE_FIREBASE_CONFIG 등)가 있으면 그 프로젝트 (에뮬레이터·다른 프로젝트 시험용)
+ * - 없으면: 배포 빌드는 위 PicBook 전용 프로젝트, 개발 서버(npm run dev)는 Firebase 없이
+ *   이 기기에만 저장하는 체험 모드
+ * 다른 서비스(삼봉월드 등)와 프로젝트를 공유하지 않는다. (docs/FIREBASE_SETUP.md)
  */
 function readConfig(): FirebaseWebConfig | null {
   const raw = import.meta.env.VITE_FIREBASE_CONFIG as string | undefined
@@ -34,7 +50,9 @@ function readConfig(): FirebaseWebConfig | null {
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined
   const appId = import.meta.env.VITE_FIREBASE_APP_ID as string | undefined
 
-  if (!apiKey || !authDomain || !projectId || !appId) return null
+  if (!apiKey || !authDomain || !projectId || !appId) {
+    return import.meta.env.PROD ? PICBOOK_FIREBASE_CONFIG : null
+  }
 
   return {
     apiKey,

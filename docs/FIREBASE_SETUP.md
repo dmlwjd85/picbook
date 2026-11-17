@@ -24,14 +24,12 @@ npx firebase-tools deploy --only firestore:rules,storage
 
 ## 3. 앱에 연결
 
-GitHub 저장소 **Settings → Secrets and variables → Actions**에 `VITE_FIREBASE_CONFIG`를 JSON 한 줄로 넣습니다.
+지금 연결된 프로젝트는 **`picbook-app-f0ce0`** (Firestore 위치: 서울)입니다. 웹 설정값은 `src/lib/firebase.ts`의 `PICBOOK_FIREBASE_CONFIG`에 들어 있고, 배포 빌드가 이 값을 씁니다.
+웹 설정값은 브라우저에 내려가는 공개 값이라 코드에 두어도 됩니다. 접근 통제는 보안 규칙이 합니다.
 
-```json
-{"apiKey":"...","authDomain":"picbook-app.firebaseapp.com","projectId":"picbook-app","appId":"1:...:web:...","storageBucket":"picbook-app.firebasestorage.app"}
-```
-
-로컬 개발은 `.env.local`에 같은 값을 넣고 `npm run dev`.
-그리고 **Authentication → 설정 → 승인된 도메인**에 배포 주소(예: `dmlwjd85.github.io`)를 추가합니다.
+- 다른 프로젝트로 옮길 때: 이 상수를 새 프로젝트 값으로 바꿉니다.
+- 로컬 개발(`npm run dev`)은 기본이 체험 모드입니다. 실제 프로젝트나 에뮬레이터에 붙이려면 `.env.local`에 `VITE_FIREBASE_CONFIG`(JSON 한 줄)를 넣습니다.
+- Storage를 켠 뒤에는 상수에 `storageBucket: 'picbook-app-f0ce0.firebasestorage.app'`를 추가하고 `storage.rules`를 배포해야 편집창의 그림 업로드가 클라우드에 저장됩니다.
 
 ## 4. 관리자 지정
 
