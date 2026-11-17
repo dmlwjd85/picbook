@@ -31,7 +31,9 @@ import { useTimelineFrameAudio } from '../hooks/useTimelineFrameAudio'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
 import { fetchPublishedBookTimelines } from '../lib/publishedTimelineFirebase'
 import { usePlaySessionStore } from '../state/playSessionStore'
-import { canOpenBook, useMasterPreviewMode } from '../lib/bookAccess'
+import { canOpenBook, useAccessContext } from '../lib/bookAccess'
+import { TRIAL_SENTENCE_COUNT } from '../data/passProducts'
+import { useTypingRecordStore } from '../state/typingRecordStore'
 import { useFullscreen } from '../hooks/useFullscreen'
 import { useUserAccountStore } from '../state/userAccountStore'
 import type { LayerState, ReadingPack } from '../types/pack'
@@ -45,6 +47,7 @@ function PlayActions({
   epilogueShown = false,
   onShowEpilogue,
   onDarkStage = false,
+  exit,
 }: {
   complete: boolean
   lastSentence: boolean
@@ -54,6 +57,8 @@ function PlayActions({
   epilogueShown?: boolean
   onShowEpilogue?: () => void
   onDarkStage?: boolean
+  /** 마지막 문장 뒤에 갈 곳 — 체험이면 이용권 안내 */
+  exit: { to: string; label: string }
 }) {
   return (
     <>
@@ -103,10 +108,10 @@ function PlayActions({
         )}
         {lastSentence && complete ? (
           <Link
-            to="/bookshelf"
+            to={exit.to}
             className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50"
           >
-            책장으로
+            {exit.label}
           </Link>
         ) : null}
       </div>
@@ -118,9 +123,16 @@ export default function PlayPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const navigate = useNavigate()
   const profileName = useUserAccountStore((s) => s.getActiveAccount()?.name)
-  const unlockedIds = useUserAccountStore((s) => s.getActiveAccount()?.unlockedIds ?? [])
-  const masterPreview = useMasterPreviewMode()
-  const isBookUnlocked = Boolean(bookId && canOpenBook(bookId, unlockedIds, masterPreview))
+  const access = useAccessContext()
+  const catalogBook = bookId ? getLibraryBook(bookId) : undefined
+  /** 전체를 열 수 없으면(비로그인·이용권 없음) 앞의 몇 문장만 체험한다 */
+  const trial = !catalogBook || !canOpenBook(catalogBook, access)
+  const exit = trial
+    ? { to: '/passes', label: '체험 끝 · 전체 보기' }
+    : { to: '/bookshelf', label: '보관함으로' }
+  const addRecord = useTypingRecordStore((s) => s.addRecord)
+  /** 같은 문장에서 엔터를 여러 번 눌러도 기록은 한 번만 */
+  const recordedSentenceRef = useRef<string | null>(null)
   const { active: fullscreenActive, supported: fullscreenSupported, toggle: toggleFullscreen } =
     useFullscreen()
   const setSession = usePlaySessionStore((s) => s.setSession)
@@ -185,10 +197,6 @@ export default function PlayPage() {
       navigate('/bookshelf', { replace: true })
       return
     }
-    if (!isBookUnlocked) {
-      navigate('/bookshelf?tab=store', { replace: true })
-      return
-    }
     const book = getLibraryBook(bookId)
     if (!book || book.comingSoon) {
       navigate('/bookshelf', { replace: true })
@@ -202,7 +210,10 @@ export default function PlayPage() {
     const load = () => {
       if (cancelled) return
       try {
-        const loaded = loadCatalogPack(book)
+        const full = loadCatalogPack(book)
+        const loaded = trial
+          ? { ...full, sentences: full.sentences.slice(0, TRIAL_SENTENCE_COUNT) }
+          : full
         if (cancelled) return
         setSession(book.id, loaded)
         startTransition(() => {
@@ -223,7 +234,7 @@ export default function PlayPage() {
       cancelled = true
       window.clearTimeout(tid)
     }
-  }, [bookId, isBookUnlocked, navigate, setSession])
+  }, [bookId, trial, navigate, setSession])
 
   const mergePublishedBook = usePicbookTimelineStore((s) => s.mergePublishedBook)
 
@@ -250,6 +261,7 @@ export default function PlayPage() {
     setTyped('')
     setTypingDraft('')
     setEpilogueShown(false)
+    recordedSentenceRef.current = null
     setFocusToken((t) => t + 1)
     lastPlayLayersRef.current = []
   }, [safeSentenceIndex, sentence?.id])
@@ -304,7 +316,7 @@ export default function PlayPage() {
     resetKey: sentence?.id,
     active: !epilogueShown && target.length > 0,
   })
-  const { submitSentence: submitTypingStats, ...typingStats } = typingStatsResult
+  const { submitSentence: submitTypingStats, peekResult: peekTypingResult, ...typingStats } = typingStatsResult
   const sentenceCount = pack?.sentences.length ?? 0
   const sentenceLabels = useMemo(() => pack?.sentences.map((s) => s.text) ?? [], [pack?.sentences])
 
@@ -312,6 +324,7 @@ export default function PlayPage() {
     setTyped('')
     setTypingDraft('')
     setEpilogueShown(false)
+    recordedSentenceRef.current = null
     lastPlayLayersRef.current = []
     setFocusToken((t) => t + 1)
   }, [])
@@ -370,6 +383,22 @@ export default function PlayPage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [complete, lastSentence, goNextSentence, epilogueShown, pack?.typingStyle, submitTypingStats, playbackRaw])
+
+  // 문장을 끝까지 맞게 쓴 순간 기록한다(키보드·터치 어느 쪽으로 넘어가든 한 번만). 체험은 기록하지 않는다.
+  useEffect(() => {
+    if (!complete || trial || !pack || !bookId || !sentence) return
+    if (recordedSentenceRef.current === sentence.id) return
+    recordedSentenceRef.current = sentence.id
+    const result = peekTypingResult(playbackRaw)
+    addRecord({
+      bookId,
+      bookTitle: pack.title,
+      sentence: target,
+      cpm: result.cpm,
+      accuracy: result.accuracy,
+      chars: target.length,
+    })
+  }, [complete, trial, pack, bookId, sentence, target, playbackRaw, peekTypingResult, addRecord])
 
   const playImmersive =
     pack?.typingStyle === 'stacked' || pack?.typingStyle === 'minimal'
@@ -441,11 +470,19 @@ export default function PlayPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Link
-              to="/bookshelf"
+              to={trial ? '/' : '/bookshelf'}
               className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-50"
             >
-              ← 책장
+              ← {trial ? '나가기' : '보관함'}
             </Link>
+            {trial ? (
+              <Link
+                to="/passes"
+                className="shrink-0 rounded-full bg-orange-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-orange-700"
+              >
+                체험 중 · 전체 보기
+              </Link>
+            ) : null}
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold text-stone-900 sm:text-lg">{pack.title}</h1>
               <p className="text-[11px] text-stone-500 sm:text-xs">
@@ -521,10 +558,10 @@ export default function PlayPage() {
             ) : null}
             {lastSentence ? (
               <Link
-                to="/bookshelf"
+                to={exit.to}
                 className="flex w-full items-center justify-center rounded-2xl bg-stone-700 py-3.5 text-base font-bold text-white shadow-lg active:scale-[0.98]"
               >
-                책장으로 돌아가기
+                {trial ? '체험 끝 · 전체 보기' : '보관함으로 돌아가기'}
               </Link>
             ) : (
               <button
@@ -622,6 +659,7 @@ export default function PlayPage() {
                     <PlayActions
                       complete={complete}
                       lastSentence={lastSentence}
+                exit={exit}
                       progressPct={progressPct}
                       onNext={goNextSentence}
                       epilogueShown
@@ -653,6 +691,7 @@ export default function PlayPage() {
                     <PlayActions
                       complete={complete}
                       lastSentence={lastSentence}
+                exit={exit}
                       progressPct={progressPct}
                       onNext={goNextSentence}
                       onShowEpilogue={() => setEpilogueShown(true)}
@@ -712,6 +751,7 @@ export default function PlayPage() {
             <PlayActions
               complete={complete}
               lastSentence={lastSentence}
+              exit={exit}
               progressPct={progressPct}
               onNext={goNextSentence}
               minimal={minimalTyping}
@@ -742,6 +782,7 @@ export default function PlayPage() {
               <PlayActions
                 complete={complete}
                 lastSentence={lastSentence}
+                exit={exit}
                 progressPct={progressPct}
                 onNext={goNextSentence}
                 minimal={minimalTyping}

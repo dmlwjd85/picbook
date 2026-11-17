@@ -1,11 +1,34 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { CustomPicbookRecord } from '../types/customPicbook'
 import { fetchAllCustomPicbooks, publishCustomPicbook } from '../lib/customPicbookFirebase'
 import { normalizeProductKey } from '../lib/productKey'
 import { createId } from '../lib/ids'
 
 const base = import.meta.env.BASE_URL
+
+/**
+ * 체험 모드에서는 그림이 data URL로 들어가 저장 공간(약 5MB)을 넘길 수 있다.
+ * 넘쳐도 편집 화면이 멈추지 않게 하고, 저장 실패를 알린다.
+ */
+let quotaWarned = false
+const safeLocalStorage = {
+  getItem: (name: string) => localStorage.getItem(name),
+  removeItem: (name: string) => localStorage.removeItem(name),
+  setItem: (name: string, value: string) => {
+    try {
+      localStorage.setItem(name, value)
+    } catch (e) {
+      console.warn('[PicBook] 픽북 저장 공간 부족', e)
+      if (!quotaWarned) {
+        quotaWarned = true
+        window.alert(
+          '이 기기의 저장 공간이 가득 차서 방금 변경은 새로고침하면 사라집니다.\nFirebase Storage를 연결하면 그림이 클라우드에 저장되어 이 문제가 없어집니다.',
+        )
+      }
+    }
+  },
+}
 
 type CustomPicbookStore = {
   books: CustomPicbookRecord[]
@@ -79,7 +102,11 @@ export const useCustomPicbookStore = create<CustomPicbookStore>()(
         set((s) => {
           const map = new Map<string, CustomPicbookRecord>()
           for (const b of s.books) map.set(b.id, b)
-          for (const r of remote) map.set(r.id, r)
+          for (const r of remote) {
+            // 배포 뒤에 이 기기에서 더 고친 책은 덮어쓰지 않는다
+            const local = map.get(r.id)
+            if (!local || local.updatedAt <= r.updatedAt) map.set(r.id, r)
+          }
           return { books: [...map.values()], hydratedFromCloud: true }
         })
       },
@@ -90,6 +117,6 @@ export const useCustomPicbookStore = create<CustomPicbookStore>()(
         return publishCustomPicbook(book)
       },
     }),
-    { name: 'picbook.custom-books.v1' },
+    { name: 'picbook.custom-books.v1', storage: createJSONStorage(() => safeLocalStorage) },
   ),
 )

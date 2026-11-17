@@ -7,6 +7,8 @@ import { getPackContentVersion } from './packContentVersions'
 import { useCustomPicbookStore } from '../state/customPicbookStore'
 import type { CustomPicbookRecord } from '../types/customPicbook'
 import type { ReadingPack } from '../types/pack'
+import { CONTENT_PICBOOKS } from './contentPicbooks'
+import type { PicbookCategoryId } from './picbookCategories'
 
 const base = import.meta.env.BASE_URL
 
@@ -18,6 +20,11 @@ export type PicbookCatalogItem = {
   blurb: string
   author: string
   coverImage: string
+  /** 분류 — 서점·홈에서 묶어 보여 준다 */
+  category: PicbookCategoryId
+  /** 교과 분류일 때 학년·과목 */
+  grade?: number
+  subject?: string
   /** 매거진 테두리·책등 톤 (tailwind gradient 조각) */
   magazineTone: string
   /** 정규화된 제품키와 비교 */
@@ -43,6 +50,9 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     blurb: '권력분립·삼권 견제·국민의 자유와 권리까지, 타이핑에 맞춰 이어지는 역사 PicBook(3문장).',
     author: 'PicBook',
     coverImage: `${base}demo/powers/powers-cover.png`,
+    category: 'curriculum',
+    grade: 6,
+    subject: '사회',
     magazineTone: 'from-amber-600 via-orange-500 to-rose-600',
     productKey: normalizeProductKey('PICBOOK-3POWERS-2026'),
     productKeyDisplay: 'PICBOOK-3POWERS-2026',
@@ -59,6 +69,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
       '속담 문장을 따라 쓰면 6컷 만화가 순서대로 바뀝니다. 30편 — 그림의 떡·금강산도 식후경·누워서 떡 먹기 등.',
     author: 'PicBook',
     coverImage: `${base}demo/proverbs/proverbs-cover.png`,
+    category: 'proverb',
     magazineTone: 'from-emerald-600 via-teal-500 to-sky-600',
     productKey: normalizeProductKey('PICBOOK-PROVERBS-2026'),
     productKeyDisplay: 'PICBOOK-PROVERBS-2026',
@@ -74,6 +85,7 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
       '타이핑한 단어·어절마다 투명 PNG가 겹쳐집니다. 숲·토끼·거북이·달리다·느리다·기쁘다 등 레고 블록 연출.',
     author: 'PicBook',
     coverImage: `${base}demo/tortoise-hare-cover.png`,
+    category: 'fairy-tale',
     magazineTone: 'from-lime-600 via-emerald-500 to-teal-600',
     productKey: normalizeProductKey('PICBOOK-TORTOISE-2026'),
     productKeyDisplay: 'PICBOOK-TORTOISE-2026',
@@ -88,6 +100,9 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     blurb: '헌법 제정 과정을 그림과 타이핑으로 따라가는 PicBook. 곧 서점에 올라옵니다.',
     author: 'PicBook',
     coverImage: `${base}demo/samgwon-1.png`,
+    category: 'curriculum',
+    grade: 6,
+    subject: '사회',
     magazineTone: 'from-slate-600 via-slate-500 to-slate-700',
     productKey: normalizeProductKey('PICBOOK-CONSTITUTION-TBA'),
     productKeyDisplay: '—',
@@ -103,6 +118,9 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
     blurb: '투표·대표·견제의 흐름을 한 팩으로. 준비 중입니다.',
     author: 'PicBook',
     coverImage: `${base}demo/samgwon-5.png`,
+    category: 'curriculum',
+    grade: 6,
+    subject: '사회',
     magazineTone: 'from-indigo-700 via-violet-600 to-purple-800',
     productKey: normalizeProductKey('PICBOOK-ELECTION-TBA'),
     productKeyDisplay: '—',
@@ -113,6 +131,11 @@ export const PICBOOK_CATALOG: PicbookCatalogItem[] = [
   },
 ]
 
+// 대량 제작 픽북(src/content/picbooks/*.json) — 코드에 든 팩과 id가 겹치면 싣지 않는다
+for (const item of CONTENT_PICBOOKS) {
+  if (!PICBOOK_CATALOG.some((b) => b.id === item.id)) PICBOOK_CATALOG.push(item)
+}
+
 export function customRecordToCatalogItem(meta: CustomPicbookRecord): PicbookCatalogItem {
   return {
     id: meta.id,
@@ -121,6 +144,10 @@ export function customRecordToCatalogItem(meta: CustomPicbookRecord): PicbookCat
     blurb: meta.blurb,
     author: meta.author,
     coverImage: meta.coverImage,
+    category: meta.category ?? 'etc',
+    grade: meta.grade,
+    subject: meta.subject,
+    free: meta.free,
     magazineTone: meta.magazineTone,
     productKey: meta.productKey,
     productKeyDisplay: meta.productKeyDisplay,

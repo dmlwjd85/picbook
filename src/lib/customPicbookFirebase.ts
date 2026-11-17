@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore'
 import type { CustomPicbookRecord } from '../types/customPicbook'
 import { getPicbookFirestore, isFirebaseEnabled } from './firebase'
 
@@ -8,7 +8,9 @@ export async function publishCustomPicbook(meta: CustomPicbookRecord): Promise<b
   const db = await getPicbookFirestore()
   if (!db) return false
   try {
-    await setDoc(doc(db, COL, meta.id), { ...meta, publishedAt: new Date().toISOString() }, { merge: true })
+    // undefined 필드는 Firestore가 거부하므로 JSON으로 한 번 걸러 낸다
+    const clean = JSON.parse(JSON.stringify(meta)) as CustomPicbookRecord
+    await setDoc(doc(db, COL, meta.id), { ...clean, publishedAt: new Date().toISOString() })
     return true
   } catch (e) {
     console.warn('[PicBook] 커스텀 픽북 배포 실패', e)
@@ -25,5 +27,17 @@ export async function fetchAllCustomPicbooks(): Promise<CustomPicbookRecord[]> {
     return snap.docs.map((d) => d.data() as CustomPicbookRecord).filter((m) => m.id && m.title)
   } catch {
     return []
+  }
+}
+
+export async function unpublishCustomPicbook(id: string): Promise<boolean> {
+  const db = await getPicbookFirestore()
+  if (!db) return false
+  try {
+    await deleteDoc(doc(db, COL, id))
+    return true
+  } catch (e) {
+    console.warn('[PicBook] 커스텀 픽북 배포 취소 실패', e)
+    return false
   }
 }

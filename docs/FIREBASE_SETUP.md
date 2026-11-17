@@ -1,60 +1,65 @@
-# PicBook Firebase 회원 연동 (삼봉월드 공용)
+# PicBook 전용 Firebase 설정
 
-PicBook은 **삼봉월드와 같은 Firebase 프로젝트** `sambong-world-2026` 를 씁니다.  
-회원 데이터는 **`picbook_accounts` 컬렉션** 에만 저장합니다 (학생·월드 데이터와 분리).
+PicBook은 **자기만의 Firebase 프로젝트**를 씁니다. 예전처럼 삼봉월드 프로젝트(`sambong-world-2026`)를 함께 쓰지 않습니다.
+설정값이 없으면 앱은 Firebase 없이 **체험 모드**(계정·편집 내용이 그 기기에만 저장)로 동작합니다.
 
-**삼봉월드 마스터 탭** → 「PicBook 회원」에서 목록·비밀번호 변경·삭제가 가능합니다.
+## 1. 프로젝트 만들기 (한 번만)
 
-## 1. Firebase 프로젝트
+1. [Firebase 콘솔](https://console.firebase.google.com/) → **프로젝트 추가** (예: `picbook-app`)
+2. **Authentication → 로그인 방법 → 이메일/비밀번호** 사용 설정
+   - 회원은 아이디로 가입하지만, 내부적으로 `아이디@picbook.example.com` 꼴의 주소로 저장됩니다. 실제 메일은 보내지 않습니다.
+3. **Firestore Database** 만들기 (프로덕션 모드, 위치는 `asia-northeast3` 서울 권장)
+4. **Storage** 시작하기 — 편집창에서 올리는 그림이 저장됩니다. (요금제 조건은 콘솔 안내를 확인하세요. Storage를 켜지 않으면 그림은 올린 기기에서만 보입니다.)
+5. **프로젝트 설정 → 일반 → 내 앱 → 웹 앱 추가** 후 설정값 복사
 
-1. [Firebase Console](https://console.firebase.google.com/)에서 프로젝트 선택 또는 생성
-2. **Firestore Database** 생성 (테스트 모드로 시작 가능)
-3. **프로젝트 설정 → 일반 → 내 앱** 에서 웹 앱 추가 후 설정값 복사
-
-## 2. Firestore 규칙
-
-`firestore.rules` 내용을 콘솔에 붙여넣거나 CLI로 배포합니다.
+## 2. 규칙 배포
 
 ```bash
-firebase deploy --only firestore:rules
+cp .firebaserc.example .firebaserc   # 파일 안의 프로젝트 id를 내 것으로 바꾸기
+npx firebase-tools login
+npx firebase-tools deploy --only firestore:rules,storage
 ```
 
-## 3. PicBook 빌드 환경 변수
+규칙 파일: `firestore.rules`, `storage.rules`. 고친 뒤에는 `npm run test:rules`로 시험할 수 있습니다(에뮬레이터, Java 필요).
 
-**방법 A — JSON 한 줄 (권장)**
+## 3. 앱에 연결
 
-GitHub Secrets: `VITE_FIREBASE_CONFIG`
+지금 연결된 프로젝트는 **`picbook-app-f0ce0`** (Firestore 위치: 서울)입니다. 웹 설정값은 `src/lib/firebase.ts`의 `PICBOOK_FIREBASE_CONFIG`에 들어 있고, 배포 빌드가 이 값을 씁니다.
+웹 설정값은 브라우저에 내려가는 공개 값이라 코드에 두어도 됩니다. 접근 통제는 보안 규칙이 합니다.
 
-```json
-{"apiKey":"...","authDomain":"xxx.firebaseapp.com","projectId":"xxx","appId":"1:...:web:...","storageBucket":"xxx.appspot.com"}
-```
+- 다른 프로젝트로 옮길 때: 이 상수를 새 프로젝트 값으로 바꿉니다.
+- 로컬 개발(`npm run dev`)은 기본이 체험 모드입니다. 실제 프로젝트나 에뮬레이터에 붙이려면 `.env.local`에 `VITE_FIREBASE_CONFIG`(JSON 한 줄)를 넣습니다.
+- Storage를 켠 뒤에는 상수에 `storageBucket: 'picbook-app-f0ce0.firebasestorage.app'`를 추가하고 `storage.rules`를 배포해야 편집창의 그림 업로드가 클라우드에 저장됩니다.
 
-**방법 B — 개별 변수**
+## 4. 관리자 지정
 
-| 변수 | 설명 |
-|------|------|
-| `VITE_FIREBASE_API_KEY` | API Key |
-| `VITE_FIREBASE_AUTH_DOMAIN` | authDomain |
-| `VITE_FIREBASE_PROJECT_ID` | projectId |
-| `VITE_FIREBASE_APP_ID` | appId |
+1. 사이트에서 관리자로 쓸 계정을 회원가입합니다.
+2. 콘솔 **Authentication → 사용자**에서 그 계정의 **사용자 UID**를 복사합니다.
+3. **Firestore → 컬렉션 시작 → `admins`** → 문서 ID에 UID를 붙여넣고 아무 필드나 하나(예: `role: "admin"`) 넣어 저장합니다.
+4. 다시 로그인하면 상단 메뉴에 **편집 · 검수**가 나타납니다.
 
-로컬: `.env.local` 에 위 값 설정 후 `npm run dev`
+관리자만 책 배포, 그림 업로드, 이용권 코드 발급을 할 수 있습니다. `admins` 문서는 앱에서 만들 수 없고 콘솔에서만 만듭니다.
 
-## 4. 저장되는 데이터 (`picbook_accounts/{이름키}`)
+## 5. 저장되는 데이터
 
-| 필드 | 설명 |
-|------|------|
-| `name` | 표시 이름 |
-| `passwordHash` | 비밀번호 SHA-256 (평문 미저장) |
-| `unlockedIds` | 구매·등록한 PicBook ID |
-| `timelines` | 마스터 타임라인 연출 |
-| `sceneEditsByBook` | 패널 연출 |
-| `createdAt` / `updatedAt` | ISO 시간 |
+| 위치 | 내용 | 읽기 | 쓰기 |
+|---|---|---|---|
+| `users/{uid}` | 아이디, 닉네임, 연출 동기화 | 본인 | 본인 (아이디·가입일 변경 불가) |
+| `users/{uid}/records` | 타자 기록 | 본인 | 본인 추가만 |
+| `users/{uid}/passes/{분류}` | 이용권 | 본인 | 코드 등록 또는 결제 서버·관리자 |
+| `pass_keys/{코드}` | 이용권 코드와 사용 횟수 | 코드를 아는 회원(단건) | 관리자 |
+| `rankings/{책}/entries/{uid}` | 책별 최고 타수 | 누구나 | 본인 (더 높은 기록만) |
+| `picbook_custom_books`, `picbook_book_edits`, `picbook_published_timelines`, `visual_dictionary*` | 책 내용 | 누구나 | 관리자 |
+| `admins/{uid}` | 관리자 표시 | 본인 | 콘솔에서만 |
 
-## 5. 동작
+## 6. 결제 연동 지점
 
-- **가입**: Firestore에 PicBook 계정 문서 생성
-- **로그인**: Firestore에서 불러와 로컬과 병합
-- **구매·연출 변경**: 2초 후 자동으로 Firestore에 저장
+이용권은 `users/{uid}/passes/{분류 id}` 문서가 있느냐로 판단합니다(`all`은 전체 이용권).
+카드 결제를 붙일 때는 결제대행사(PG)의 결제 완료 알림을 **서버**(Cloud Functions 등)에서 검증한 뒤, Admin SDK로 이 문서를 만들면 됩니다.
+브라우저에서는 이 문서를 직접 만들 수 없습니다 — 이용권 코드 등록(코드 사용 횟수 차감과 한 묶음)만 예외입니다.
+가격 표시는 `src/data/passProducts.ts`의 `priceLabel`에서 정합니다.
 
-Firebase 미설정 시: 이 기기 `localStorage`만 사용 (선택적으로 Cloudflare Worker URL 사용 가능).
+## 7. 예전 데이터
+
+예전 회원(이름 + 숫자 6자리)은 삼봉월드 프로젝트의 `picbook_accounts`에 남아 있고 새 프로젝트로 옮겨지지 않습니다. 새로 가입해야 합니다.
+`workers/account-sync`(Cloudflare Worker 동기화)는 더 이상 앱에서 쓰지 않습니다.

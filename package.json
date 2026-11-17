@@ -17,7 +17,9 @@
     "queue:images": "node scripts/image-queue.mjs",
     "queue:images:watch": "node scripts/image-queue.mjs --watch",
     "outpaint:proverbs": "node scripts/batch-outpaint-proverbs.mjs",
-    "prebuild": "node scripts/sync-editor-workspace.mjs && node scripts/fix-proverb-panels-3x2.mjs && node scripts/verify-proverbs-pack.mjs"
+    "prebuild": "node scripts/sync-editor-workspace.mjs && node scripts/fix-proverb-panels-3x2.mjs && node scripts/verify-proverbs-pack.mjs && node scripts/verify-picbooks.mjs",
+    "verify:picbooks": "node scripts/verify-picbooks.mjs",
+    "test:rules": "node scripts/run-rules-test.mjs"
   },
   "dependencies": {
     "firebase": "^12.13.0",

@@ -1,54 +1,117 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import {
-  accountToCloudPayload,
-  fetchCloudAccount,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from 'firebase/auth'
+import {
+  createCloudUser,
+  fetchCloudUser,
+  fetchIsAdmin,
   isCloudSyncEnabled,
-  mergeCloudIntoLocal,
-  pushCloudAccount,
-  remoteAccountExists,
+  pushCloudUser,
+  type CloudUserDoc,
 } from '../lib/accountCloudSync'
+import {
+  loginIdToEmail,
+  normalizeLoginId,
+  validateLoginId,
+  validateNickname,
+  validatePassword,
+} from '../lib/accountRules'
+import { getPicbookAuth, isFirebaseEnabled } from '../lib/firebase'
 import { importCloudMasterData } from '../lib/importCloudMasterData'
-import { isValidSixDigitPassword } from '../lib/password'
+import { fetchPasses, redeemPassKey, type RedeemResult } from '../lib/passes'
 import { usePicbookSceneEditStore } from './picbookSceneEditStore'
 import { usePicbookTimelineStore } from './picbookTimelineStore'
 
-const STORAGE_KEY = 'picbook.accounts.v1'
+/** v1(이름+6자리 비밀번호)과 구조가 달라 새 키를 쓴다 */
+const STORAGE_KEY = 'picbook.accounts.v2'
 
 export type UserAccount = {
-  /** 표시용 이름(최초 등록 시 입력값) */
+  /** Firebase Auth uid. 체험 모드(Firebase 미설정)는 `local:아이디` */
+  uid: string
+  loginId: string
+  /** 닉네임 — 책장·랭킹에 표시 */
   name: string
-  password: string
   unlockedIds: string[]
   createdAt: string
   lastLoginAt: string
+  /** 체험 모드 전용. Firebase 사용 시 비밀번호는 Firebase Auth만 보관한다. */
+  localPasswordHash?: string
 }
 
-export function accountKeyFromName(name: string): string {
-  return name.trim().toLowerCase()
-}
+export type AuthResult = { ok: true } | { ok: false; error: string }
 
 type UserAccountStore = {
   accounts: Record<string, UserAccount>
-  /** 현재 로그인 세션(계정 키) */
+  /** 현재 로그인한 계정의 uid */
   sessionKey: string | null
+  /** 관리자 여부 — 로그인할 때마다 서버(admins/{uid})에서 확인한다. 저장하지 않는다 */
+  isAdmin: boolean
+  /** 보유 이용권(분류 id 또는 'all') — 로그인할 때마다 서버에서 읽는다. 저장하지 않는다 */
+  passes: string[]
   getActiveAccount: () => UserAccount | null
-  register: (name: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>
-  login: (name: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>
-  logout: () => void
+  register: (loginId: string, nickname: string, password: string) => Promise<AuthResult>
+  login: (loginId: string, password: string) => Promise<AuthResult>
+  logout: () => Promise<void>
+  /** 앱 시작 시 Firebase 로그인 상태와 세션을 맞춘다 */
+  syncAuthSession: () => Promise<void>
+  /** 이용권 코드 등록 */
+  redeemPass: (rawKey: string) => Promise<RedeemResult>
   isUnlocked: (bookId: string) => boolean
   unlock: (bookId: string) => void
-  migrateLegacyStorage: () => void
-  /** 계정·연출을 클라우드에 올림 */
+  /** 서재·연출을 클라우드에 올림 */
   pushCloudSnapshot: () => Promise<void>
 }
 
-function touchLogin(accounts: Record<string, UserAccount>, key: string): Record<string, UserAccount> {
-  const acc = accounts[key]
-  if (!acc) return accounts
+async function sha256(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function authErrorMessage(e: unknown): string {
+  const code = (e as { code?: string } | null)?.code ?? ''
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return '이미 사용 중인 아이디입니다. 다른 아이디를 골라 주세요.'
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-email':
+      return '아이디 또는 비밀번호가 맞지 않습니다.'
+    case 'auth/weak-password':
+      return '비밀번호가 너무 쉽습니다. 더 길게 만들어 주세요.'
+    case 'auth/too-many-requests':
+      return '시도가 너무 많습니다. 잠시 후 다시 해 주세요.'
+    case 'auth/network-request-failed':
+      return '인터넷 연결을 확인해 주세요.'
+    case 'auth/operation-not-allowed':
+      return '회원가입이 아직 열려 있지 않습니다. (Firebase 콘솔에서 이메일/비밀번호 로그인을 켜 주세요)'
+    default:
+      console.warn('[PicBook] 인증 오류', e)
+      return '처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+  }
+}
+
+/** 클라우드 회원 문서를 로컬 계정으로 반영하고 연출 데이터를 병합 */
+function accountFromCloud(
+  uid: string,
+  cloud: CloudUserDoc,
+  local: UserAccount | undefined,
+  now: string,
+): UserAccount {
   return {
-    ...accounts,
-    [key]: { ...acc, lastLoginAt: new Date().toISOString() },
+    uid,
+    loginId: cloud.loginId || local?.loginId || '',
+    name: cloud.nickname || local?.name || '',
+    unlockedIds: [...new Set([...(local?.unlockedIds ?? []), ...cloud.unlockedIds])],
+    createdAt: cloud.createdAt || local?.createdAt || now,
+    lastLoginAt: now,
   }
 }
 
@@ -57,6 +120,8 @@ export const useUserAccountStore = create<UserAccountStore>()(
     (set, get) => ({
       accounts: {},
       sessionKey: null,
+      isAdmin: false,
+      passes: [],
 
       getActiveAccount: () => {
         const key = get().sessionKey
@@ -64,88 +129,156 @@ export const useUserAccountStore = create<UserAccountStore>()(
         return get().accounts[key] ?? null
       },
 
-      register: async (name, password) => {
-        const trimmed = name.trim()
-        if (trimmed.length < 1) return { ok: false, error: '이름을 입력해 주세요.' }
-        if (!isValidSixDigitPassword(password)) {
-          return { ok: false, error: '비밀번호는 숫자 6자리로 입력해 주세요.' }
-        }
-        const key = accountKeyFromName(trimmed)
-        if (get().accounts[key]) {
-          return { ok: false, error: '이미 등록된 이름입니다. 로그인해 주세요.' }
-        }
-        if (isCloudSyncEnabled() && (await remoteAccountExists(trimmed))) {
-          return { ok: false, error: '이미 등록된 이름입니다. 로그인해 주세요.' }
-        }
+      register: async (rawLoginId, rawNickname, password) => {
+        const invalid =
+          validateLoginId(rawLoginId) ?? validateNickname(rawNickname) ?? validatePassword(password)
+        if (invalid) return { ok: false, error: invalid }
+        const loginId = normalizeLoginId(rawLoginId)
+        const nickname = rawNickname.trim()
         const now = new Date().toISOString()
+
+        if (!isFirebaseEnabled()) {
+          const uid = `local:${loginId}`
+          if (get().accounts[uid]) return { ok: false, error: '이미 사용 중인 아이디입니다.' }
+          const account: UserAccount = {
+            uid,
+            loginId,
+            name: nickname,
+            unlockedIds: [],
+            createdAt: now,
+            lastLoginAt: now,
+            localPasswordHash: await sha256(`${loginId}:${password}`),
+          }
+          set((s) => ({ accounts: { ...s.accounts, [uid]: account }, sessionKey: uid }))
+          return { ok: true }
+        }
+
+        const auth = getPicbookAuth()
+        if (!auth) return { ok: false, error: 'Firebase에 연결하지 못했습니다.' }
+        let uid: string
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, loginIdToEmail(loginId), password)
+          uid = cred.user.uid
+          await updateProfile(cred.user, { displayName: nickname })
+        } catch (e) {
+          return { ok: false, error: authErrorMessage(e) }
+        }
+        try {
+          await createCloudUser(uid, { loginId, nickname, createdAt: now })
+        } catch (e) {
+          // 계정은 만들어졌으므로 로그인은 유지한다 — 회원 문서는 다음 로그인 때 다시 만든다
+          console.warn('[PicBook] 회원 문서 생성 실패', e)
+        }
         const account: UserAccount = {
-          name: trimmed,
-          password,
+          uid,
+          loginId,
+          name: nickname,
           unlockedIds: [],
           createdAt: now,
           lastLoginAt: now,
         }
-        set((s) => ({
-          accounts: { ...s.accounts, [key]: account },
-          sessionKey: key,
-        }))
-        await get().pushCloudSnapshot()
+        set((s) => ({ accounts: { ...s.accounts, [uid]: account }, sessionKey: uid, isAdmin: false, passes: [] }))
         return { ok: true }
       },
 
-      login: async (name, password) => {
-        const trimmed = name.trim()
-        if (trimmed.length < 1) return { ok: false, error: '이름을 입력해 주세요.' }
-        if (!isValidSixDigitPassword(password)) {
-          return { ok: false, error: '비밀번호는 숫자 6자리로 입력해 주세요.' }
-        }
-        const key = accountKeyFromName(trimmed)
-        let account = get().accounts[key]
+      login: async (rawLoginId, password) => {
+        const loginId = normalizeLoginId(rawLoginId)
+        if (!loginId) return { ok: false, error: '아이디를 입력해 주세요.' }
+        if (!password) return { ok: false, error: '비밀번호를 입력해 주세요.' }
+        const now = new Date().toISOString()
 
-        if (!account && isCloudSyncEnabled()) {
-          const cloudOnly = await fetchCloudAccount(trimmed, password)
-          if (cloudOnly) {
-            const now = new Date().toISOString()
-            account = {
-              name: cloudOnly.name,
-              password,
-              unlockedIds: cloudOnly.unlockedIds,
-              createdAt: now,
+        if (!isFirebaseEnabled()) {
+          const uid = `local:${loginId}`
+          const account = get().accounts[uid]
+          if (!account || account.localPasswordHash !== (await sha256(`${loginId}:${password}`))) {
+            return { ok: false, error: '아이디 또는 비밀번호가 맞지 않습니다.' }
+          }
+          set((s) => ({
+            sessionKey: uid,
+            accounts: { ...s.accounts, [uid]: { ...account, lastLoginAt: now } },
+          }))
+          return { ok: true }
+        }
+
+        const auth = getPicbookAuth()
+        if (!auth) return { ok: false, error: 'Firebase에 연결하지 못했습니다.' }
+        let uid: string
+        let displayName: string
+        try {
+          const cred = await signInWithEmailAndPassword(auth, loginIdToEmail(loginId), password)
+          uid = cred.user.uid
+          displayName = cred.user.displayName ?? loginId
+        } catch (e) {
+          return { ok: false, error: authErrorMessage(e) }
+        }
+
+        let cloud: CloudUserDoc | null = null
+        try {
+          cloud = await fetchCloudUser(uid)
+          if (!cloud) {
+            await createCloudUser(uid, { loginId, nickname: displayName, createdAt: now })
+            cloud = await fetchCloudUser(uid)
+          }
+        } catch (e) {
+          console.warn('[PicBook] 회원 정보 불러오기 실패', e)
+        }
+
+        const local = get().accounts[uid]
+        const account: UserAccount = cloud
+          ? accountFromCloud(uid, cloud, local, now)
+          : {
+              uid,
+              loginId,
+              name: local?.name ?? displayName,
+              unlockedIds: local?.unlockedIds ?? [],
+              createdAt: local?.createdAt ?? now,
               lastLoginAt: now,
             }
-            set((s) => ({ accounts: { ...s.accounts, [key]: account! } }))
-            importCloudMasterData(cloudOnly)
-          }
-        }
-
-        if (!account) {
-          return { ok: false, error: '등록되지 않은 이름입니다. 처음이시면 가입해 주세요.' }
-        }
-        if (account.password !== password) {
-          return { ok: false, error: '비밀번호가 맞지 않습니다.' }
-        }
-
-        if (isCloudSyncEnabled()) {
-          const cloud = await fetchCloudAccount(trimmed, password)
-          if (cloud) {
-            importCloudMasterData(cloud)
-            account = mergeCloudIntoLocal(account, cloud)
-            set((s) => ({
-              accounts: { ...s.accounts, [key]: account! },
-            }))
-          }
-        }
-
-        set((s) => ({
-          sessionKey: key,
-          accounts: touchLogin(s.accounts, key),
-        }))
+        if (cloud) importCloudMasterData(cloud)
+        set((s) => ({ accounts: { ...s.accounts, [uid]: account }, sessionKey: uid }))
+        set({ isAdmin: await fetchIsAdmin(uid), passes: await fetchPasses(uid) })
         await get().pushCloudSnapshot()
         return { ok: true }
       },
 
-      /** 세션만 종료 — accounts·unlockedIds는 localStorage에 유지 */
-      logout: () => set({ sessionKey: null }),
+      logout: async () => {
+        set({ sessionKey: null, isAdmin: false, passes: [] })
+        const auth = getPicbookAuth()
+        if (auth) await signOut(auth).catch(() => {})
+      },
+
+      syncAuthSession: async () => {
+        const auth = getPicbookAuth()
+        if (!auth) return
+        await auth.authStateReady()
+        const user = auth.currentUser
+        const sessionKey = get().sessionKey
+        if (!user) {
+          // 다른 탭에서 로그아웃했거나 로그인 정보가 지워진 경우
+          if (sessionKey) set({ sessionKey: null })
+          return
+        }
+        set({ isAdmin: await fetchIsAdmin(user.uid), passes: await fetchPasses(user.uid) })
+        if (sessionKey === user.uid && get().accounts[user.uid]) return
+        const now = new Date().toISOString()
+        const cloud = await fetchCloudUser(user.uid).catch(() => null)
+        if (!cloud) {
+          set({ sessionKey: null })
+          await signOut(auth).catch(() => {})
+          return
+        }
+        importCloudMasterData(cloud)
+        const account = accountFromCloud(user.uid, cloud, get().accounts[user.uid], now)
+        set((s) => ({ accounts: { ...s.accounts, [user.uid]: account }, sessionKey: user.uid }))
+      },
+
+      redeemPass: async (rawKey) => {
+        const uid = get().sessionKey
+        if (!uid) return { ok: false, error: '먼저 로그인해 주세요.' }
+        const result = await redeemPassKey(uid, rawKey)
+        if (result.ok) set((s) => ({ passes: [...new Set([...s.passes, result.pass])] }))
+        return result
+      },
 
       isUnlocked: (bookId) => {
         const acc = get().getActiveAccount()
@@ -171,74 +304,19 @@ export const useUserAccountStore = create<UserAccountStore>()(
       pushCloudSnapshot: async () => {
         if (!isCloudSyncEnabled()) return
         const acc = get().getActiveAccount()
-        if (!acc) return
-        const timelines = usePicbookTimelineStore.getState().byBook
-        const sceneEditsByBook = usePicbookSceneEditStore.getState().editsByBook
-        await pushCloudAccount(accountToCloudPayload(acc, timelines, sceneEditsByBook))
-      },
-
-      migrateLegacyStorage: () => {
-        if (typeof localStorage === 'undefined') return
-        try {
-          const legacyProfileRaw = localStorage.getItem('picbook.user.profile.v1')
-          const legacyUnlockRaw = localStorage.getItem('picbook.library.unlocks.v1')
-          type LegacyProfilePayload = {
-            state?: { profile?: { name: string; password: string; createdAt: string } }
-          }
-          let legacyProfile: LegacyProfilePayload | null = null
-          let legacyUnlocks: string[] = []
-          if (legacyProfileRaw) {
-            legacyProfile = JSON.parse(legacyProfileRaw) as LegacyProfilePayload
-          }
-          if (legacyUnlockRaw) {
-            const parsed = JSON.parse(legacyUnlockRaw) as { state?: { unlockedIds?: string[] } }
-            legacyUnlocks = parsed?.state?.unlockedIds ?? []
-          }
-          const p = legacyProfile?.state?.profile
-          if (!p?.name) return
-
-          const key = accountKeyFromName(p.name)
-          set((s) => {
-            if (s.accounts[key]) {
-              if (!s.sessionKey) return { sessionKey: key }
-              return s
-            }
-            const now = new Date().toISOString()
-            return {
-              accounts: {
-                ...s.accounts,
-                [key]: {
-                  name: p.name.trim(),
-                  password: p.password,
-                  unlockedIds: legacyUnlocks,
-                  createdAt: p.createdAt ?? now,
-                  lastLoginAt: now,
-                },
-              },
-              sessionKey: s.sessionKey ?? key,
-            }
-          })
-        } catch {
-          /* ignore */
-        }
+        const auth = getPicbookAuth()
+        if (!acc || !auth || auth.currentUser?.uid !== acc.uid) return
+        await pushCloudUser(acc.uid, {
+          unlockedIds: acc.unlockedIds,
+          timelines: usePicbookTimelineStore.getState().byBook,
+          sceneEditsByBook: usePicbookSceneEditStore.getState().editsByBook,
+        })
       },
     }),
     {
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ accounts: s.accounts, sessionKey: s.sessionKey }),
-      onRehydrateStorage: () => (state) => {
-        state?.migrateLegacyStorage()
-      },
     },
   ),
 )
-
-/** 이전 스토어와 호환 — 프로필 형태 */
-export function useActiveProfile() {
-  return useUserAccountStore((s) => {
-    const acc = s.getActiveAccount()
-    if (!acc) return null
-    return { name: acc.name, password: acc.password, createdAt: acc.createdAt }
-  })
-}
