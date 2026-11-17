@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useUndoableState } from '../../hooks/useUndoableState'
 import {
   activePanelIndex,
   computeAutoCueIndexes,
@@ -43,14 +44,45 @@ type Props = {
   onReset?: () => void
 }
 
+/** 편집창에서 되돌릴 수 있는 내용 */
+type Draft = {
+  text: string
+  closingLine: string
+  images: string[]
+  cues: number[]
+}
+
+function sameList<T>(a: T[], b: T[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i])
+}
+
+function isSameDraft(a: Draft, b: Draft): boolean {
+  return (
+    a.text === b.text &&
+    a.closingLine === b.closingLine &&
+    sameList(a.images, b.images) &&
+    sameList(a.cues, b.cues)
+  )
+}
+
+/** 단축키 안내에 쓸 이름 — 맥은 ⌘, 그 밖은 Ctrl */
+const MOD_KEY =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl'
+
 /** 문장 하나의 편집창: ① 문장 ② 그림 ③ 그림이 바뀌는 위치 + 미리 보기 */
 export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAndNext, onClose, onReset }: Props) {
-  const [text, setText] = useState(initial.text)
-  const [closingLine, setClosingLine] = useState(initial.closingLine ?? '')
-  const [images, setImages] = useState<string[]>(initial.images)
-  const [cues, setCues] = useState<number[]>(() =>
-    normalizeCueIndexes(initial.text, initial.cueIndexes, initial.images.length),
+  /** 되돌리기·다시 실행 대상 — 문장, 다 쓴 뒤 한 줄, 그림, 등장 위치를 한 묶음으로 기록한다 */
+  const draft = useUndoableState<Draft>(
+    () => ({
+      text: initial.text,
+      closingLine: initial.closingLine ?? '',
+      images: initial.images,
+      cues: normalizeCueIndexes(initial.text, initial.cueIndexes, initial.images.length),
+    }),
+    isSameDraft,
   )
+  const { text, closingLine, images, cues } = draft.value
+  const { commit, undo, redo } = draft
   /** 타임라인에서 위치를 옮길 그림 (0번은 항상 문장 시작이라 고를 수 없다) */
   const [selected, setSelected] = useState(1)
   const [previewLen, setPreviewLen] = useState(0)
@@ -65,12 +97,11 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
   const problem = validatePanelSentence(text, images.length)
   const active = activePanelIndex(cues, previewLen)
 
-  // 문장이나 그림 수가 바뀌면 등장 위치를 다시 고르게 나눈다
-  const reflow = (nextText: string, count: number) => {
-    setCues(computeAutoCueIndexes(nextText, count))
-    setPreviewLen((n) => Math.min(n, nextText.length))
-    setSelected((s) => Math.min(Math.max(1, s), Math.max(1, count - 1)))
-  }
+  // 되돌리기 등으로 문장·그림 수가 바뀌어도 미리 보기 위치와 고른 그림이 범위를 벗어나지 않게
+  useEffect(() => {
+    setPreviewLen((n) => Math.min(n, text.length))
+    setSelected((s) => Math.min(Math.max(1, s), Math.max(1, images.length - 1)))
+  }, [text.length, images.length])
 
   useEffect(() => {
     if (!playing) return
@@ -84,11 +115,25 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      // 글자 조합 중(한글 입력)에는 단축키를 가로채지 않는다
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.isComposing) return
+      const key = e.key.toLowerCase()
+      // 입력칸 안에서도 브라우저 기본 되돌리기 대신 편집창 기록을 쓴다(문장을 바꾸면 등장 위치도 함께 바뀌기 때문)
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault()
+        redo()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, undo, redo])
 
   const uploadFiles = async (files: FileList | null): Promise<string[]> => {
     if (!files || files.length === 0) return []
@@ -114,31 +159,34 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
     const picked = files ? (Array.from(files).slice(0, room) as unknown as FileList) : null
     const urls = await uploadFiles(picked)
     if (urls.length === 0) return
-    const next = [...images, ...urls]
-    setImages(next)
-    reflow(text, next.length)
+    commit((d) => {
+      const nextImages = [...d.images, ...urls].slice(0, PANEL_MAX)
+      return { ...d, images: nextImages, cues: computeAutoCueIndexes(d.text, nextImages.length) }
+    })
   }
 
   const onReplaceFile = async (files: FileList | null) => {
     const [url] = await uploadFiles(files)
     if (!url) return
-    setImages((list) => list.map((u, i) => (i === replaceIndexRef.current ? url : u)))
+    const at = replaceIndexRef.current
+    commit((d) => ({ ...d, images: d.images.map((u, i) => (i === at ? url : u)) }))
   }
 
   const moveImage = (index: number, dir: -1 | 1) => {
     const to = index + dir
     if (to < 0 || to >= images.length) return
-    setImages((list) => {
-      const next = [...list]
+    commit((d) => {
+      const next = [...d.images]
       ;[next[index], next[to]] = [next[to], next[index]]
-      return next
+      return { ...d, images: next }
     })
   }
 
   const removeImage = (index: number) => {
-    const next = images.filter((_, i) => i !== index)
-    setImages(next)
-    reflow(text, next.length)
+    commit((d) => {
+      const nextImages = d.images.filter((_, i) => i !== index)
+      return { ...d, images: nextImages, cues: computeAutoCueIndexes(d.text, nextImages.length) }
+    })
   }
 
   /** 그림 panel이 나타나는 글자 위치를 옮긴다 — 앞뒤 그림을 넘어가지 않게 막는다 */
@@ -149,7 +197,7 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
     if (max < min) return
     const next = [...cues]
     next[panel] = Math.min(Math.max(charIndex, min), max)
-    setCues(next)
+    commit({ ...draft.value, cues: next })
     setPreviewLen(next[panel])
   }
 
@@ -175,15 +223,35 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
       aria-label={heading}
     >
       <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl">
-        <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+        <header className="sticky -top-3 z-10 sm:-top-6 flex items-center justify-between gap-3 rounded-t-2xl border-b border-slate-200 bg-white px-5 py-4">
           <h2 className="text-lg font-bold text-slate-900">{heading}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-slate-100"
-          >
-            닫기 ✕
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!draft.canUndo}
+              title={`되돌리기 (${MOD_KEY}+Z)`}
+              className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-35"
+            >
+              ↶ 되돌리기
+            </button>
+            <button
+              type="button"
+              onClick={redo}
+              disabled={!draft.canRedo}
+              title={`다시 실행 (${MOD_KEY}+Shift+Z 또는 ${MOD_KEY}+Y)`}
+              className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-35"
+            >
+              ↷ 다시 실행
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="ml-1 rounded-lg px-2 py-1 text-sm font-semibold text-slate-500 hover:bg-slate-100"
+            >
+              닫기 ✕
+            </button>
+          </div>
         </header>
 
         <div className="grid gap-6 p-5 lg:grid-cols-[1fr_320px]">
@@ -196,8 +264,8 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
                 value={text}
                 onChange={(e) => {
                   const next = e.target.value.replace(/\n/g, ' ')
-                  setText(next)
-                  reflow(next, images.length)
+                  // 문장이 바뀌면 등장 위치를 다시 고르게 나눈다
+                  commit((d) => ({ ...d, text: next, cues: computeAutoCueIndexes(next, d.images.length) }), 'text')
                 }}
                 placeholder="예: 가는 말이 고와야 오는 말이 곱다"
                 className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
@@ -206,7 +274,10 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
                 다 쓴 뒤 보여 줄 한 줄 (뜻·교훈, 선택)
                 <input
                   value={closingLine}
-                  onChange={(e) => setClosingLine(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value
+                    commit((d) => ({ ...d, closingLine: next }), 'closingLine')
+                  }}
                   className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-orange-500 focus:outline-none"
                 />
               </label>
@@ -333,7 +404,7 @@ export function PanelSentenceEditor({ bookId, heading, initial, onSave, onSaveAn
                 <h3 className="text-sm font-bold text-slate-900">③ 그림이 바뀌는 위치</h3>
                 <button
                   type="button"
-                  onClick={() => reflow(text, images.length)}
+                  onClick={() => commit((d) => ({ ...d, cues: computeAutoCueIndexes(d.text, d.images.length) }))}
                   className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   자동으로 고르게 나누기
