@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import type { ReadingPack, SentenceBlock } from '../types/pack'
 
 /** 마스터 편집기 — 카탈로그 팩 문장(타이핑 텍스트) 로컬 덮어쓰기 */
@@ -34,7 +35,7 @@ export const usePackSentenceOverrideStore = create<PackSentenceOverrideStore>()(
           return { byBook: next }
         }),
     }),
-    { name: 'picbook.pack-sentence-overrides.v1' },
+    { name: 'picbook.pack-sentence-overrides.v1', version: PERSIST_V1, migrate: migratePassthrough },
   ),
 )
 

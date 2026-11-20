@@ -19,7 +19,9 @@
     "outpaint:proverbs": "node scripts/batch-outpaint-proverbs.mjs",
     "prebuild": "node scripts/sync-editor-workspace.mjs && node scripts/fix-proverb-panels-3x2.mjs && node scripts/verify-proverbs-pack.mjs && node scripts/verify-picbooks.mjs",
     "verify:picbooks": "node scripts/verify-picbooks.mjs",
-    "test:rules": "node scripts/run-rules-test.mjs"
+    "test:rules": "node scripts/run-rules-test.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "firebase": "^12.13.0",
@@ -38,11 +40,13 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.3",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.7.3",
     "typescript-eslint": "^8.26.1",
-    "vite": "^6.2.2"
+    "vite": "^6.2.2",
+    "vitest": "^3.2.7"
   }
 }

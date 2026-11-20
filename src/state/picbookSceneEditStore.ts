@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import { panelKeyFromImageUrl } from '../lib/panelKey'
 import { defaultPanelSceneEdit, type PanelSceneEdit } from '../types/sceneEdit'
 
@@ -56,6 +57,8 @@ export const usePicbookSceneEditStore = create<SceneEditStore>()(
     }),
     {
       name: STORAGE_KEY,
+      version: PERSIST_V1,
+      migrate: migratePassthrough,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ editsByBook: s.editsByBook }),
     },

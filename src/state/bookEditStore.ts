@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import { fetchAllBookEdits, publishBookEdit } from '../lib/bookEditFirebase'
 import { emptyBookEdit, type BookEdit } from '../lib/bookEdits'
 import type { PanelSentence } from '../types/customPicbook'
@@ -96,6 +97,6 @@ export const useBookEditStore = create<BookEditStore>()(
         return ok
       },
     }),
-    { name: 'picbook.book-edits.v1', storage: createJSONStorage(() => safeStorage) },
+    { name: 'picbook.book-edits.v1', version: PERSIST_V1, migrate: migratePassthrough, storage: createJSONStorage(() => safeStorage) },
   ),
 )

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { PERSIST_V1, migratePassthrough } from './persistVersion'
 import { createId } from '../lib/ids'
 import {
   createEmptySentenceTimeline,
@@ -196,6 +197,8 @@ export const usePicbookTimelineStore = create<TimelineStore>()(
     }),
     {
       name: STORAGE_KEY,
+      version: PERSIST_V1,
+      migrate: migratePassthrough,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ byBook: s.byBook }),
     },
