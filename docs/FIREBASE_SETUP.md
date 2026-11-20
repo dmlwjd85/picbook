@@ -61,5 +61,5 @@ npx firebase-tools deploy --only firestore:rules,storage
 
 ## 7. 예전 데이터
 
-예전 회원(이름 + 숫자 6자리)은 삼봉월드 프로젝트의 `picbook_accounts`에 남아 있고 새 프로젝트로 옮겨지지 않습니다. 새로 가입해야 합니다.
+예전 회원의 클라우드 기록은 삼봉월드 프로젝트의 `picbook_accounts`에 남아 있고 새 프로젝트로 옮겨지지 않습니다. 다른 기기에서 쓰려면 새로 가입해야 합니다. 같은 기기에 남아 있는 로컬 계정(이름+6자리 비밀번호)은 앱을 열 때 v2 형태로 복사됩니다.
 `workers/account-sync`(Cloudflare Worker 동기화)는 더 이상 앱에서 쓰지 않습니다.
