@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { runV1AccountMigration } from '../lib/runV1AccountMigration'
 import { initCloudSyncSubscriptions } from '../lib/scheduleCloudPush'
+import { useBookEditStore } from '../state/bookEditStore'
+import { useCustomPicbookStore } from '../state/customPicbookStore'
 import { useMasterAuthStore } from '../state/masterAuthStore'
 import { usePicbookTimelineStore } from '../state/picbookTimelineStore'
+import { useTypingRecordStore } from '../state/typingRecordStore'
 import { useUserAccountStore } from '../state/userAccountStore'
-import { useCustomPicbookStore } from '../state/customPicbookStore'
-import { useBookEditStore } from '../state/bookEditStore'
 
 type PersistStore = {
   persist: {
@@ -38,7 +40,13 @@ export function PersistGate({ children }: { children: ReactNode }) {
       waitForHydration(usePicbookTimelineStore),
       waitForHydration(useCustomPicbookStore),
       waitForHydration(useBookEditStore),
+      waitForHydration(useTypingRecordStore),
     ]).then(async () => {
+      try {
+        await runV1AccountMigration()
+      } catch (e) {
+        console.warn('[PicBook] 예전 계정 이전 실패', e)
+      }
       await useUserAccountStore.getState().syncAuthSession()
       initCloudSyncSubscriptions()
       await Promise.all([

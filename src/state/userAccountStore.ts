@@ -25,6 +25,7 @@ import {
 import { getPicbookAuth, isFirebaseEnabled } from '../lib/firebase'
 import { importCloudMasterData } from '../lib/importCloudMasterData'
 import { fetchPasses, redeemPassKey, type RedeemResult } from '../lib/passes'
+import { hashLocalPassword, verifyLocalPassword } from '../lib/passwordHash'
 import { usePicbookSceneEditStore } from './picbookSceneEditStore'
 import { usePicbookTimelineStore } from './picbookTimelineStore'
 
@@ -68,13 +69,6 @@ type UserAccountStore = {
   pushCloudSnapshot: () => Promise<void>
 }
 
-async function sha256(text: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
 function authErrorMessage(e: unknown): string {
   const code = (e as { code?: string } | null)?.code ?? ''
   switch (code) {
@@ -99,7 +93,12 @@ function authErrorMessage(e: unknown): string {
   }
 }
 
+function isLocalUid(uid: string): boolean {
+  return uid.startsWith('local:')
+}
+
 /** 클라우드 회원 문서를 로컬 계정으로 반영하고 연출 데이터를 병합 */
+
 function accountFromCloud(
   uid: string,
   cloud: CloudUserDoc,
@@ -148,7 +147,7 @@ export const useUserAccountStore = create<UserAccountStore>()(
             unlockedIds: [],
             createdAt: now,
             lastLoginAt: now,
-            localPasswordHash: await sha256(`${loginId}:${password}`),
+            localPasswordHash: await hashLocalPassword(password),
           }
           set((s) => ({ accounts: { ...s.accounts, [uid]: account }, sessionKey: uid }))
           return { ok: true }
@@ -188,17 +187,24 @@ export const useUserAccountStore = create<UserAccountStore>()(
         if (!password) return { ok: false, error: '비밀번호를 입력해 주세요.' }
         const now = new Date().toISOString()
 
-        if (!isFirebaseEnabled()) {
+        const loginLocal = async (): Promise<AuthResult | null> => {
           const uid = `local:${loginId}`
           const account = get().accounts[uid]
-          if (!account || account.localPasswordHash !== (await sha256(`${loginId}:${password}`))) {
+          if (!account) return null
+          if (!(await verifyLocalPassword(loginId, password, account.localPasswordHash))) {
             return { ok: false, error: '아이디 또는 비밀번호가 맞지 않습니다.' }
           }
           set((s) => ({
             sessionKey: uid,
             accounts: { ...s.accounts, [uid]: { ...account, lastLoginAt: now } },
+            isAdmin: false,
+            passes: [],
           }))
           return { ok: true }
+        }
+
+        if (!isFirebaseEnabled()) {
+          return (await loginLocal()) ?? { ok: false, error: '아이디 또는 비밀번호가 맞지 않습니다.' }
         }
 
         const auth = getPicbookAuth()
@@ -210,6 +216,9 @@ export const useUserAccountStore = create<UserAccountStore>()(
           uid = cred.user.uid
           displayName = cred.user.displayName ?? loginId
         } catch (e) {
+          // 예전 기기 안 계정(이름+비밀번호)은 Firebase에 없으므로, 실패한 뒤에만 로컬로 시도한다
+          const local = await loginLocal()
+          if (local) return local
           return { ok: false, error: authErrorMessage(e) }
         }
 
@@ -255,8 +264,9 @@ export const useUserAccountStore = create<UserAccountStore>()(
         const user = auth.currentUser
         const sessionKey = get().sessionKey
         if (!user) {
-          // 다른 탭에서 로그아웃했거나 로그인 정보가 지워진 경우
-          if (sessionKey) set({ sessionKey: null })
+          // 다른 탭에서 로그아웃했거나 로그인 정보가 지워진 경우.
+          // 기기 안 계정(체험·이전된 예전 계정)은 Firebase 세션이 없어도 유지한다.
+          if (sessionKey && !isLocalUid(sessionKey)) set({ sessionKey: null, isAdmin: false, passes: [] })
           return
         }
         set({ isAdmin: await fetchIsAdmin(user.uid), passes: await fetchPasses(user.uid) })

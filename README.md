@@ -88,10 +88,12 @@ docs/          Firebase 설정, 콘텐츠 파이프라인, 시각 사전
 | `picbook.book-edits.v1` | `bookEditStore` | 검수 편집창에서 고친 문장·그림(아직 배포 전인 수정도 포함) |
 | `picbook.typing-records.v1` | `typingRecordStore` | 회원별 최근 타자 기록 |
 
-레거시 키(예전 앱이 쓰던 값, 자동으로 새 키로 옮기지 않음): `picbook.accounts.v1`(이름+6자리 비밀번호 계정), `picbook.user.profile.v1`, `picbook.library.unlocks.v1`.
+앱을 열면 `picbook.accounts.v1`(이름+6자리 비밀번호 계정)에만 있던 기기 안 계정을 `picbook.accounts.v2` 형태로 복사합니다. v1 원본은 롤백을 위해 지우지 않습니다. 비밀번호는 평문으로 옮기지 않고 솔트를 붙인 해시로만 저장합니다. 같은 아이디가 이미 v2에 있으면 덮어쓰지 않습니다.
+
+레거시 키(예전 앱이 쓰던 값, 아직 자동으로 옮기지 않음): `picbook.user.profile.v1`, `picbook.library.unlocks.v1`.
 sessionStorage: 마스터 로그인 여부(탭 단위).
 
-예전 회원(이름 + 숫자 6자리)은 이전 Firebase 프로젝트의 `picbook_accounts`에 남아 있고, 지금 PicBook 전용 프로젝트로 옮겨지지 않습니다. 새로 가입해야 합니다.
+예전 회원의 클라우드 기록은 이전 Firebase 프로젝트의 `picbook_accounts`에 남아 있고, 지금 PicBook 전용 프로젝트로 옮겨지지 않습니다. 다른 기기에서 쓰려면 새로 가입해야 합니다. 같은 기기에 저장된 로컬 계정은 위에서 설명한 대로 이어집니다.
 
 ### IndexedDB
 
